@@ -1,0 +1,3 @@
+[submodule "dependencies/pqxx"]
+	path = dependencies/pqxx
+	url = https://github.com/jtv/libpqxx
