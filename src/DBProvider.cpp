@@ -1,7 +1,7 @@
 #include <DBProvider/DBProvider.h>
 
-#include <pqxx/pqxx>
-#include <pqxx/transaction>
+//#include <pqxx/pqxx>
+//#include <pqxx/transaction>
 
 DBProvider::DBProvider() {}
 DBProvider::~DBProvider() {}
