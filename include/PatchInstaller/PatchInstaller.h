@@ -5,5 +5,5 @@ class PatchInstaller {
 public:
   PatchInstaller();
   ~PatchInstaller();
-}
+};
 #endif
