@@ -1,7 +1,9 @@
-#include <DBProvider/DBProvider.h>
-#include <PatchBuilder/PatchBuilder.h>
-
+#include "DBProvider/DBProvider.h"
+#include "PatchBuilder/PatchBuilder.h"
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <utility>
 
 using namespace std;
 
@@ -36,5 +38,40 @@ void PatchBuilder::createInstallScript(string directory)
 
 void PatchBuilder::createDependencyList(string directory)
 {
+	vector<pair<string, string>> objectVector;
+	string name;
+	string type;
+	pair<string, string> newPair;
+
+	ifstream input(directory + objectListName);
+	if (input.is_open())
+	{
+		while (!input.eof())
+		{
+			input >> name;
+			input >> type;
+			newPair.first = name;
+			newPair.second = type;
+			objectVector.push_back(newPair);
+		}
+		input.close();
+	}
+
+	ofstream output(directory + dependencyListName);
+	if (output.is_open())
+	{
+		for (pair<string, string> objectPair : objectVector)
+		{
+			output << objectPair.first << " ";
+			output << objectPair.second << endl;
+		}
+	}
+	output.close();
+
 	cout << "Dependency list created" << endl;
+}
+
+bool PatchBuilder::isContains(string objectName, string objectType, string scriptFullName)
+{
+	return false;
 }
