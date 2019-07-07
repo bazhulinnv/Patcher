@@ -15,9 +15,14 @@ public:
 private:
 	string patchListDirectory;
 
+	string dependencyListName = "\\DependencyList.txt";
+	string objectListName = "\\ObjectList.txt";
+
 	void createInstallPocket(string directory);
 	void createObjectList(string directory);
 	void createInstallScript(string directory);
 	void createDependencyList(string directory);
+
+	bool isContains(string objectName, string objectType, string scriptFullName);
 };
 #endif
