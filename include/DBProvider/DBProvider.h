@@ -1,5 +1,6 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
+#include <string>
 
 class DBProvider {
 public:
@@ -7,6 +8,6 @@ public:
   ~DBProvider();
   int getObjects();
   void connect();
-  bool isCurrentObjectExist();
+  bool isCurrentObjectExist(std::string objectName, std::string objectType);
 };
 #endif

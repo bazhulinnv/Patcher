@@ -5,9 +5,10 @@ DBProvider::~DBProvider() {}
 int DBProvider::getObjects() { return 0; }
 void DBProvider::connect() {}
 
-bool DBProvider::isCurrentObjectExist()
+bool DBProvider::isCurrentObjectExist(std::string objectName, std::string objectType)
 {
 	return false;
 }
+
 
 
