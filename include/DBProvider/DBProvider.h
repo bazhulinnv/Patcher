@@ -7,5 +7,6 @@ public:
   ~DBProvider();
   int getObjects();
   void connect();
+  bool isCurrentObjectExist();
 };
 #endif
