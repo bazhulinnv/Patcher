@@ -1,77 +1,165 @@
-#include "DBProvider/DBProvider.h"
-#include "PatchBuilder/PatchBuilder.h"
 #include <iostream>
 #include <fstream>
+#include <streambuf>
 #include <vector>
 #include <utility>
+#include <direct.h>
+#include "DBProvider/DBProvider.h"
+#include "PatchBuilder/PatchBuilder.h"
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(string pPatchListDirectory)
+PatchBuilder::PatchBuilder(const string pPatchListFullName)
 {
-	patchListDirectory = pPatchListDirectory;
+	// Initialisation of class fields
+	patchListFullName = pPatchListFullName;
 }
 PatchBuilder::~PatchBuilder() {}
 
-void PatchBuilder::buildPatch(string directory)
+void PatchBuilder::buildPatch(const string directory)
 {
-	createInstallPocket(directory);
-	createInstallScript(directory);
-	createDependencyList(directory);
+	// Executing all methods for patch building
+	ofstream output(directory + "\\" + dependencyListName); // Dependency list directory
+	scriptDataVectorType scriptDataVector = getScriptDataVector(); // Getting all scripts created by DBProvider
+	fillScriptDataVector(scriptDataVector); // Temp
+	creatInstallPocket(directory, scriptDataVector); // Creaing all instalation components
+	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
+	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
+	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
+	// Writing of DependencyList
+	for (ObjectData objectData : objectDataVector)
+	{
+		// Ñhecking all objects for the presence in scripts
+		for (ScriptData scriptData : scriptDataVector)
+		{
+			if (isContains(objectData, scriptData.text))
+			{
+				// If object was found - writing it's name and type it DependencyList
+				output << objectData.name << " ";
+				output << objectData.type << endl;
+				break;
+			}
+		}
+	}
+	output.close();
 	cout << "Patch builded!" << endl;
 }
 
-void PatchBuilder::createInstallPocket(string directory)
+scriptDataVectorType PatchBuilder::getScriptDataVector() const
 {
-	cout << "Install pocket created" << endl;
+	// Not implemented
+	scriptDataVectorType scriptMap;
+	cout << "Script vector created" << endl;
+	return scriptMap;
 }
 
-void PatchBuilder::createObjectList(string directory)
+objectDataVectorType PatchBuilder::getObjectDataVector() const
 {
-	cout << "Object list created" << endl;
-}
-
-void PatchBuilder::createInstallScript(string directory)
-{
-	cout << "Install script created" << endl;
-}
-
-void PatchBuilder::createDependencyList(string directory)
-{
-	vector<pair<string, string>> objectVector;
-	string name;
-	string type;
-	pair<string, string> newPair;
-
-	ifstream input(directory + objectListName);
+	// Getting all source database objects
+	// Not implementeds
+	objectDataVectorType objectVector;
+	ifstream input("C:\\Users\\Timur\\Documents\\Temp\\ObjectList.txt");
 	if (input.is_open())
 	{
 		while (!input.eof())
 		{
-			input >> name;
-			input >> type;
-			newPair.first = name;
-			newPair.second = type;
-			objectVector.push_back(newPair);
-		}
-		input.close();
-	}
-
-	ofstream output(directory + dependencyListName);
-	if (output.is_open())
-	{
-		for (pair<string, string> objectPair : objectVector)
-		{
-			output << objectPair.first << " ";
-			output << objectPair.second << endl;
+			ObjectData data;
+			input >> data.name;
+			input >> data.type;
+			objectVector.push_back(data);
 		}
 	}
-	output.close();
-
-	cout << "Dependency list created" << endl;
+	cout << "Object vector created" << endl;
+	return objectVector;
 }
 
-bool PatchBuilder::isContains(string objectName, string objectType, string scriptFullName)
+void PatchBuilder::creatInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
 {
-	return false;
+	// Creating sql files for all scrpits
+	for (ScriptData data : scriptDataVector)
+	{
+		// Creating directory named as type of script
+		mkdir(&(directory + "\\" + data.type)[0]);
+		ofstream output(directory + "\\" + data.type + "\\" + data.name);
+		// Writing script text in file
+		output << data.text;
+	}
+	// Creating of install script not added yet
+	cout << "Install pocket created" << endl;
+}
+
+bool PatchBuilder::isContains(const ObjectData data, const string &scriptText) const
+{
+	// Checking on the content of the object in current script
+	// Not implemented
+	return true;
+}
+
+objectDataVectorType PatchBuilder::getPatchListVector() const
+{
+	// Getting all patch objects
+	objectDataVectorType patchListVector;
+	ifstream input(patchListFullName);
+	if (input.is_open())
+	{
+		while (!input.eof())
+		{
+			// Reading from PatchList file in patchListVector
+			ObjectData data;
+			input >> data.name;
+			input >> data.type;
+			patchListVector.push_back(data);
+		}
+	}
+	return patchListVector;
+}
+
+void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
+{
+	// Temp
+	ScriptData data;
+	{
+		data.name = "roles.sql";
+		data.type = "table";
+		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\roles.sql");
+		string str((std::istreambuf_iterator<char>(input)),
+			std::istreambuf_iterator<char>());
+		data.text = str;
+		scriptDataVector.push_back(data);
+	}
+	{
+		data.name = "users.sql";
+		data.type = "table";
+		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\users.sql");
+		string str((std::istreambuf_iterator<char>(input)),
+			std::istreambuf_iterator<char>());
+		data.text = str;
+		scriptDataVector.push_back(data);
+	}
+	{
+		data.name = "placeholder.sql";
+		data.type = "table";
+		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\placeholder.sql");
+		string str((std::istreambuf_iterator<char>(input)),
+			std::istreambuf_iterator<char>());
+		data.text = str;
+		scriptDataVector.push_back(data);
+	}
+}
+
+void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second)
+{
+	// Removing elements of second vector from first vector
+	for (int index = 0; index < objectDataVector_first.size(); index++)
+	{
+		for (ObjectData objectData : objectDataVector_second)
+		{
+			if (objectData == objectDataVector_first[index])
+			{
+				objectDataVector_first.erase(objectDataVector_first.begin() + index);
+				index--;
+				break;
+			}
+		}
+	}
 }
