@@ -1,45 +1,46 @@
 #include <cstdio>
-#include <PatchInstaller/PatchInstaller.h>
-#include "DBProvider/DBProvider.h"
-#include "PatchInstaller/PatchInstaller.h"
 #include <String>
 #include <fstream>
 #include <iostream>
+
+#include "PatchInstaller/PatchInstaller.h"
+#include "DBProvider/DBProvider.h"
+#include "PatchInstaller/PatchInstaller.h"
+
 
 using namespace std;
 
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
 
+/* The function checks the presence of objects in the database according to the list of objects specified in the file. */
 bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile)
 {
 	bool result = true;
 	DBProvider dbProvider;
-	ifstream dependencies;
-	dependencies.open(nameOfFile, std::ios::in);
-	//Generate file, when for each object write exist it, or not
+	ifstream dependencies(nameOfFile, ios::in);
 	ofstream objectsExistence("ObjectsExistence.txt");
+	std::string buffer("");
+	std::string objectName("");
+	std::string objectType("");
 
-	std::cout << "Created file objectsExistence!\n";
-	std::string buffer;
+	//Try to read first string from file
+	dependencies >> objectName >> objectType;
 
-	while (getline(dependencies, buffer)) {
-		//parsing of file with list of objects
-		std::string objectName("");
-		std::string objectType("");
+	if ((objectName != "") && (objectType != "")) {
+		while (getline(dependencies, buffer)) {
+			result = result && dbProvider.isCurrentObjectExist(objectName, objectType);
 
-		//dependencies.getline(buff, sizeof(buff));
-		dependencies >> objectName >> objectType;
-		std::cout << objectName << " " << objectType << "\n";
+			if (!dbProvider.isCurrentObjectExist(objectName, objectType)) {
+				//writing to logging file with existence of objects
+				objectsExistence << objectName << " " << objectType << " "
+					<< dbProvider.isCurrentObjectExist(objectName, objectType) << "\n";
+			}
 
-		result = result && dbProvider.isCurrentObjectExist(objectName, objectType);
-
-		if (!dbProvider.isCurrentObjectExist(objectName, objectType)) {
-			//writing to logging file with existence of objects
-			std::cout << "Write in objectExistingFile!\n";
-			objectsExistence << objectName <<  " " << objectType << " " << 
-				dbProvider.isCurrentObjectExist(objectName, objectType) << "\n";
+			dependencies >> objectName >> objectType;
 		}
+		objectsExistence << objectName << " " << objectType << " " <<
+			dbProvider.isCurrentObjectExist(objectName, objectType) << "\n";
 	}
 
 	dependencies.close();
@@ -48,20 +49,11 @@ bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile)
 	return result;
 }
 
-
-
-bool startInstallation(FILE* fileWithDependencies, std::string objectsAndScriptsDirectory, 
-					std::string installationScriptDirectory, PatchInstaller patchInstaller) {
+/* When the method starts, the dependency check is considered successful. */
+bool startInstallation(/* Installation script. */) {
 	//Take the list of dependencies and check it for the presence in database
-	/*if (patchInstaller.checkObjectsForExistence(fileWithDependencies)) {
-		//Check succeed
-		//Start installation script
-		FILE* installationSctipt;
-		//Generate logging file with installation mistakes
-	}
-	else {
-		//Check failed (some object does not exist)
-		return false;
-	}*/
-	return false;
+	//Check succeed
+	//Start installation script
+	//Generate logging file with installation mistakes
+	return true;
 }

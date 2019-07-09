@@ -1,5 +1,6 @@
 #ifndef PATCHINSTALLER_H
 #define PATCHINSTALLER_H
+
 #include <cstdio>
 #include <string>
 
@@ -8,5 +9,6 @@ public:
   PatchInstaller();
   ~PatchInstaller();
   bool checkObjectsForExistence(std::string nameOfFile);
+  bool startInstallation();
 };
 #endif
