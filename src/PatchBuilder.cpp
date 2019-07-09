@@ -27,6 +27,7 @@ void PatchBuilder::buildPatch(const string directory)
 	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
 	// Writing of DependencyList
+	cout << "Parsing started" << endl;
 	for (ObjectData objectData : objectDataVector)
 	{
 		// Ñhecking all objects for the presence in scripts
@@ -42,7 +43,7 @@ void PatchBuilder::buildPatch(const string directory)
 		}
 	}
 	output.close();
-	cout << "Patch builded!" << endl;
+	cout << "Patch builded successfully!" << endl;
 }
 
 scriptDataVectorType PatchBuilder::getScriptDataVector() const
@@ -92,7 +93,32 @@ bool PatchBuilder::isContains(const ObjectData data, const string &scriptText) c
 {
 	// Checking on the content of the object in current script
 	// Not implemented
-	return true;
+	string name = data.name;
+	string type = data.type;
+	for (size_t scriptIndex = 0; scriptIndex < scriptText.size(); scriptIndex++)
+	{
+		if (scriptText[scriptIndex] == name[0])
+		{
+			size_t nameIndex = 0;
+			for (size_t coincidenceIndex = scriptIndex; coincidenceIndex < (name.size() + scriptIndex); coincidenceIndex++)
+			{
+				if (scriptText[coincidenceIndex] == name[nameIndex])
+				{
+					nameIndex++;
+					if (nameIndex == name.size())
+					{
+						cout << " - " << name << " with " << type << " type included" << endl;
+						return true;
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 objectDataVectorType PatchBuilder::getPatchListVector() const
@@ -150,7 +176,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second)
 {
 	// Removing elements of second vector from first vector
-	for (int index = 0; index < objectDataVector_first.size(); index++)
+	for (size_t index = 0; index < objectDataVector_first.size(); index++)
 	{
 		for (ObjectData objectData : objectDataVector_second)
 		{
