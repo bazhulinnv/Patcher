@@ -1,9 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <streambuf>
-#include <vector>
-#include <utility>
 #include <direct.h>
+#include <regex>
 #include "DBProvider/DBProvider.h"
 #include "PatchBuilder/PatchBuilder.h"
 
@@ -21,8 +20,8 @@ void PatchBuilder::buildPatch(const string directory)
 	// Executing all methods for patch building
 	ofstream output(directory + "\\" + dependencyListName); // Dependency list directory
 	scriptDataVectorType scriptDataVector = getScriptDataVector(); // Getting all scripts created by DBProvider
-	fillScriptDataVector(scriptDataVector); // Temp
 	creatInstallPocket(directory, scriptDataVector); // Creaing all instalation components
+	removeCommits(scriptDataVector);
 	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
 	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
@@ -35,7 +34,7 @@ void PatchBuilder::buildPatch(const string directory)
 		{
 			if (isContains(objectData, scriptData.text))
 			{
-				// If object was found - writing it's name and type it DependencyList
+				// If object was found - writing it's name and type in DependencyList
 				output << objectData.name << " ";
 				output << objectData.type << endl;
 				break;
@@ -46,12 +45,13 @@ void PatchBuilder::buildPatch(const string directory)
 	cout << "Patch builded successfully!" << endl;
 }
 
-scriptDataVectorType PatchBuilder::getScriptDataVector() const
+scriptDataVectorType PatchBuilder::getScriptDataVector() /*const*/
 {
 	// Not implemented
-	scriptDataVectorType scriptMap;
+	scriptDataVectorType scriptDataVector;
+	fillScriptDataVector(scriptDataVector); // Temp
 	cout << "Script vector created" << endl;
-	return scriptMap;
+	return scriptDataVector;
 }
 
 objectDataVectorType PatchBuilder::getObjectDataVector() const
@@ -92,32 +92,15 @@ void PatchBuilder::creatInstallPocket(const string directory, const scriptDataVe
 bool PatchBuilder::isContains(const ObjectData data, const string &scriptText) const
 {
 	// Checking on the content of the object in current script
-	// Not implemented
-	string name = data.name;
-	string type = data.type;
-	for (size_t scriptIndex = 0; scriptIndex < scriptText.size(); scriptIndex++)
+	cmatch res; // To contain result of searching
+	string str = data.name;
+	regex rx(str); // Creating regular expression 
+	if (regex_search(scriptText.c_str(), res, rx))
 	{
-		if (scriptText[scriptIndex] == name[0])
-		{
-			size_t nameIndex = 0;
-			for (size_t coincidenceIndex = scriptIndex; coincidenceIndex < (name.size() + scriptIndex); coincidenceIndex++)
-			{
-				if (scriptText[coincidenceIndex] == name[nameIndex])
-				{
-					nameIndex++;
-					if (nameIndex == name.size())
-					{
-						cout << " - " << name << " with " << type << " type included" << endl;
-						return true;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-		}
-	}
+		// If current expresiion was found return true
+		cout << " - " << data.name << " with " << data.type << " type included" << endl;
+		return true;
+	}	
 	return false;
 }
 
@@ -148,8 +131,8 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "roles.sql";
 		data.type = "table";
 		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\roles.sql");
-		string str((std::istreambuf_iterator<char>(input)),
-			std::istreambuf_iterator<char>());
+		string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
+		str.erase(0, 3); //Utf8 mark delition
 		data.text = str;
 		scriptDataVector.push_back(data);
 	}
@@ -159,6 +142,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\users.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
+		str.erase(0, 3); //Utf8 mark delition
 		data.text = str;
 		scriptDataVector.push_back(data);
 	}
@@ -186,6 +170,35 @@ void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const ob
 				index--;
 				break;
 			}
+		}
+	}
+}
+
+void PatchBuilder::removeCommits(scriptDataVectorType & scriptDataVector)
+{
+	// Removing of all commits
+	for (ScriptData &data : scriptDataVector)
+	{
+		// "--" comits removing
+		string &text = data.text;
+		size_t startPosition = text.find("--"); // Find "--" in text
+		size_t endPosition;
+		while (startPosition != string::npos)
+		{
+			// While can not to find "--" in text
+			endPosition = text.find("\n", startPosition); // Find "new line symbol" in text after position of "--"
+			text.erase(startPosition, endPosition - startPosition + 1); // Remove this part of text
+			startPosition = text.find("--"); // Try to find next "--"
+		}
+
+		// "/* */" commits removing
+		startPosition = text.find("/*"); // Find "/*" in text
+		while (startPosition != string::npos)
+		{
+			// While can not to find "/*" in text
+			endPosition = text.find("*/", startPosition); // Find "*/" in text after position of "/*"
+			text.erase(startPosition, endPosition - startPosition + 2); // Remove this part of text
+			startPosition = text.find("/*"); // Try to find next "/*"
 		}
 	}
 }
