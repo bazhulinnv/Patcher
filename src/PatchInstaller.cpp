@@ -2,6 +2,9 @@
 #include <String>
 #include <fstream>
 #include <iostream>
+#include <cstdlib>
+#include <cstdio>
+#include <array>
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "DBProvider/DBProvider.h"
@@ -13,7 +16,7 @@ using namespace std;
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
 
-/* The function checks the presence of objects in the database according to the list of objects specified in the file. */
+/** The function checks the presence of objects in the database according to the list of objects specified in the file. */
 bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile)
 {
 	bool result = true;
@@ -49,11 +52,47 @@ bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile)
 	return result;
 }
 
-/* When the method starts, the dependency check is considered successful. */
-bool startInstallation(/* Installation script. */) {
-	//Take the list of dependencies and check it for the presence in database
-	//Check succeed
-	//Start installation script
-	//Generate logging file with installation mistakes
+/** Figuring out the operating system. */
+#if !defined(__WIN32__) && (defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__))
+#  define __WIN32__
+#endif
+
+#if defined(__unix__) || defined(__unix) || defined(_UNIXWARE7)
+#define __unix__
+#endif
+
+/** When the method starts, the dependency check is considered successful. */
+bool PatchInstaller::startInstallation() {
+	std::string command("dir");
+	std::array<char, 128> buffer;
+	std::string result;
+
+#if defined(__WIN32__)
+	FILE* pipe = _popen(command.c_str(), "r");
+	if (!pipe) {
+		std::cerr << "Couldn't start command." << std::endl;
+		return 0;
+	}
+	while (fgets(buffer.data(), 128, pipe) != NULL) {
+		result += buffer.data();
+	}
+	auto returnCode = _pclose(pipe);
+#endif
+
+#if (defined(__unix__)) 
+	FILE* pipe = popen(command.c_str(), "r");
+	if (!pipe) {
+		std::cerr << "Couldn't start command." << std::endl;
+		return 0;
+	}
+	while (fgets(buffer.data(), 128, pipe) != NULL) {
+		result += buffer.data();
+	}
+	auto returnCode = pclose(pipe);
+#endif
+
+	ofstream file("InstallingMistakes.txt");
+	file << result;
 	return true;
 }
+

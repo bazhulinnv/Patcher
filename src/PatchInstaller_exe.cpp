@@ -9,5 +9,6 @@ int main() {
 	std::string nameOfFile =  "dependencies.txt";
 	PatchInstaller patchInstaller;
 	patchInstaller.checkObjectsForExistence(nameOfFile);
+	patchInstaller.startInstallation();
 	return 0;
 }
