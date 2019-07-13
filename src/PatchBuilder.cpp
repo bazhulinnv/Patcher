@@ -20,10 +20,10 @@ PatchBuilder::~PatchBuilder() {}
 void PatchBuilder::buildPatch(const string directory)
 {
 	// Executing all methods for patch building
-	ofstream output(directory + "\\" + DEPENDENCY_LIST_NAME); // Dependency list directory
+	ofstream output(directory + "//" + DEPENDENCY_LIST_NAME); // Dependency list directory
 	scriptDataVectorType scriptDataVector = getScriptDataVector(); // Getting all scripts created by DBProvider
 	creatInstallPocket(directory, scriptDataVector); // Creaing all instalation components
-	removeCommits(scriptDataVector);
+	removeComments(scriptDataVector);
 	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
 	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
@@ -62,7 +62,7 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 	// Getting all source database objects
 	// Not implementeds
 	objectDataVectorType objectVector;
-	ifstream input("C:\\Users\\Timur\\Documents\\Temp\\ObjectList.txt");
+	ifstream input("C://Users//Timur//Documents//Temp//ObjectList.txt");
 	if (input.is_open())
 	{
 		while (!input.eof())
@@ -80,19 +80,23 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 
 void PatchBuilder::creatInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
 {
-	ofstream outputInstallScript(directory + "\\" + INSTALL_SCRIPT_NAME);
+	ofstream outputInstallScriptBat(directory + "//" + INSTALL_SCRIPT_NAME_BAT);
+	ofstream outputInstallScriptSh(directory + "//" + INSTALL_SCRIPT_NAME_SH);
 	// Creating sql files for all scrpits and writing install script
 	for (ScriptData data : scriptDataVector)
 	{
 		// Creating directory named as type of script
-		mkdir(&(directory + "\\" + data.schema)[0]);
-		mkdir(&(directory + "\\" + data.schema + "\\" + data.type)[0]);
-		ofstream outputScript(directory + "\\" + data.schema + "\\" + data.type + "\\" + data.name);
+		mkdir(&(directory + "//" + data.schema)[0]);
+		mkdir(&(directory + "//" + data.schema + "//" + data.type)[0]);
+		ofstream outputScript(directory + "//" + data.schema + "//" + data.type + "//" + data.name);
 		// Writing script text in file
 		outputScript << data.text;
 
-		// Writing psql command in InstallScript
-		outputInstallScript << "psql -U " << userName << " -d " << databaseName << " -f "  << data.schema << "\\" << data.type << "\\" << data.name << "\n";
+		// Writing psql command in InstallScript with .bat format
+		outputInstallScriptBat << "psql -U " << userName << " -d " << databaseName << " -f "  << data.schema << "//" << data.type << "//" << data.name << "\n";
+
+		// Writing psql command in InstallScript with .sh format
+		outputInstallScriptSh << "psql -U " << userName << " -d " << databaseName << " -f " << data.schema << "//" << data.type << "//" << data.name << "\n";
 	}
 	// Creating of install script not added yet
 	cout << "Install pocket created" << endl;
@@ -140,7 +144,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "roles.sql";
 		data.type = "table";
 		data.schema = "public";
-		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\roles.sql");
+		ifstream input("C://Users//Timur//Documents//public//tables//roles.sql");
 		string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
 		str.erase(0, 3); //Utf8 mark delition
 		data.text = str;
@@ -150,7 +154,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "users.sql";
 		data.type = "table";
 		data.schema = "public";
-		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\users.sql");
+		ifstream input("C://Users//Timur//Documents//public//tables//users.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		str.erase(0, 3); //Utf8 mark delition
@@ -161,7 +165,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "placeholder.sql";
 		data.type = "table";
 		data.schema = "public";
-		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\placeholder.sql");
+		ifstream input("C://Users//Timur//Documents//public//tables//placeholder.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
@@ -186,12 +190,12 @@ void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const ob
 	}
 }
 
-void PatchBuilder::removeCommits(scriptDataVectorType & scriptDataVector)
+void PatchBuilder::removeComments(scriptDataVectorType & scriptDataVector)
 {
 	// Removing of all commits
 	for (ScriptData &data : scriptDataVector)
 	{
-		// "--" comits removing
+		// "--" comments removing
 		string &text = data.text;
 		size_t startPosition = text.find("--"); // Find "--" in text
 		size_t endPosition;
@@ -203,7 +207,7 @@ void PatchBuilder::removeCommits(scriptDataVectorType & scriptDataVector)
 			startPosition = text.find("--"); // Try to find next "--"
 		}
 
-		// "/* */" commits removing
+		// "/* */" comments removing
 		startPosition = text.find("/*"); // Find "/*" in text
 		while (startPosition != string::npos)
 		{

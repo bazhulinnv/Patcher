@@ -18,7 +18,8 @@ constexpr auto SCHEMA_LENGTH = 8; // Object name length
 constexpr auto ANY_TYPE_CODE = "$any$"; // Type not present in the template code
 
 constexpr auto DEPENDENCY_LIST_NAME = "DependencyList.txt"; // Name of file that will be created. Contains list of objects and their type that required to install the patch
-constexpr auto INSTALL_SCRIPT_NAME = "Install.bat"; // Name of PatchList
+constexpr auto INSTALL_SCRIPT_NAME_BAT = "Install.bat"; // Name of PatchList with .bat format
+constexpr auto INSTALL_SCRIPT_NAME_SH = "Install.sh"; // Name of PatchList with .shell format
 
 using namespace std;
 
@@ -58,7 +59,7 @@ private:
 	objectDataVectorType getPatchListVector() const; // Getting vector of objects that contains a patch
 	void fillScriptDataVector(scriptDataVectorType &scriptDataVector); // temp
 	void remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
-	void removeCommits(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
+	void removeComments(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
 	regex createExpression(ObjectData data); // Creating regular expression for data from params
 };
 #endif
