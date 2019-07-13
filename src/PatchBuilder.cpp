@@ -2,29 +2,32 @@
 #include <fstream>
 #include <streambuf>
 #include <direct.h>
-#include <regex>
 #include "DBProvider/DBProvider.h"
 #include "PatchBuilder/PatchBuilder.h"
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(const string pPatchListFullName)
+PatchBuilder::PatchBuilder(const string pPatchListFullName, const string pTemplatesFullName, const string pUserName, const string pDatabaseName)
 {
 	// Initialisation of class fields
 	patchListFullName = pPatchListFullName;
+	templatesFullName = pTemplatesFullName;
+	userName = pUserName;
+	databaseName = pDatabaseName;
 }
 PatchBuilder::~PatchBuilder() {}
 
 void PatchBuilder::buildPatch(const string directory)
 {
 	// Executing all methods for patch building
-	ofstream output(directory + "\\" + dependencyListName); // Dependency list directory
+	ofstream output(directory + "\\" + DEPENDENCY_LIST_NAME); // Dependency list directory
 	scriptDataVectorType scriptDataVector = getScriptDataVector(); // Getting all scripts created by DBProvider
 	creatInstallPocket(directory, scriptDataVector); // Creaing all instalation components
 	removeCommits(scriptDataVector);
 	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
 	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
+
 	// Writing of DependencyList
 	cout << "Parsing started" << endl;
 	for (ObjectData objectData : objectDataVector)
@@ -65,6 +68,7 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 		while (!input.eof())
 		{
 			ObjectData data;
+			input >> data.schema;
 			input >> data.name;
 			input >> data.type;
 			objectVector.push_back(data);
@@ -76,26 +80,30 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 
 void PatchBuilder::creatInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
 {
-	// Creating sql files for all scrpits
+	ofstream outputInstallScript(directory + "\\" + INSTALL_SCRIPT_NAME);
+	// Creating sql files for all scrpits and writing install script
 	for (ScriptData data : scriptDataVector)
 	{
 		// Creating directory named as type of script
-		mkdir(&(directory + "\\" + data.type)[0]);
-		ofstream output(directory + "\\" + data.type + "\\" + data.name);
+		mkdir(&(directory + "\\" + data.schema)[0]);
+		mkdir(&(directory + "\\" + data.schema + "\\" + data.type)[0]);
+		ofstream outputScript(directory + "\\" + data.schema + "\\" + data.type + "\\" + data.name);
 		// Writing script text in file
-		output << data.text;
+		outputScript << data.text;
+
+		// Writing psql command in InstallScript
+		outputInstallScript << "psql -U " << userName << " -d " << databaseName << " -f "  << data.schema << "\\" << data.type << "\\" << data.name << "\n";
 	}
 	// Creating of install script not added yet
 	cout << "Install pocket created" << endl;
 }
 
-bool PatchBuilder::isContains(const ObjectData data, const string &scriptText) const
+bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
 {
 	// Checking on the content of the object in current script
-	cmatch res; // To contain result of searching
-	string str = data.name;
-	regex rx(str); // Creating regular expression 
-	if (regex_search(scriptText.c_str(), res, rx))
+	cmatch result; // To contain result of searching
+	regex regularExpression = createExpression(data); // Creating regular expression 
+	if (regex_search(scriptText.c_str(), result, regularExpression))
 	{
 		// If current expresiion was found return true
 		cout << " - " << data.name << " with " << data.type << " type included" << endl;
@@ -115,6 +123,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 		{
 			// Reading from PatchList file in patchListVector
 			ObjectData data;
+			input >> data.schema;
 			input >> data.name;
 			input >> data.type;
 			patchListVector.push_back(data);
@@ -130,6 +139,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 	{
 		data.name = "roles.sql";
 		data.type = "table";
+		data.schema = "public";
 		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\roles.sql");
 		string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
 		str.erase(0, 3); //Utf8 mark delition
@@ -139,6 +149,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 	{
 		data.name = "users.sql";
 		data.type = "table";
+		data.schema = "public";
 		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\users.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
@@ -149,6 +160,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 	{
 		data.name = "placeholder.sql";
 		data.type = "table";
+		data.schema = "public";
 		ifstream input("C:\\Users\\Timur\\Documents\\public\\tables\\placeholder.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
@@ -201,4 +213,49 @@ void PatchBuilder::removeCommits(scriptDataVectorType & scriptDataVector)
 			startPosition = text.find("/*"); // Try to find next "/*"
 		}
 	}
+}
+
+regex PatchBuilder::createExpression(ObjectData data)
+{
+	// Determine the type of the object and use the appropriate template
+	ifstream input(templatesFullName);
+	string currentWord = "";
+	string regExStr = "";
+	if (input.is_open())
+	{
+		while (!input.eof())
+		{
+			input >> currentWord;
+			if (currentWord == TYPE_CODE)
+			{
+				input >> currentWord;
+				input >> currentWord;
+				if (currentWord == data.type || currentWord == ANY_TYPE_CODE)
+				{
+					input >> currentWord;
+					input >> currentWord;
+					while (currentWord != END_CODE)
+					{
+						size_t namePos = currentWord.find(NAME_CODE);
+						if (namePos != string::npos)
+						{
+							currentWord.replace(namePos, NAME_LENGTH, data.name);
+						}
+						size_t schemaPos = currentWord.find(SCHEMA_CODE);
+						if (schemaPos != string::npos)
+						{
+							currentWord.replace(schemaPos, SCHEMA_LENGTH, data.schema);
+						}
+						size_t nextLinePos = currentWord.find("\n");
+						regExStr += currentWord;
+						regExStr += "|";
+						input >> currentWord;
+					}
+					regExStr.pop_back();
+					return regex(regExStr);
+				}
+			}
+		}
+	}
+	return regex();
 }
