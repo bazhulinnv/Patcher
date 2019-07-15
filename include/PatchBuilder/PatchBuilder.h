@@ -50,7 +50,7 @@ class PatchBuilder
 {
 public:
   PatchBuilder(const string pPatchListFullName, const string pTemplatesFullName, const string userName, const string databaseName); // Constructor
-  ~PatchBuilder(); // distructor
+  ~PatchBuilder(); // Distructor
   void buildPatch(const string directory); // Build patch in choosen directory
 
 private:
@@ -68,8 +68,8 @@ private:
 	void fillScriptDataVector(scriptDataVectorType &scriptDataVector); // temp
 	void remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
 	void removeComments(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
-	regex createExpression(ObjectData data); // Creating regular expression for data from params
-	string getCurrentDateTime(); // Get current date
-	void addLog(string message); // Add message in log file
+	regex createExpression(const ObjectData data); // Creating regular expression for data from params
+	string getCurrentDateTime() const; // Get current date
+	void addLog(const string message) const; // Add message in log file
 };
 #endif

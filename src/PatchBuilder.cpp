@@ -270,7 +270,7 @@ void PatchBuilder::removeComments(scriptDataVectorType & scriptDataVector)
 	}
 }
 
-regex PatchBuilder::createExpression(ObjectData data)
+regex PatchBuilder::createExpression(const ObjectData data)
 {
 	// Determine the type of the object and use the appropriate template
 	ifstream input(templatesFullName);
@@ -347,7 +347,7 @@ regex PatchBuilder::createExpression(ObjectData data)
 	return regex(data.name);
 }
 
-string PatchBuilder::getCurrentDateTime()
+string PatchBuilder::getCurrentDateTime() const
 {
 	// Getting current date
 	time_t now = time(0);
@@ -358,7 +358,7 @@ string PatchBuilder::getCurrentDateTime()
 	return string(buf);
 }
 
-void PatchBuilder::addLog(string message)
+void PatchBuilder::addLog(const string message) const
 {
 	// Writing message in log file
 	ofstream output(logFileFullName, std::ios_base::app);
