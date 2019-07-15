@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <array>
+#include <list>
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "DBProvider/DBProvider.h"
@@ -16,16 +17,21 @@ using namespace std;
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
 
+void PatchInstaller::passParametersToDBProvider(char *parameters, DBProvider dbProvider) {
+	dbProvider.connect(parameters);
+}
+
 /** The function checks the presence of objects in the database according to the list of objects specified in the file. */
-bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile)
+bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile, DBProvider dbProvider)
 {
 	bool result = true;
-	DBProvider dbProvider;
 	ifstream dependencies(nameOfFile, ios::in);
-	ofstream objectsExistence("ObjectsExistence.txt");
+	ofstream objectsExistence("ObjectsExistence.log");
+
 	std::string buffer("");
 	std::string objectName("");
 	std::string objectType("");
+	list <bool> objectsExistenceForGUI;
 
 	//Try to read first string from file
 	dependencies >> objectName >> objectType;
@@ -33,17 +39,25 @@ bool PatchInstaller::checkObjectsForExistence(std::string nameOfFile)
 	if ((objectName != "") && (objectType != "")) {
 		while (getline(dependencies, buffer)) {
 			result = result && dbProvider.isCurrentObjectExist(objectName, objectType);
-
+			objectsExistence << objectName << " " << objectType << " ";
 			if (!dbProvider.isCurrentObjectExist(objectName, objectType)) {
-				//writing to logging file with existence of objects
-				objectsExistence << objectName << " " << objectType << " "
-					<< dbProvider.isCurrentObjectExist(objectName, objectType) << "\n";
+				objectsExistence << "not ";
 			}
+	
+			objectsExistence << "exists\n";
 
+			objectsExistenceForGUI.push_back(dbProvider.isCurrentObjectExist(objectName, objectType));
 			dependencies >> objectName >> objectType;
 		}
-		objectsExistence << objectName << " " << objectType << " " <<
-			dbProvider.isCurrentObjectExist(objectName, objectType) << "\n";
+		objectsExistence << objectName << " " << objectType << " ";
+		if (!dbProvider.isCurrentObjectExist(objectName, objectType)) {
+			objectsExistence << "not ";
+		}
+		objectsExistence << "exists\n";
+
+		objectsExistenceForGUI.push_back(dbProvider.isCurrentObjectExist(objectName, objectType));
+
+		copy(objectsExistenceForGUI.begin(), objectsExistenceForGUI.end(), ostream_iterator<int>(cout, ""));
 	}
 
 	dependencies.close();
@@ -91,7 +105,7 @@ bool PatchInstaller::startInstallation() {
 	auto returnCode = pclose(pipe);
 #endif
 
-	ofstream file("InstallingMistakes.txt");
+	ofstream file("Installing.log");
 	file << result;
 	return true;
 }

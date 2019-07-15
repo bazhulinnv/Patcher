@@ -7,7 +7,7 @@ public:
   DBProvider();
   ~DBProvider();
   int getObjects();
-  void connect();
+  void connect(char *parameters);
   bool isCurrentObjectExist(std::string objectName, std::string objectType);
 };
 #endif

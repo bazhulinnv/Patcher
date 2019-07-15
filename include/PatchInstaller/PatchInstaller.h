@@ -3,12 +3,14 @@
 
 #include <cstdio>
 #include <string>
+#include "DBProvider/DBProvider.h"
 
 class PatchInstaller {
 public:
   PatchInstaller();
   ~PatchInstaller();
-  bool checkObjectsForExistence(std::string nameOfFile);
+  void passParametersToDBProvider(char *parameters, DBProvider dbProvider);
+  bool checkObjectsForExistence(std::string nameOfFile, DBProvider dbProvider);
   bool startInstallation();
 };
 #endif
