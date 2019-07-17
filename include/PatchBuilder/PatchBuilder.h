@@ -25,7 +25,7 @@ constexpr auto LOG_FOLDER = "Logs"; // Folder name for logs
 constexpr auto LOG_FORMAT = ".log"; // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
-
+//\b[Ff][Rr][Oo][Mm]\s+[^;]*\b%scheme%\.%name%[^;]*;
 using namespace std;
 
 struct ObjectData // Sctruct for containing objet data
