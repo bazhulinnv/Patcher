@@ -37,7 +37,9 @@ void PatchBuilder::buildPatch(const string directory)
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
 
 	// Writing of DependencyList
-	cout << "Parsing started..." << endl << BLOCK_LINE << endl;
+	string message = string("Parsing started...\n")  +  BLOCK_LINE + "\n";
+	cout << message;
+	addLog(message);
 	for (ObjectData objectData : objectDataVector)
 	{
 		// Ñhecking all objects for the presence in scripts
@@ -49,22 +51,27 @@ void PatchBuilder::buildPatch(const string directory)
 				output << objectData.scheme << " ";
 				output << objectData.name << " ";
 				output << objectData.type << endl;
+				string message = " - " + objectData.name + " with " + objectData.type + " type included\n";
+				cout << message;
+				addLog(message);
 				break;
 			}
 		}
 	}
 	output.close();
 	cout << BLOCK_LINE << endl;
+	addLog(BLOCK_LINE + string("\n"));
 
 	if (isSuccessfully)
 	{
-		cout << "Patch builded successfully!" << endl;
-		addLog("Patch builded without errors");
+		message = "Patch builded successfully!\n";
 	}
 	else
 	{
-		cout << "Patch builded with errors!" << endl;
+		message = "Patch builded with errors!\n";
 	}
+	cout << message;
+	addLog(message);
 }
 
 scriptDataVectorType PatchBuilder::getScriptDataVector() /*const*/
@@ -72,7 +79,9 @@ scriptDataVectorType PatchBuilder::getScriptDataVector() /*const*/
 	// Not implemented
 	scriptDataVectorType scriptDataVector;
 	fillScriptDataVector(scriptDataVector); // Temp
-	cout << "Script vector created" << endl;
+	string message =  "Script vector created\n";
+	cout << message;
+	addLog(message);
 	return scriptDataVector;
 }
 
@@ -93,7 +102,9 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 			objectVector.push_back(data);
 		}
 	}
-	cout << "Object vector created" << endl;
+	string message = "Object vector created\n";
+	cout << message;
+	addLog(message);
 	return objectVector;
 }
 
@@ -117,8 +128,9 @@ void PatchBuilder::creatInstallPocket(const string directory, const scriptDataVe
 		// Writing psql command in InstallScript with .sh format
 		outputInstallScriptSh << "psql -U " << userName << " -d " << databaseName << " -f " << data.scheme << "//" << data.type << "//" << data.name << "\n";
 	}
-	// Creating of install script not added yet
-	cout << "Install pocket created" << endl;
+	string message = "Install pocket created\n";
+	cout << message;
+	addLog(message);
 }
 
 bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
@@ -126,13 +138,30 @@ bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
 	// Checking on the content of the object in current script
 	cmatch result; // To contain result of searching
 	regex regularExpression = createExpression(data); // Creating regular expression 
-	if (regex_search(scriptText.c_str(), result, regularExpression))
+	try
 	{
-		// If current expresiion was found return true
-		cout << " - " << data.name << " with " << data.type << " type included" << endl;
-		return true;
-	}	
-	return false;
+		if (regex_search(scriptText.c_str(), result, regularExpression))
+		{
+			// If current expression was found return true
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	catch (exception &err)
+	{
+		// If can not searching regular expression
+		string errorStr = "ERROR - can not search regular expression from template:\nDESCRIPTION - ";
+		errorStr += err.what();
+		errorStr += "\n";
+		errorStr += "returning false result for " + data.name + "\n";
+		cerr << errorStr;
+		addLog(errorStr);
+		isSuccessfully = false;
+		return false;
+	}
 }
 
 objectDataVectorType PatchBuilder::getPatchListVector() const
@@ -217,6 +246,16 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.type = "functions";
 		data.scheme = "common";
 		ifstream input("C://Users//Timur//Documents//Doors//common//functions//init_test.sql");
+		string str((std::istreambuf_iterator<char>(input)),
+			std::istreambuf_iterator<char>());
+		data.text = str;
+		scriptDataVector.push_back(data);
+	}
+	{
+		data.name = "test.sql";
+		data.type = "tables";
+		data.scheme = "test";
+		ifstream input("C://Users//Timur//Documents//Doors//test//tables//test.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
