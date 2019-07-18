@@ -14,9 +14,12 @@ PatchBuilder::PatchBuilder(const string pPatchListFullName, const string pTempla
 {
 	// Initialisation of class fields
 	patchListFullName = pPatchListFullName;
-	templatesFullName = pTemplatesFullName;
 	userName = pUserName;
 	databaseName = pDatabaseName;
+	// Initialisation fo templateString
+	ifstream input(pTemplatesFullName);
+	string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>()); // Reading all text file in string
+	templateString = str;
 }
 PatchBuilder::~PatchBuilder() {}
 
@@ -312,78 +315,79 @@ void PatchBuilder::removeComments(scriptDataVectorType & scriptDataVector)
 regex PatchBuilder::createExpression(const ObjectData data)
 {
 	// Determine the type of the object and use the appropriate template
-	ifstream input(templatesFullName);
 	string currentWord = "";
 	string regExStr = "";
-	if (input.is_open())
+	stringstream templateStream;
+	templateStream << templateString;
+	while (!templateStream.eof())
 	{
-		while (!input.eof())
+		templateStream >> currentWord;
+		// if have found type code word 
+		if (currentWord == TYPE_CODE)
 		{
-			input >> currentWord;
-			// if have found type code word 
-			if (currentWord == TYPE_CODE)
+			templateStream >> currentWord;
+			templateStream >> currentWord;
+			// Compare current template type with object type
+			if (currentWord == data.type || currentWord == ANY_TYPE_CODE)
 			{
-				input >> currentWord;
-				input >> currentWord;
-				// Compare current template type with object type
-				if (currentWord == data.type || currentWord == ANY_TYPE_CODE)
+				// If types are equal or it template for any type
+				templateStream >> currentWord;
+				templateStream >> currentWord;
+				// Reading all reglular expressions
+				// until the end code word is found
+				while (currentWord != END_CODE)
 				{
-					// If types are equal or it template for any type
-					input >> currentWord;
-					input >> currentWord;
-					// Reading all reglular expressions
-					// until the end code word is found
-					while (currentWord != END_CODE)
+					// Replace name code word on current object name
+					size_t namePos = currentWord.find(NAME_CODE);
+					if (namePos != string::npos)
 					{
-						// Replace name code word on current object name
-						size_t namePos = currentWord.find(NAME_CODE);
-						if (namePos != string::npos)
-						{
-							currentWord.replace(namePos, NAME_LENGTH, data.name);
-						}
-
-						// Replace scheme code word on current object schema
-						size_t schemaPos = currentWord.find(SCHEME_CODE);
-						if (schemaPos != string::npos)
-						{
-							currentWord.replace(schemaPos, SCHEME_LENGTH, data.scheme);
-						}
-
-						// Concatenate this regular expressions with other
-						regExStr += currentWord;
-						regExStr += "|";
-
-						// Reading next 
-						input >> currentWord;
+						currentWord.replace(namePos, NAME_LENGTH, data.name);
 					}
 
-					// Remove last "|" symbol
-					regExStr.pop_back();
-					try 
+					// Replace scheme code word on current object schema
+					size_t schemaPos = currentWord.find(SCHEME_CODE);
+					if (schemaPos != string::npos)
 					{
-						return regex(regExStr);
+						currentWord.replace(schemaPos, SCHEME_LENGTH, data.scheme);
 					}
-					catch (exception &err)
+
+					// Replace scheme code word on current object schema
+					size_t endlPos = currentWord.find("\n");
+					if (endlPos != string::npos)
 					{
-						// If can not create regular expression
-						string errorStr = "ERROR - can not create regular expression from template:\nDESCRIPTION - ";
-						errorStr += err.what();
-						errorStr += "\n";
-						errorStr += "returning simple expression by object name for " + data.name + "\n";
-						cerr << errorStr;
-						addLog(errorStr);
-						isSuccessfully = false;
-						return  regex(data.name);
+						currentWord.pop_back();
+						currentWord.pop_back();
 					}
+
+					// Concatenate this regular expressions with other
+					regExStr += currentWord;
+					regExStr += "|";
+
+					// Reading next 
+					templateStream >> currentWord;
+				}
+
+				// Remove last "|" symbol
+				regExStr.pop_back();
+				try 
+				{
+					return regex(regExStr);
+				}
+				catch (exception &err)
+				{
+					// If can not create regular expression
+					string errorStr = "ERROR - can not create regular expression from template:\nDESCRIPTION - ";
+					errorStr += err.what();
+					errorStr += "\n";
+					errorStr += "returning simple expression by object name for " + data.name + "\n";
+					cerr << errorStr;
+					addLog(errorStr);
+					isSuccessfully = false;
+					return  regex(data.name);
 				}
 			}
 		}
 	}
-
-	// If file doesn't open return simple expression
-	cout << "ERROR - can not open template file:" << endl;
-	cout << "returning simple expression by object name for " << data.name << endl;
-	return regex(data.name);
 }
 
 string PatchBuilder::getCurrentDateTime() const

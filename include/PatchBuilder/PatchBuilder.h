@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <regex>
+#include <sstream>
 #include "DBProvider/DBProvider.h"
 
 // Templates code words
@@ -55,7 +56,7 @@ public:
 
 private:
 	string patchListFullName; // Directory and name of PatchList
-	string templatesFullName; // Directory and name of Templates file
+	string templateString; // Teplate text
 	string userName; // Name of user, who want to build patch
 	string databaseName; // Name ob database
 	string logFileFullName; // Directory and name of file for logs
