@@ -421,8 +421,8 @@ string PatchBuilder::getCurrentDateTime() const
 {
 	// Getting current date
 	time_t now = time(0);
-	struct tm  tstruct;
-	char  buf[80];
+	struct tm tstruct;
+	char buf[80];
 	tstruct = *localtime(&now);
 	strftime(buf, sizeof(buf), "%F-%H-%M-%S", &tstruct); // Returning time in "year-month-day-hour-minute-second" format
 	return string(buf);
