@@ -6,7 +6,6 @@
 #include <utility>
 #include <regex>
 #include <sstream>
-#include "DBProvider/DBProvider.h"
 
 // Templates code words
 constexpr auto TYPE_CODE = "$type$"; // Type code
