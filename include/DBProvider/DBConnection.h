@@ -22,17 +22,17 @@ public:
 		std::string databaseName;
 		std::string username;
 		std::string password;
-		std::string hostname;
+		std::string host;
 		unsigned int portNumber;
 		std::string result;
-	} *info;
+	} info;
 
 	DBConnection(std::string loginCredentials);
 	~DBConnection();
+	void setConnection();
 
 private:
 	// field stores current connection
 	pqxx::connection *current = nullptr;
-	void setConnection(const std::string &credentials);
 	void disconnect();
 };
