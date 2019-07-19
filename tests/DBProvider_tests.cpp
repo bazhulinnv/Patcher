@@ -78,15 +78,22 @@ bool testCustomConnectionMethod(std::string credentials)
 	return true;
 }
 
-bool testQueryResult(std::string creds)
+bool testPrintObjectsData(std::string creds)
 {
-	auto* dbProvider = new DBProvider(creds);
+	auto *dbProvider = new DBProvider(creds);
+	std::string getObjects =
+		"SELECT /*sequences */\
+				f.sequence_schema AS obj_schema, f.sequence_name AS obj_name, 'sequence' AS obj_type\
+				from information_schema.sequences f\
+			UNION ALL\
+			SELECT /*tables */\
+				f.table_schema AS obj_schema, f.table_name AS obj_name, 'tables' AS obj_type\
+				from information_schema.tables f\
+			WHERE f.table_schema in('public', 'io', 'common', 'secure')";
+	
+	auto resOfQuery = dbProvider->query(getObjects);
 
-	auto resOfQuery = dbProvider->query("select f.table_schema as obj_schema, f.table_name as obj_name, \
-										'tables' as obj_type from information_schema.tables \
-										f where f.table_schema in('public', 'io', 'common', 'secure')");
-
-	dbProvider->printQueryData(resOfQuery);
+	printObjectsData(resOfQuery);
 	delete dbProvider;
 	return true;
 }
@@ -97,18 +104,17 @@ int main()
 	bool isStdConnectionWorks = testStandardConnectionMethod();
 	bool isLogWorks = testDBProviderLogger();
 
-	std::cout << "\nRUNNING: testCustomConnectionMethod" << std::endl;
+	std::cout << "\nRUNNING: Test custom connection method" << std::endl;
 	
-	bool isCustomConnectionWorks = testCustomConnectionMethod(creds);
-	if (isCustomConnectionWorks)
+	if (testCustomConnectionMethod(creds))
 	{
-		std::cout << "SUCCEEDED: testCustomConnectionMethod" << std::endl;
+		std::cout << "SUCCEEDED: Test custom connection method" << std::endl;
 	}
 	
-	std::cout << "\nRUNNING: testQueryResult" << std::endl;
-	if (testQueryResult(creds))
+	std::cout << "\nRUNNING: Test print objects data method" << std::endl;
+	if (testPrintObjectsData(creds))
 	{
-		std::cout << "SUCCEEDED: testQueryResult" << std::endl;
+		std::cout << "SUCCEEDED: Test print objects data method" << std::endl;
 	}
 	
 	return 0;
