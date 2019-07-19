@@ -5,7 +5,6 @@
 #include <ctime>
 #include <cstdio>
 #include <exception>
-#include "DBProvider/DBProvider.h"
 #include "PatchBuilder/PatchBuilder.h"
 
 using namespace std;
@@ -45,7 +44,7 @@ void PatchBuilder::buildPatch(const string directory)
 	addLog(message);
 	for (ObjectData objectData : objectDataVector)
 	{
-		// Ñhecking all objects for the presence in scripts
+		// Ã‘hecking all objects for the presence in scripts
 		for (ScriptData scriptData : scriptDataVector)
 		{
 			if (isContains(objectData, scriptData.text))
