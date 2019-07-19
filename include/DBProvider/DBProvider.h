@@ -8,6 +8,6 @@ public:
   ~DBProvider();
   int getObjects();
   void connect(char *parameters);
-  bool isCurrentObjectExist(std::string objectName, std::string objectType);
+  bool isCurrentObjectExist(std::string scheme, std::string objectName, std::string objectType);
 };
 #endif

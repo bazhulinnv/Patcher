@@ -12,5 +12,7 @@ public:
   ~PatchInstaller();
   bool checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider dbProvider);
   bool startInstallation();
+  void passParametersToDBProvider(char * parameters, DBProvider dbProvider);
+  void addLog(std::string message, std::string logFileFullName);
 };
 #endif

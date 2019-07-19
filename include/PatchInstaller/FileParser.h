@@ -8,6 +8,6 @@ class FileParser {
 public:
 	FileParser();
 	~FileParser();
-	std::list<std::pair<std::string, std::string>> parse(std::string nameOfFile);
+	std::list<std::tuple<std::string, std::string, std::string>> parse(std::string nameOfFile);
 };
 #endif

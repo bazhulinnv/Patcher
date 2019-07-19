@@ -7,7 +7,7 @@ void DBProvider::connect(char *parameters) {
 	//get string with parameters from gui (string looks like hostname:port:database:username:password)
 }
 
-bool DBProvider::isCurrentObjectExist(std::string objectName, std::string objectType) {
+bool DBProvider::isCurrentObjectExist(std::string scheme, std::string objectName, std::string objectType) {
 	return true;
 }
 
