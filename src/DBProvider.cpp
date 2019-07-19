@@ -35,7 +35,7 @@ pqxx::result DBProvider::query(std::string stringSQL)
 	return res;
 }
 
-void DBProvider::printQueryData(pqxx::result queryResult)
+void printObjectsData(pqxx::result queryResult)
 {
 	// Iterate over the rows in our result set.
 	// Results objects are containers similar to std::vector and such.
