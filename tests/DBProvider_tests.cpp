@@ -14,6 +14,8 @@ bool testStandardConnectionMethod()
 		if (conn.is_open())
 		{
 			std::cout << "Opened database successfully: " << conn.dbname() << std::endl;
+			std::cout << "Disconnecting from: " << conn.dbname() << std::endl;
+			conn.disconnect();
 			return true;
 		}
 		
@@ -83,12 +85,19 @@ int main()
 
 	std::cout << "\nRUNNING: testCustomConnectionMethod" << std::endl;
 	std::string creds = "Doors:doo:rc:127.0.0.1:5432";
+	
 	bool isCustomConnectionWorks = testCustomConnectionMethod(creds);
 	if (isCustomConnectionWorks)
 	{
 		std::cout << "SUCCEEDED: testCustomConnectionMethod" << std::endl;
 	}
 
-	std::pair<std::vector<std::string>, std::string> result = ParsingTools::parseCredentials(creds);
+	auto *dbProvider = new DBProvider(creds);
+
+	auto resOfQuery = dbProvider->query("select f.table_schema as obj_schema, f.table_name as obj_name, 'tables' as obj_type from information_schema.tables f where f.table_schema in('public', 'io', 'common', 'secure')");
+	
+	resOfQuery;
+	delete dbProvider;
+
 	return 0;
 }

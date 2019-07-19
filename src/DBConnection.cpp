@@ -108,6 +108,11 @@ void DBConnection::setConnection()
 	}
 }
 
+pqxx::connection* DBConnection::getConnection()
+{
+	return current;
+}
+
 void DBConnection::disconnect()
 {
 	current->disconnect();
