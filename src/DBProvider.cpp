@@ -1,9 +1,18 @@
 #include <DBProvider/DBProvider.h>
+#include <pqxx/pqxx>
+#include <pqxx/transaction>
 
-//#include <pqxx/pqxx>
-//#include <pqxx/transaction>
+DBProvider::DBProvider(std::string args)
+{
+	conn = new DBConnection(args);
+}
 
-DBProvider::DBProvider() {}
-DBProvider::~DBProvider() {}
-int DBProvider::getObjects() { return 0; }
-void DBProvider::connect() {}
+DBProvider::~DBProvider()
+{
+	delete conn;
+}
+
+std::vector<std::tuple<Schema, ObjectName, ObjectType>> DBProvider::getObjects()
+{
+	return std::vector<std::tuple<Schema, ObjectName, ObjectType>>();
+}
