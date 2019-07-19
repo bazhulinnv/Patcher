@@ -5,6 +5,7 @@
 #include <string>
 #include "DBProvider/DBProvider.h"
 #include "FileParser.h"
+#include "Logger.h"
 
 class PatchInstaller {
 public:

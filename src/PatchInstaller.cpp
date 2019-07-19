@@ -98,6 +98,7 @@ bool PatchInstaller::startInstallation() {
 	std::string logDirectory = "InstallingLogs";
 	mkdir(&logDirectory[0]);
 	std::string logFileFullName = logDirectory + "//" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
-	addLog(result, logFileFullName);
+	Logger logger;
+	logger.addLog(result, logFileFullName);
 	return true;
 }
