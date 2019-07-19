@@ -78,26 +78,38 @@ bool testCustomConnectionMethod(std::string credentials)
 	return true;
 }
 
+bool testQueryResult(std::string creds)
+{
+	auto* dbProvider = new DBProvider(creds);
+
+	auto resOfQuery = dbProvider->query("select f.table_schema as obj_schema, f.table_name as obj_name, \
+										'tables' as obj_type from information_schema.tables \
+										f where f.table_schema in('public', 'io', 'common', 'secure')");
+
+	dbProvider->printQueryData(resOfQuery);
+	delete dbProvider;
+	return true;
+}
+
 int main()
 {
+	std::string creds = "Doors:doo:rc:127.0.0.1:5432";
 	bool isStdConnectionWorks = testStandardConnectionMethod();
 	bool isLogWorks = testDBProviderLogger();
 
 	std::cout << "\nRUNNING: testCustomConnectionMethod" << std::endl;
-	std::string creds = "Doors:doo:rc:127.0.0.1:5432";
 	
 	bool isCustomConnectionWorks = testCustomConnectionMethod(creds);
 	if (isCustomConnectionWorks)
 	{
 		std::cout << "SUCCEEDED: testCustomConnectionMethod" << std::endl;
 	}
-
-	auto *dbProvider = new DBProvider(creds);
-
-	auto resOfQuery = dbProvider->query("select f.table_schema as obj_schema, f.table_name as obj_name, 'tables' as obj_type from information_schema.tables f where f.table_schema in('public', 'io', 'common', 'secure')");
 	
-	resOfQuery;
-	delete dbProvider;
-
+	std::cout << "\nRUNNING: testQueryResult" << std::endl;
+	if (testQueryResult(creds))
+	{
+		std::cout << "SUCCEEDED: testQueryResult" << std::endl;
+	}
+	
 	return 0;
 }
