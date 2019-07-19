@@ -32,11 +32,11 @@ void PatchBuilder::buildPatch(const string directory)
 
 	// Executing all methods for patch building
 	ofstream output(directory + "//" + DEPENDENCY_LIST_NAME); // Dependency list directory
-	scriptDataVectorType scriptDataVector = getScriptDataVector(); // Getting all scripts created by DBProvider
-	creatInstallPocket(directory, scriptDataVector); // Creaing all instalation components
+	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
+	scriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
+	createInstallPocket(directory, scriptDataVector); // Creaing all instalation components
 	removeComments(scriptDataVector);
 	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
-	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
 
 	// Writing of DependencyList
@@ -67,21 +67,39 @@ void PatchBuilder::buildPatch(const string directory)
 
 	if (isSuccessfully)
 	{
-		message = "Patch builded successfully!\n";
+		message = "Patch built successfully!\n";
 	}
 	else
 	{
-		message = "Patch builded with errors!\n";
+		message = "Patch built with errors!\n";
 	}
 	cout << message;
 	addLog(message);
 }
 
-scriptDataVectorType PatchBuilder::getScriptDataVector() /*const*/
+scriptDataVectorType PatchBuilder::getScriptDataVector(objectDataVectorType objectDataVector) /*const*/
 {
 	// Not implemented
 	scriptDataVectorType scriptDataVector;
 	fillScriptDataVector(scriptDataVector); // Temp
+	// Add in vector outside scripts from patchListVector
+	for (ObjectData objectData : objectDataVector)
+	{
+		if (objectData.scheme == "script")
+		{
+			// Reading all text from file
+			ifstream input(objectData.name);
+			string text((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
+
+			// Remove path to file leave only name
+			size_t slashPos = objectData.name.find_last_of("\\");
+			objectData.name.erase(0, slashPos+1);
+
+			// Add script in vector
+			ScriptData scriptData(objectData, text);
+			scriptDataVector.push_back(scriptData);
+		}
+	}
 	string message =  "Script vector created\n";
 	cout << message;
 	addLog(message);
@@ -111,7 +129,7 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 	return objectVector;
 }
 
-void PatchBuilder::creatInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
+void PatchBuilder::createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
 {
 	ofstream outputInstallScriptBat(directory + "//" + INSTALL_SCRIPT_NAME_BAT);
 	ofstream outputInstallScriptSh(directory + "//" + INSTALL_SCRIPT_NAME_SH);
@@ -179,8 +197,17 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 			// Reading from PatchList file in patchListVector
 			ObjectData data;
 			input >> data.scheme;
-			input >> data.name;
-			input >> data.type;
+			// If this is script from outside - type field is empty
+			if (data.scheme == "script")
+			{
+				input >> data.name;
+				data.type = "";
+			}
+			else
+			{
+				input >> data.name;
+				input >> data.type;
+			}
 			// If type is "function" reading params of it
 			if (data.type == "function")
 			{
@@ -375,7 +402,7 @@ regex PatchBuilder::createExpression(const ObjectData data)
 				}
 				catch (exception &err)
 				{
-					// If can not create regular expression
+					// If cannot create regular expression
 					string errorStr = "ERROR - can not create regular expression from template:\nDESCRIPTION - ";
 					errorStr += err.what();
 					errorStr += "\n";

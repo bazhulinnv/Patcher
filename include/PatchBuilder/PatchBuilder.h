@@ -22,11 +22,10 @@ constexpr auto DEPENDENCY_LIST_NAME = "DependencyList.dpn"; // Name of file that
 constexpr auto INSTALL_SCRIPT_NAME_BAT = "Install.bat"; // Name of PatchList with .bat format
 constexpr auto INSTALL_SCRIPT_NAME_SH = "Install.sh"; // Name of PatchList with .shell format
 constexpr auto LOG_NAME = "PatchBuilder_"; // Begining of the log file name
-constexpr auto LOG_FOLDER = "Logs"; // Folder name for logs
+constexpr auto LOG_FOLDER = "logs"; // Folder name for logs
 constexpr auto LOG_FORMAT = ".log"; // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
-//\b[Ff][Rr][Oo][Mm]\s+[^;]*\b%scheme%\.%name%[^;]*;
 using namespace std;
 
 struct ObjectData // Sctruct for containing objet data
@@ -36,6 +35,15 @@ struct ObjectData // Sctruct for containing objet data
 	string scheme;
 	vector<string> paramsVector;
 
+	ObjectData(){}
+	ObjectData(string pName, string pType, string pScheme, vector<string> pParamsVector)
+	{
+		name = pName;
+		type = pType;
+		scheme = pScheme;
+		paramsVector = pParamsVector;
+	}
+
 	bool operator == (ObjectData &object) const {
 		return (this->name == object.name) && (this->type == object.type);
 	}
@@ -43,6 +51,13 @@ struct ObjectData // Sctruct for containing objet data
 struct ScriptData : ObjectData // Sctruct for containing script data
 {
 	string text;
+
+	ScriptData(){}
+	ScriptData(string pName, string pType, string pScheme, vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
+	{
+		text = pText;
+	}
+	ScriptData(ObjectData objectData, string pText = "") :ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
 };
 typedef vector<ObjectData> objectDataVectorType; // Vector for containing object data
 typedef vector<ScriptData> scriptDataVectorType; // Vector for containing script data
@@ -61,9 +76,9 @@ private:
 	string databaseName; // Name ob database
 	string logFileFullName; // Directory and name of file for logs
 	bool isSuccessfully = true; // Become false if something goes wrong
-	scriptDataVectorType getScriptDataVector() /*const*/; // Getting vector of scripts, created by DBProvider
+	scriptDataVectorType getScriptDataVector(objectDataVectorType objectDataVector) /*const*/; // Getting vector of scripts, created by DBProvider
 	objectDataVectorType getObjectDataVector() const; // Getting vector of objects from source database
-	void creatInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file
+	void createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file
 	bool isContains(const ObjectData data, const string &scriptText); // Returns true, if the object was found in the script
 	objectDataVectorType getPatchListVector() const; // Getting vector of objects that contains a patch
 	void fillScriptDataVector(scriptDataVectorType &scriptDataVector); // temp
