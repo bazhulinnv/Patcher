@@ -1,72 +1,105 @@
 #include "../include/DBProvider/DBConnection.h"
+#include <iostream>
+#include <sstream>
+#include <iterator>
+#include <exception>
 
-std::vector<std::string> ParsingTools::splitToVector(std::string str, std::string delimiter)
+namespace ParsingTools
 {
-	vector<string> parsed;
-	string token;
-
-	size_t position = 0;
-	while ((position = str.find(delimiter)) != string::npos)
+	vector<string> splitToVector(string str, const string &delimiter)
 	{
-		token = str.substr(0, position);
-		parsed.push_back(token);
-		str.erase(0, position + delimiter.length());
+		vector<string> parsed;
+		string token;
+
+		size_t position = 0;
+		while ((position = str.find(delimiter)) != string::npos)
+		{
+			token = str.substr(0, position);
+			parsed.push_back(token);
+			str.erase(0, position + delimiter.length());
+		}
+
+		return parsed;
 	}
 
-	return parsed;
-}
-
-std::string ParsingTools::interpolate(std::string &original, const std::string &toBeReplaced, const std::string &replacement)
-{
-	string newString = original.replace(original.find(toBeReplaced), toBeReplaced.length(), replacement);
-	return newString;
-};
-
-std::pair<std::vector<std::string>, char *> ParsingTools::parseCredentials(std::string &input)
-{
-	vector<string> params =
+	string interpolate(string &original, const string &toBeReplaced, const string &replacement)
 	{
-		"username=${} ",
-		"host=${} ",
-		"password=${} ",
-		"dbname=${}"
+		string newString = original.replace(original.find(toBeReplaced), toBeReplaced.length(), replacement);
+		return newString;
 	};
 
-	vector<string> values = splitToVector(input, ":");
-	vector<string> items;
-
-	for (int i = 0; i < params.size(); ++i)
+	string joinAsStrings(const vector<string> &vec, const char *delimiter)
 	{
-		items.push_back(interpolate(params[i], "${}", values[i]));
+		stringstream res;
+		copy(vec.begin(), vec.end(), ostream_iterator<string>(res, delimiter));
+		return res.str();
 	}
 
-	// Stores parsed input as charecter set
-	char * output;
 
-	// Convert all items to character set
-	for (string item : items)
+	pair<vector<string>, string> parseCredentials(string &input)
 	{
-		strcpy(output, item.c_str());
-	}
+		vector<string> params =
+		{
+			"dbname=${}",
+			"user=${}",
+			"password=${}"
+			"hostname=${}",
+			"port=${}",
+			
+		};
 
-	return make_pair(values, output);
+		vector<string> values = splitToVector(input, ":");
+		vector<string> items;
+
+		for (int i = 0; i < params.size(); ++i)
+		{
+			items.push_back(interpolate(params[i], "${}", values[i]));
+		}
+
+		const char *delim = " ";
+
+		// Converts to a single string using stringstream
+		string result = joinAsStrings(items, delim);
+		return make_pair(values, result);
+	}
 }
 
-void DBConnection::setConnection(const char * credentials)
+DBConnection::DBConnection(std::string loginCredentials)
 {
-	// Set connection
+	// Parse string and get credentials
+	std::pair<std::vector<std::string>, std::string> parsed = ParsingTools::parseCredentials(loginCredentials);
+
+	// Save login info
+	info->databaseName = parsed.first[0];
+	info->username = parsed.first[1];
+	info->password = parsed.first[2];
+	info->hostname = parsed.first[3];
+	info->portNumber = stoi(parsed.first[4]);
+	info->result = parsed.second;
+
+	setConnection(parsed.second);
+}
+
+DBConnection::~DBConnection()
+{
+	disconnect();
+	delete info;
+}
+
+void DBConnection::setConnection(const std::string &credentials)
+{
 	try
 	{
-		this->currentConnection = new pqxx::connection(credentials);
+		current = new pqxx::connection(std::string());
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "ERROR: Could not establish connection!" << std::endl;
+		std::cerr << "ERROR: Could not establish connection." << std::endl;
 		std::cerr << e.what() << std::endl;
 	}
 }
 
 void DBConnection::disconnect()
 {
-	this->currentConnection->disconnect();
+	current->disconnect();
 }
