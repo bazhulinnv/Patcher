@@ -15,7 +15,7 @@ public:
 	explicit DBProvider(std::string args);
 	~DBProvider();
 	std::vector<std::tuple<Schema, ObjectName, ObjectType>> getObjects();
-	// pqxx::result query(std::string strSQL);
+	pqxx::result query(std::string strSQL);
 
 private:
 	DBConnection *conn = nullptr;

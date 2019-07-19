@@ -30,6 +30,7 @@ public:
 	DBConnection(std::string loginCredentials);
 	~DBConnection();
 	void setConnection();
+	pqxx::connection* getConnection();
 
 private:
 	// field stores current connection
