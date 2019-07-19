@@ -6,20 +6,32 @@
 
 namespace ParsingTools
 {
-	vector<string> splitToVector(string str, const string &delimiter)
+	vector<string> splitToVector(string str, const string& delimiter)
 	{
-		vector<string> parsed;
-		string token;
-
-		size_t position = 0;
-		while ((position = str.find(delimiter)) != string::npos)
+		vector<string> result;
+		
+		while (str.size())
 		{
-			token = str.substr(0, position);
-			parsed.push_back(token);
-			str.erase(0, position + delimiter.length());
+			size_t index = str.find(delimiter);
+			
+			if (index != string::npos)
+			{
+				result.push_back(str.substr(0, index));
+				str = str.substr(index + delimiter.size());
+				
+				if (str.size() == 0)
+				{
+					result.push_back(str);
+				}
+			}
+			else
+			{
+				result.push_back(str);
+				str = "";
+			}
 		}
 
-		return parsed;
+		return result;
 	}
 
 	string interpolate(string &original, const string &toBeReplaced, const string &replacement)
@@ -42,10 +54,9 @@ namespace ParsingTools
 		{
 			"dbname=${}",
 			"user=${}",
-			"password=${}"
-			"hostname=${}",
+			"password=${}",
+			"hostaddr=${}",
 			"port=${}",
-			
 		};
 
 		vector<string> values = splitToVector(input, ":");
@@ -70,27 +81,25 @@ DBConnection::DBConnection(std::string loginCredentials)
 	std::pair<std::vector<std::string>, std::string> parsed = ParsingTools::parseCredentials(loginCredentials);
 
 	// Save login info
-	info->databaseName = parsed.first[0];
-	info->username = parsed.first[1];
-	info->password = parsed.first[2];
-	info->hostname = parsed.first[3];
-	info->portNumber = stoi(parsed.first[4]);
-	info->result = parsed.second;
+	info.databaseName = parsed.first[0];
+	info.username = parsed.first[1];
+	info.password = parsed.first[2];
+	info.host = parsed.first[3];
+	info.portNumber = stoi(parsed.first[4]);
 
-	setConnection(parsed.second);
+	info.result = parsed.second;
 }
 
 DBConnection::~DBConnection()
 {
 	disconnect();
-	delete info;
 }
 
-void DBConnection::setConnection(const std::string &credentials)
+void DBConnection::setConnection()
 {
 	try
 	{
-		current = new pqxx::connection(std::string());
+		current = new pqxx::connection(info.result);
 	}
 	catch (const std::exception &e)
 	{
