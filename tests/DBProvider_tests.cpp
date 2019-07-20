@@ -1,5 +1,5 @@
 #include <DBProvider/DBProvider.h>
-#include "../include/DBProvider/DBProviderLogger.h"
+#include <DBProvider/DBProviderLogger.h>
 #include <iostream>
 #include <pqxx/pqxx>
 

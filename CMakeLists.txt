@@ -57,10 +57,14 @@ set(PATCH_INSTALLER PatchInstaller)
 #---------------------------------
 set(patcher_INCS_prov
   include/DBProvider/DBProvider.h
+  include/DBProvider/DBConnection.h
+  include/DBProvider/DBProviderLogger.h
   )
 
 set(patcher_SRCS_prov
   src/DBProvider.cpp
+  src/DBConnection.cpp
+  src/DBProviderLogger.cpp
   )
 
 #---------------------------------

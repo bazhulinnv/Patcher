@@ -1,7 +1,7 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
 
-#include "../include/DBProvider/DBConnection.h"
+#include <DBProvider/DBConnection.h>
 #include <tuple>
 #include <pqxx/pqxx>
 

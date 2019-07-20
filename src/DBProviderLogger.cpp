@@ -1,4 +1,4 @@
-#include "../include/DBProvider/DBProviderLogger.h"
+#include <DBProvider/DBProviderLogger.h>
 #include <exception>
 
 namespace DBProviderLogger
