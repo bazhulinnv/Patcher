@@ -31,17 +31,18 @@ using namespace std;
 class PatchBuilder 
 {
 public:
-  PatchBuilder(const string pPatchListFullName, const string pTemplatesFullName, const string userName, const string databaseName); // Constructor
+  PatchBuilder(const string pPatchListFullName, const string userName, const string databaseName, const string pTemplatesFullName = ""); // Constructor
   ~PatchBuilder(); // Distructor
   void buildPatch(const string directory); // Build patch in choosen directory
 
 private:
 	string patchListFullName; // Directory and name of PatchList
-	string templateString; // Teplate text
+	string templateString = ""; // Teplate text
 	string userName; // Name of user, who want to build patch
 	string databaseName; // Name ob database
 	string logFileFullName; // Directory and name of file for logs
-	bool isSuccessfully = true; // Become false if something goes wrong
+	bool isWithErrors = false; // Become true after some error
+	bool isWithWarnings = false; // Become true after some warning
 	scriptDataVectorType getScriptDataVector(objectDataVectorType objectDataVector) /*const*/; // Getting vector of scripts, created by DBProvider
 	objectDataVectorType getObjectDataVector() const; // Getting vector of objects from source database
 	void createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file

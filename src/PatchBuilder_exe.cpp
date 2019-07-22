@@ -8,6 +8,6 @@ int main()
 {
 	// Temp logic
 	string tempDirectory = "C://Users//Timur//Documents//Temp";
-	PatchBuilder patchBuilder(tempDirectory + "//PatchList.txt", tempDirectory + "//Templates.ini", "doo", "Doors");
+	PatchBuilder patchBuilder(tempDirectory + "//PatchList.txt", "doo", "Doors", tempDirectory + "//Templates.ini");
 	patchBuilder.buildPatch(tempDirectory);
 }

@@ -9,16 +9,26 @@
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(const string pPatchListFullName, const string pTemplatesFullName, const string pUserName, const string pDatabaseName)
+PatchBuilder::PatchBuilder(const string pPatchListFullName, const string pUserName, const string pDatabaseName, const string pTemplatesFullName)
 {
 	// Initialisation of class fields
 	patchListFullName = pPatchListFullName;
 	userName = pUserName;
 	databaseName = pDatabaseName;
-	// Initialisation fo templateString
-	ifstream input(pTemplatesFullName);
-	string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>()); // Reading all text file in string
-	templateString = str;
+	// Check tamplate file
+	ifstream input;
+	input.open(pTemplatesFullName);
+	if (input.is_open())
+	{
+		templateString = string((istreambuf_iterator<char>(input)), istreambuf_iterator<char>()); // Reading all text file in string
+	}
+	else
+	{
+		string message = "Cannot open or find template file\nDependencyList will be formed by presence of names\n";
+		isWithWarnings = true;
+		cerr << message;
+		addLog(message);
+	}
 }
 PatchBuilder::~PatchBuilder() {}
 
@@ -44,7 +54,7 @@ void PatchBuilder::buildPatch(const string directory)
 	addLog(message);
 	for (ObjectData objectData : objectDataVector)
 	{
-		// Ñhecking all objects for the presence in scripts
+		// Checking all objects for the presence in scripts
 		for (ScriptData scriptData : scriptDataVector)
 		{
 			if (isContains(objectData, scriptData.text))
@@ -64,13 +74,20 @@ void PatchBuilder::buildPatch(const string directory)
 	cout << BLOCK_LINE << endl;
 	addLog(BLOCK_LINE + string("\n"));
 
-	if (isSuccessfully)
+	if (isWithErrors)
 	{
-		message = "Patch built successfully!\n";
+		message = "Patch built with errors!\n";\
 	}
 	else
 	{
-		message = "Patch built with errors!\n";
+		if (isWithWarnings)
+		{
+			message = "Patch built with warnings!\n";
+		}
+		else
+		{
+			message = "Patch built successfully!\n";
+		}
 	}
 	cout << message;
 	addLog(message);
@@ -155,31 +172,30 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 
 bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
 {
-	// Checking on the content of the object in current script
 	cmatch result; // To contain result of searching
+
+	// If template is empty - searching by object name
+	if (templateString == "")
+	{
+		return (regex_search(scriptText.c_str(), result, regex(data.name)));
+	}
+
+	// Checking on the content of the object in current script
 	regex regularExpression = createExpression(data); // Creating regular expression 
 	try
 	{
-		if (regex_search(scriptText.c_str(), result, regularExpression))
-		{
-			// If current expression was found return true
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return (regex_search(scriptText.c_str(), result, regularExpression));
 	}
 	catch (exception &err)
 	{
 		// If can not searching regular expression
-		string errorStr = "ERROR - can not search regular expression from template:\nDESCRIPTION - ";
-		errorStr += err.what();
-		errorStr += "\n";
-		errorStr += "returning false result for " + data.name + "\n";
-		cerr << errorStr;
-		addLog(errorStr);
-		isSuccessfully = false;
+		string waringStr = "WARNING - can not search regular expression from template:\nDESCRIPTION - ";
+		waringStr += err.what();
+		waringStr += "\n";
+		waringStr += "returning false result for " + data.name + "\n";
+		cerr << waringStr;
+		addLog(waringStr);
+		isWithWarnings = true;
 		return false;
 	}
 }
@@ -402,13 +418,13 @@ regex PatchBuilder::createExpression(const ObjectData data)
 				catch (exception &err)
 				{
 					// If cannot create regular expression
-					string errorStr = "ERROR - can not create regular expression from template:\nDESCRIPTION - ";
-					errorStr += err.what();
-					errorStr += "\n";
-					errorStr += "returning simple expression by object name for " + data.name + "\n";
-					cerr << errorStr;
-					addLog(errorStr);
-					isSuccessfully = false;
+					string warningStr = "WARNING - can not create regular expression from template:\nDESCRIPTION - ";
+					warningStr += err.what();
+					warningStr += "\n";
+					warningStr += "returning simple expression by object name for " + data.name + "\n";
+					cerr << warningStr;
+					addLog(warningStr);
+					isWithWarnings = true;
 					return  regex(data.name);
 				}
 			}
