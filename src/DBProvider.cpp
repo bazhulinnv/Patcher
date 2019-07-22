@@ -3,6 +3,8 @@
 #include <pqxx/transaction>
 #include <iostream>
 
+using namespace std;
+
 DBProvider::DBProvider(std::string args)
 {
 	conn = new DBConnection(args);
@@ -14,9 +16,9 @@ DBProvider::~DBProvider()
 	delete conn;
 }
 
-std::vector<std::tuple<Schema, ObjectName, ObjectType>> DBProvider::getObjects()
+vector<ObjectData> DBProvider::getObjects()
 {
-	return std::vector<std::tuple<Schema, ObjectName, ObjectType>>();
+	return vector<ObjectData>();
 }
 
 pqxx::result DBProvider::query(std::string stringSQL)

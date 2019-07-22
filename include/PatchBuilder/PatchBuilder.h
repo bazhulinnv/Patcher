@@ -6,6 +6,7 @@
 #include <utility>
 #include <regex>
 #include <sstream>
+#include "DBProvider/DBProvider.h"
 
 // Templates code words
 constexpr auto TYPE_CODE = "$type$"; // Type code
@@ -26,40 +27,6 @@ constexpr auto LOG_FORMAT = ".log"; // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
 using namespace std;
-
-struct ObjectData // Sctruct for containing objet data
-{
-	string name;
-	string type;
-	string scheme;
-	vector<string> paramsVector;
-
-	ObjectData(){}
-	ObjectData(string pName, string pType, string pScheme, vector<string> pParamsVector)
-	{
-		name = pName;
-		type = pType;
-		scheme = pScheme;
-		paramsVector = pParamsVector;
-	}
-
-	bool operator == (ObjectData &object) const {
-		return (this->name == object.name) && (this->type == object.type);
-	}
-};
-struct ScriptData : ObjectData // Sctruct for containing script data
-{
-	string text;
-
-	ScriptData(){}
-	ScriptData(string pName, string pType, string pScheme, vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
-	{
-		text = pText;
-	}
-	ScriptData(ObjectData objectData, string pText = "") :ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
-};
-typedef vector<ObjectData> objectDataVectorType; // Vector for containing object data
-typedef vector<ScriptData> scriptDataVectorType; // Vector for containing script data
 
 class PatchBuilder 
 {
