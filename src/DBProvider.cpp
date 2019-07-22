@@ -18,7 +18,18 @@ DBProvider::~DBProvider()
 
 vector<ObjectData> DBProvider::getObjects()
 {
+	// example:
+	// output - public, myFunction, function, <param1, param2, param3>
+	//          common, myTable,    table,    <>
 	return vector<ObjectData>();
+}
+
+ScriptData DBProvider::getScriptData(ObjectData)
+{
+	// example:
+	// input  - public, myFunction,     function, <param1, param2, param3>
+	// output - public, myFunction.sql, function, <param1, param2, param3>, some script text
+	return ScriptData();
 }
 
 pqxx::result DBProvider::query(std::string stringSQL)

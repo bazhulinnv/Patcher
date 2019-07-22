@@ -50,7 +50,7 @@ public:
 	explicit DBProvider(std::string args);
 	~DBProvider();
 	vector<ObjectData> getObjects(); // Returns all objects of database
-
+	ScriptData getScriptData(ObjectData); // Returns script data by object data
 
 	pqxx::result query(std::string strSQL);
 
