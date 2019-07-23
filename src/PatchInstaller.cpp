@@ -28,7 +28,6 @@ std::string getCurrentDateTime() {
 }
 
 void PatchInstaller::passParametersToDBProvider(char *parameters, DBProvider dbProvider) {
-	dbProvider.connect(parameters);
 }
 
 void PatchInstaller::addLog(std::string message, std::string logFileFullName)
