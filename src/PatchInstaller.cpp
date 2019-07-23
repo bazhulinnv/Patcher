@@ -40,22 +40,34 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 
 /** When the method starts, the dependency check is considered successful. */
 bool PatchInstaller::startInstallation(std::string directory) {
-	//std::string command("cd " + directory + " install.sh");
-	std::string command(directory);
+	std::string command0("cd " + directory);
+	std::string command1("Install.bat");
+	//command("Install.bat");
 	std::array<char, 128> buffer;
 	std::string dataForLog;
 
 #if defined(__WIN32__)
-	FILE* pipe = _popen(command.c_str(), "r");
-	if (!pipe) {
+	FILE* pipe0 = _popen(command0.c_str(), "r");
+	if (!pipe0) {
 		std::cerr << "Couldn't start command." << std::endl;
 		return 0;
 	}
-	while (fgets(buffer.data(), 128, pipe) != NULL) {
+	while (fgets(buffer.data(), 128, pipe0) != NULL) {
 		dataForLog += buffer.data();
 	}
 	std::cout << "!!!!!!" << dataForLog << "!!!\n";
-	auto returnCode = _pclose(pipe);
+
+	FILE* pipe1 = _popen(command1.c_str(), "r");
+	if (!pipe1) {
+		std::cerr << "Couldn't start command." << std::endl;
+		return 0;
+	}
+	while (fgets(buffer.data(), 128, pipe1) != NULL) {
+		dataForLog += buffer.data();
+	}
+	std::cout << "!!!!!!" << dataForLog << "!!!\n";
+	//auto returnCode = _pclose(pipe0);
+	//auto returnCode = _pclose(pipe1);
 #endif
 
 #if (defined(__unix__)) 

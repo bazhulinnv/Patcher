@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
 	std::string parameters(argv[1]);
 	std::string installerDirectory(argv[3]);
 	DBProvider *dbProvider = new DBProvider(parameters);
+	patchInstaller.startInstallation(installerDirectory);
 	if (strcmp(argv[2], "check") == 0)
 	{
 		//std::cout << "Start checking:\n";
@@ -23,5 +24,6 @@ int main(int argc, char* argv[]) {
 		std::cout << "WE ARE HERE!!!!";
 		patchInstaller.startInstallation(installerDirectory);
 	}
+	delete dbProvider;
 	return 0;
 }
