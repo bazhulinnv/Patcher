@@ -16,4 +16,5 @@ public:
   void passParametersToDBProvider(char * parameters, DBProvider dbProvider);
   void addLog(std::string message, std::string logFileFullName);
 };
+
 #endif

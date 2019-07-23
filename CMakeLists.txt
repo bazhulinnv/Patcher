@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
+
 set(MODULE_NAME Patcher)
 project(${MODULE_NAME})
 
@@ -55,10 +56,14 @@ set(PATCH_INSTALLER PatchInstaller)
 
 #---------------------------------
 set(patcher_INCS_prov
+  include/DBProvider/DBProviderLogger.h
+  include/DBProvider/DBConnection.h
   include/DBProvider/DBProvider.h
   )
 
 set(patcher_SRCS_prov
+  src/DBProviderLogger.cpp
+  src/DBConnection.cpp
   src/DBProvider.cpp
   )
 
@@ -104,10 +109,10 @@ target_include_directories(${PATCH_BUILDER}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
-target_link_libraries(${PATCH_BUILDER} PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
+target_link_libraries(${PATCH_BUILDER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 add_executable(${PATCH_BUILDER}_exe  src/PatchBuilder_exe.cpp)
-target_link_libraries(${PATCH_BUILDER}_exe PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_BUILDER})
+target_link_libraries(${PATCH_BUILDER}_exe PRIVATE ${FILESYSTEM_LIBRARY} ${pqxx_libs} ${DB_PROVIDER} ${PATCH_BUILDER})
 
 
 #---------------------------------
