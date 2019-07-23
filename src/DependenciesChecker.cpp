@@ -7,13 +7,17 @@ DependenciesChecker::~DependenciesChecker() {};
 
 bool DependenciesChecker::check(DependenciesChecker &checker, std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType, DBProvider dbProvider) {
 	//std::cout << " in DependenciesChecker::check " << objectsNameAndType.size() << "\n";
+	checker.allObjectsExists = true;
 	for (auto i : objectsNameAndType) {
-		//bool doesCurrentObjectExist = dbProvider.isCurrentObjectExist(std::get<0>(i), std::get<1>(i), std::get<2>(i));
-		//std::cout << "does current object exist? " << doesCurrentObjectExist;
-		bool doesCurrentObjectExist = false;
+		bool doesCurrentObjectExist = dbProvider.doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
 		checker.allObjectsExists = checker.allObjectsExists && doesCurrentObjectExist;
 		checker.existenceEachObject.push_back(doesCurrentObjectExist);
-		//std::cout << " existence added" << doesCurrentObjectExist << "\n";
+		
+		checker.dataForLog += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
+		if (!doesCurrentObjectExist) {
+			checker.dataForLog += "not ";
+		}
+		checker.dataForLog += "exists\n";
 	}
 	return checker.allObjectsExists;
 

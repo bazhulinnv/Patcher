@@ -77,7 +77,7 @@ set(patcher_SRCS_bld
   src/PatchBuilder.cpp
   )
 
-#---------------------------------
+#--------------------------------- я изгоняюсь из этого компьютера :)Пока, компьютерный демон:)))
 set(patcher_INCS_inst
 	include/DBProvider/DBProvider.h
 	include/PatchInstaller/DependenciesChecker.h

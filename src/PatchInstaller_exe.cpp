@@ -5,25 +5,23 @@
 #include "PatchInstaller/DependenciesChecker.h"
 #include "PatchInstaller/FileParser.h"
 
-using namespace std;
-
 int main(int argc, char* argv[]) { 
 	std::string nameOfFile =  "DependencyList.dpn";
 	PatchInstaller patchInstaller;
-
-	auto *dbProvider = new DBProvider(nameOfFile);
-	
 	// gui pass 0, if user want to check; pass 1, if user want to install
+	std::string parameters(argv[1]);
+	std::string installerDirectory(argv[3]);
+	DBProvider *dbProvider = new DBProvider(parameters);
 	if (strcmp(argv[2], "check") == 0)
 	{
 		//std::cout << "Start checking:\n";
 		patchInstaller.checkObjectsForExistenceFromFile(nameOfFile, *dbProvider);
 	}
-
 	if (strcmp(argv[2], "install") == 0)
 	{
-		//std::cout << "Start installation:\n";
-		patchInstaller.startInstallation();
+		//std::cout << installerDirectory;
+		std::cout << "WE ARE HERE!!!!";
+		patchInstaller.startInstallation(installerDirectory);
 	}
 	return 0;
 }
