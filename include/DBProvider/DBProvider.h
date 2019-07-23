@@ -1,5 +1,6 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
+#include <string>
 
 #include <DBProvider/DBConnection.h>
 #include <tuple>
