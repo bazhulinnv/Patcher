@@ -6,13 +6,16 @@
 
 #include "DBProvider/DBProvider.h"
 
+//DBobjectList using std::list<std::tuple<std::string, std::string, std::string>>;
+
 class DependenciesChecker {
 public:
 	DependenciesChecker();
 	~DependenciesChecker();
 	std::list<bool> existenceEachObject;
 	bool allObjectsExists;
-	bool DependenciesChecker::check(DependenciesChecker &checker, std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType, DBProvider dbProvider);
-	void DependenciesChecker::printExistenceOfEachObject(DependenciesChecker &checker);
+	std::string dataForLog;
+	bool DependenciesChecker::check(std::list<std::tuple<std::string, std::string, std::string>> &objectsNameAndType, DBProvider &dbProvider);
+	void DependenciesChecker::printExistenceOfEachObject();
 };
 #endif

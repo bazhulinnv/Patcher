@@ -77,14 +77,20 @@ set(patcher_SRCS_bld
   src/PatchBuilder.cpp
   )
 
-#---------------------------------
+#--------------------------------- я изгоняюсь из этого компьютера :)Пока, компьютерный демон:)))
 set(patcher_INCS_inst
-  include/DBProvider/DBProvider.h
-  include/PatchInstaller/PatchInstaller.h
+	include/DBProvider/DBProvider.h
+	include/PatchInstaller/DependenciesChecker.h
+	include/PatchInstaller/FileParser.h
+	include/PatchInstaller/Logger.h
+	include/PatchInstaller/PatchInstaller.h
   )
 
 set(patcher_SRCS_inst
-  src/PatchInstaller.cpp
+	src/PatchInstaller.cpp
+  	src/DependenciesChecker.cpp
+	src/FileParser.cpp
+	src/Logger.cpp
   )
 
 
@@ -112,7 +118,7 @@ target_include_directories(${PATCH_BUILDER}
 target_link_libraries(${PATCH_BUILDER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 add_executable(${PATCH_BUILDER}_exe  src/PatchBuilder_exe.cpp)
-target_link_libraries(${PATCH_BUILDER}_exe PRIVATE ${FILESYSTEM_LIBRARY} ${pqxx_libs} ${DB_PROVIDER} ${PATCH_BUILDER})
+target_link_libraries(${PATCH_BUILDER}_exe PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_BUILDER})
 
 
 #---------------------------------
@@ -122,10 +128,10 @@ target_include_directories(${PATCH_INSTALLER}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
-target_link_libraries(${PATCH_INSTALLER} PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
+target_link_libraries(${PATCH_INSTALLER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 add_executable(${PATCH_INSTALLER}_exe src/PatchInstaller_exe.cpp)
-target_link_libraries(${PATCH_INSTALLER}_exe PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_INSTALLER}) 
+target_link_libraries(${PATCH_INSTALLER}_exe PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_INSTALLER}) 
 
 
 

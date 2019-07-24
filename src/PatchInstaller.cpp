@@ -6,53 +6,22 @@
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
+#include "DBProvider/DBProviderLogger.h"
+
+using namespace DBProviderLogger;
 
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
 
-/** Logging part (requires a separate class).*/
-
-constexpr auto LOG_NAME = "PatchInstaller_"; // Begining of the log file name
-constexpr auto LOG_FOLDER = "Logs"; // Folder name for logs
-constexpr auto LOG_FORMAT = ".log"; // Folder name for logs
-
-std::string getCurrentDateTime() {
-	// Getting current date
-	time_t now;
-	time(&now);
-	struct tm  tstruct;
-	char  buf[80];
-	tstruct = *localtime(&now);
-	strftime(buf, sizeof(buf), "%F-%H-%M-%S", &tstruct); // Returning time in "year-month-day-hour-minute-second" format
-	return std::string(buf);
-}
-
-void PatchInstaller::passParametersToDBProvider(char *parameters, DBProvider dbProvider) {
-	dbProvider.connect(parameters);
-}
-
-void PatchInstaller::addLog(std::string message, std::string logFileFullName)
-{
-	// Writing message in log file
-	std::ofstream output(logFileFullName, std::ios_base::app);
-	output << message;
-	output.close();
-}
-// End of logging part.
-
 
 /** The function checks the presence of objects in the database according to the list of objects specified in the file. */
 bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider dbProvider) {
-	//needs logs!
 	FileParser fileParser;
 	std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType = fileParser.parse(nameOfFile);
-	//std::cout << "In checkObjectsForExistenceFromFile:\n";
-	//std::cout << objectsNameAndType.size() << "<- size in method higher\n";
 	DependenciesChecker checker;
-	checker.check(checker, objectsNameAndType, dbProvider);
-	checker.printExistenceOfEachObject(checker);
-
-	return checker.allObjectsExists;
+	bool result = checker.check(objectsNameAndType, dbProvider);
+	checker.printExistenceOfEachObject();
+	return result;
 }
 
 
@@ -67,21 +36,35 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 #endif
 
 /** When the method starts, the dependency check is considered successful. */
-bool PatchInstaller::startInstallation() {
-	std::string command("dir");
+bool PatchInstaller::startInstallation(std::string directory) {
+	std::string command0("cd " + directory);
+	std::string command1("Install.bat");
+	//command("Install.bat");
 	std::array<char, 128> buffer;
-	std::string result;
+	std::string dataForLog;
 
 #if defined(__WIN32__)
-	FILE* pipe = _popen(command.c_str(), "r");
-	if (!pipe) {
+	FILE* pipe0 = _popen(command0.c_str(), "r");
+	if (!pipe0) {
 		std::cerr << "Couldn't start command." << std::endl;
 		return 0;
 	}
-	while (fgets(buffer.data(), 128, pipe) != NULL) {
-		result += buffer.data();
+	while (fgets(buffer.data(), 128, pipe0) != NULL) {
+		dataForLog += buffer.data();
 	}
-	auto returnCode = _pclose(pipe);
+	std::cout << "!!!!!!" << dataForLog << "!!!\n";
+
+	FILE* pipe1 = _popen(command1.c_str(), "r");
+	if (!pipe1) {
+		std::cerr << "Couldn't start command." << std::endl;
+		return 0;
+	}
+	while (fgets(buffer.data(), 128, pipe1) != NULL) {
+		dataForLog += buffer.data();
+	}
+	std::cout << "!!!!!!" << dataForLog << "!!!\n";
+	//auto returnCode = _pclose(pipe0);
+	//auto returnCode = _pclose(pipe1);
 #endif
 
 #if (defined(__unix__)) 
@@ -91,14 +74,9 @@ bool PatchInstaller::startInstallation() {
 		return 0;
 	}
 	while (fgets(buffer.data(), 128, pipe) != NULL) {
-		result += buffer.data();
+		dataForLog += buffer.data();
 	}
 	auto returnCode = pclose(pipe);
 #endif
-	std::string logDirectory = "InstallingLogs";
-	mkdir(&logDirectory[0]);
-	std::string logFileFullName = logDirectory + "//" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
-	Logger logger;
-	logger.addLog(result, logFileFullName);
 	return true;
 }

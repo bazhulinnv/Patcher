@@ -18,16 +18,12 @@ std::list<std::tuple<std::string, std::string, std::string>> FileParser::parse(s
 
 	//Try to read first string from file
 	dependencies >> scheme >>objectName >> objectType;
-	//std::cout << scheme << objectName << objectType << "\n\n";
 	if ((objectName != "") && (objectType != "")) {
 		while (getline(dependencies, buffer)) {
-			//std::pair<std::string, std::string> currentObjectParameters = { objectName, objectType };
 			objectParametersFromFile.emplace_back(scheme, objectName, objectType);
-			//std::cout << scheme << objectName << objectType << " added\n";
 			dependencies >> scheme >> objectName >> objectType;
 		}
 	}
-	//std::cout << "\n" << scheme << objectName << objectType << "added\n";
 
 	dependencies.close();
 	return objectParametersFromFile;
