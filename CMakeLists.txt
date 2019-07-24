@@ -77,12 +77,11 @@ set(patcher_SRCS_bld
   src/PatchBuilder.cpp
   )
 
-#--------------------------------- я изгоняюсь из этого компьютера :)Пока, компьютерный демон:)))
+#---------------------------------
 set(patcher_INCS_inst
 	include/DBProvider/DBProvider.h
 	include/PatchInstaller/DependenciesChecker.h
 	include/PatchInstaller/FileParser.h
-	include/PatchInstaller/Logger.h
 	include/PatchInstaller/PatchInstaller.h
   )
 
@@ -90,7 +89,6 @@ set(patcher_SRCS_inst
 	src/PatchInstaller.cpp
   	src/DependenciesChecker.cpp
 	src/FileParser.cpp
-	src/Logger.cpp
   )
 
 
