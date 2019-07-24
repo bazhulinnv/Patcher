@@ -19,12 +19,9 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 	FileParser fileParser;
 	std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType = fileParser.parse(nameOfFile);
 	DependenciesChecker checker;
-	checker.check(checker, objectsNameAndType, dbProvider);
-	checker.printExistenceOfEachObject(checker);
-	std::cout << checker.dataForLog;
-	//DBLog logger;
-	//logger.addLog(INFO, checker.dataForLog);
-	return checker.allObjectsExists;
+	bool result = checker.check(objectsNameAndType, dbProvider);
+	checker.printExistenceOfEachObject();
+	return result;
 }
 
 

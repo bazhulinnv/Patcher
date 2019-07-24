@@ -2,31 +2,34 @@
 
 #include "PatchInstaller/DependenciesChecker.h"
 
-DependenciesChecker::DependenciesChecker() {};
-DependenciesChecker::~DependenciesChecker() {};
+DependenciesChecker::DependenciesChecker() {
+	allObjectsExists = true;
+};
+DependenciesChecker::~DependenciesChecker() {
+	//this->dataForLog.~string();
+	//this->existenceEachObject.~list<bool>();
+};
 
-bool DependenciesChecker::check(DependenciesChecker &checker, std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType, DBProvider dbProvider) {
-	//std::cout << " in DependenciesChecker::check " << objectsNameAndType.size() << "\n";
-	checker.allObjectsExists = true;
+bool DependenciesChecker::check(std::list<std::tuple<std::string, std::string, std::string>> &objectsNameAndType, DBProvider &dbProvider) {
 	for (auto i : objectsNameAndType) {
 		bool doesCurrentObjectExist = dbProvider.doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
-		checker.allObjectsExists = checker.allObjectsExists && doesCurrentObjectExist;
-		checker.existenceEachObject.push_back(doesCurrentObjectExist);
+		allObjectsExists = allObjectsExists && doesCurrentObjectExist;
+		existenceEachObject.emplace_back(doesCurrentObjectExist);
 		
-		checker.dataForLog += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
+		dataForLog += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
 		if (!doesCurrentObjectExist) {
-			checker.dataForLog += "not ";
+			dataForLog += "not ";
 		}
-		checker.dataForLog += "exists\n";
+		dataForLog += "exists\n";
 	}
-	return checker.allObjectsExists;
+	return allObjectsExists;
 
 }
 
-void DependenciesChecker::printExistenceOfEachObject(DependenciesChecker &checker) {
+void DependenciesChecker::printExistenceOfEachObject() {
 	std::list <bool> ::iterator iterator;
 	//std::cout << checker.existenceEachObject.size() << "\n";
-	for (auto x : checker.existenceEachObject) {
+	for (auto x : existenceEachObject) {
 		//std::cout << checker.existenceEachObject.size() << "\n";
 		std::cout << x;
 	}
