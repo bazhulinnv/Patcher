@@ -56,13 +56,13 @@ set(PATCH_INSTALLER PatchInstaller)
 
 #---------------------------------
 set(patcher_INCS_prov
-  include/DBProvider/DBProviderLogger.h
+  include/Shared/Logger.h
   include/DBProvider/DBConnection.h
   include/DBProvider/DBProvider.h
   )
 
 set(patcher_SRCS_prov
-  src/DBProviderLogger.cpp
+  src/Logger.cpp
   src/DBConnection.cpp
   src/DBProvider.cpp
   )

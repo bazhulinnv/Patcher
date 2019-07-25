@@ -1,4 +1,5 @@
-#include <DBProvider/DBConnection.h>
+#include "DBProvider/DBConnection.h"
+
 #include <iostream>
 #include <sstream>
 #include <iterator>
@@ -110,10 +111,21 @@ void DBConnection::setConnection()
 
 pqxx::connection* DBConnection::getConnection()
 {
+	if (!current)
+	{
+		throw new std::exception("ERROR:Connection to databse lost.\n");
+	}
+
 	return current;
 }
 
 void DBConnection::disconnect()
 {
+	if (!current)
+	{
+		return;
+	}
+
+	// use pqxx disconnect method
 	current->disconnect();
 }
