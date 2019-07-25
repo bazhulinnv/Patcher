@@ -27,14 +27,6 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 
 
 /** When the method starts, the dependency check is considered successful. */
-/** Figuring out the operating system. */
-#if !defined(__WIN32__) && (defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__))
-#  define __WIN32__
-#endif
-
-#if defined(__unix__) || defined(__unix) || defined(_UNIXWARE7)
-#define __unix__
-#endif
 
 // You can use a simple guard class to make sure the buffer is always reset:
 struct cerrRedirect
@@ -58,55 +50,48 @@ private:
 	std::streambuf * old;
 };
 
-/*inline bool fileExists() {
-	ifstream f("Install.bat");
-	return f.good();
-}*/
+	/** When the method starts, the dependency check is considered successful. */
+/** Figuring out the operating system. */
+#if !defined(__WIN32__) && (defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__))
+#  define __WIN32__
+#endif
+
+#if defined(__unix__) || defined(__unix) || defined(_UNIXWARE7)
+#define __unix__
+#endif
 
 /** When the method starts, the dependency check is considered successful. */
 bool PatchInstaller::startInstallation(char* directory) {
-#if (defined(__WIN32__))
 	chdir(directory);
-	std::array<char, 128> buffer;
-	std::string result;
+	system("Install.bat");
+	std::ifstream errors("tempError.txt", ios::in);
+	std::ifstream info("tempInfo.txt", ios::in);
+	bool resultOfInstall = false;
 
-	std::stringstream awsomeLogBuffer;
-	std::stringstream awsomeLogInfoBuffer;
-	auto *customRedirect = new cerrRedirect(awsomeLogBuffer.rdbuf());
-	auto *customRedirect1 = new cout_redirect(awsomeLogInfoBuffer.rdbuf());
-	std::cerr << "ERROR" << std::endl;
-	std::cout << "INFO" << std::endl;
-	std::string awsomeErrors = awsomeLogBuffer.str();
-	std::string info = awsomeLogInfoBuffer.str();
+	std::string dataForErrorLog;
+	std::string dataForInfoLog;
+	std::string buffer;
+	
+	while (getline(errors, buffer)) {
+		dataForErrorLog += buffer;
+		dataForErrorLog += "\n";
+	}
+	buffer = "";
+	while (getline(info, buffer)) {
+		dataForInfoLog += buffer;
+		dataForInfoLog += "\n";
+	}
 
-	FILE* pipe = _popen("Install.bat", "r");
-	if (!pipe)
-	{
-		std::cerr << "Couldn't start command." << std::endl;
-		return false;
+	std::ofstream logError("logError.log", ios::out | ios::app);
+	logError << dataForErrorLog;
+	std::ofstream logInfo("logInfo.log", ios::out | ios::app);
+	logInfo << dataForInfoLog;
+	if (dataForErrorLog == "") {
+		resultOfInstall = true;
 	}
-	while (fgets(buffer.data(), 128, pipe) != NULL) {};
-	awsomeErrors = awsomeLogBuffer.str();
-	info = awsomeLogInfoBuffer.str();
-	std::cout << awsomeErrors << std::endl;
-	std::cout << "####" << info << "###" << std::endl;
-	delete customRedirect;
-	delete customRedirect1;
-	auto returnCode = _pclose(pipe);
-#endif
-#if (defined(__unix__)) 
-	FILE* pipe = popen("Install.bat", "r");
-	if (!pipe)
-	{
-		std::cerr << "Couldn't start command." << std::endl;
-		return 0;
-	}
-	while (fgets(buffer.data(), 128, pipe) != NULL) {
-		result += buffer.data();
-	}
-	auto returnCode = pclose(pipe);
-
-	std::cout << "!!!" << result << "!!" << std::endl;
-	//std::cout << returnCode << std::endl;
-#endif
+	logError.close();
+	logInfo.close();
+	errors.close();
+	info.close();
+	return resultOfInstall;
 }

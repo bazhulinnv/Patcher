@@ -12,6 +12,7 @@ bool directoryExists(char* directory) {
 }
 
 inline bool fileExists(char* directory) {
+	//chdir needs to be changed on more suitable variant
 	chdir(directory);
 	ifstream f("Install.bat");
 	return f.good();
