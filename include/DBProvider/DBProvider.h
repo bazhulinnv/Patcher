@@ -1,10 +1,10 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
-#include <string>
 
-#include <DBProvider/DBConnection.h>
-#include <tuple>
+#include "DBProvider/DBConnection.h"
+
 #include <pqxx/pqxx>
+#include <tuple>
 #include <string>
 
 using namespace std;
