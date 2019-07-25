@@ -9,12 +9,9 @@
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(const string pPatchListFullName, const string pUserName, const string pDatabaseName, const string pTemplatesFullName)
+PatchBuilder::PatchBuilder(const string pPatchListFullName, const DBProvider &provider, const string pTemplatesFullName)
 {
-	// Initialisation of class fields
 	patchListFullName = pPatchListFullName;
-	userName = pUserName;
-	databaseName = pDatabaseName;
 	// Check tamplate file
 	ifstream input;
 	input.open(pTemplatesFullName);
@@ -35,12 +32,12 @@ PatchBuilder::~PatchBuilder() {}
 void PatchBuilder::buildPatch(const string directory)
 {
 	// Creating log file
-	string logDirectory = (directory + "//" + LOG_FOLDER);
+	string logDirectory = (directory + "/" + LOG_FOLDER);
 	mkdir(&logDirectory[0]);
-	logFileFullName = logDirectory + "//" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
+	logFileFullName = logDirectory + "/" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
 
 	// Executing all methods for patch building
-	ofstream output(directory + "//" + DEPENDENCY_LIST_NAME); // Dependency list directory
+	ofstream output(directory + "/" + DEPENDENCY_LIST_NAME); // Dependency list directory
 	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	scriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
 	createInstallPocket(directory, scriptDataVector); // Creaing all instalation components
@@ -147,23 +144,28 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 
 void PatchBuilder::createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
 {
-	ofstream outputInstallScriptBat(directory + "//" + INSTALL_SCRIPT_NAME_BAT);
-	ofstream outputInstallScriptSh(directory + "//" + INSTALL_SCRIPT_NAME_SH);
+	ofstream outputInstallScriptBat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
+	ofstream outputInstallScriptSh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
 	// Creating sql files for all scrpits and writing install script
 	for (ScriptData data : scriptDataVector)
 	{
 		// Creating directory named as type of script
-		mkdir(&(directory + "//" + data.scheme)[0]);
-		mkdir(&(directory + "//" + data.scheme + "//" + data.type)[0]);
-		ofstream outputScript(directory + "//" + data.scheme + "//" + data.type + "//" + data.name);
+		mkdir(&(directory + "/" + data.scheme)[0]);
+		mkdir(&(directory + "/" + data.scheme + "/" + data.type)[0]);
+		ofstream outputScript(directory + "/" + data.scheme + "/" + data.type + "/" + data.name);
 		// Writing script text in file
 		outputScript << data.text;
 
-		// Writing psql command in InstallScript with .bat format
-		outputInstallScriptBat << "psql -U " << userName << " -d " << databaseName << " -f "  << data.scheme << "//" << data.type << "//" << data.name << "\n";
+		// Creating install command
+		string installStr = string("psql -U ") + "user" + " -d " + "database" + " -f " + data.scheme + "/";
+		if (data.type != "")
+		{
+			installStr += data.type + "/";
+		}
+		installStr += data.name + "\n";
 
-		// Writing psql command in InstallScript with .sh format
-		outputInstallScriptSh << "psql -U " << userName << " -d " << databaseName << " -f " << data.scheme << "//" << data.type << "//" << data.name << "\n";
+		outputInstallScriptBat << installStr; // Writing psql command in InstallScript with .bat format
+		outputInstallScriptSh << installStr; // Writing psql command in InstallScript with .sh format	
 	}
 	string message = "Install pocket created\n";
 	cout << message;
