@@ -6,9 +6,9 @@
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
-#include "DBProvider/DBProviderLogger.h"
+#include "Shared/Logger.h"
 
-using namespace DBProviderLogger;
+using namespace PatcherLogger;
 
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
