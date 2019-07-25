@@ -79,6 +79,7 @@ set(patcher_SRCS_bld
 
 #---------------------------------
 set(patcher_INCS_inst
+	include/Shared/Logger.h
 	include/DBProvider/DBProvider.h
 	include/PatchInstaller/DependenciesChecker.h
 	include/PatchInstaller/FileParser.h
@@ -86,6 +87,7 @@ set(patcher_INCS_inst
   )
 
 set(patcher_SRCS_inst
+	src/Logger.h
 	src/PatchInstaller.cpp
   	src/DependenciesChecker.cpp
 	src/FileParser.cpp
