@@ -87,7 +87,7 @@ set(patcher_INCS_inst
   )
 
 set(patcher_SRCS_inst
-	src/Logger.h
+	src/Logger.cpp
 	src/PatchInstaller.cpp
   	src/DependenciesChecker.cpp
 	src/FileParser.cpp
