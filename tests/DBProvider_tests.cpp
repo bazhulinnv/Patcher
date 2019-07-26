@@ -98,24 +98,103 @@ bool testPrintObjectsData(std::string creds)
 	return true;
 }
 
+
 int main()
 {
 	std::string creds = "Doors:doo:rc:127.0.0.1:5432";
 	bool isStdConnectionWorks = testStandardConnectionMethod();
-	bool isLogWorks = testDBProviderLogger();
+	// bool isLogWorks = testDBProviderLogger();
 
-	std::cout << "\nRUNNING: Test custom connection method" << std::endl;
+	//std::cout << "\nRUNNING: Test custom connection method" << std::endl;
+	//
+	//if (testCustomConnectionMethod(creds))
+	//{
+	//	std::cout << "SUCCEEDED: Test custom connection method" << std::endl;
+	//}
+	//
+	//std::cout << "\nRUNNING: Test print objects data method" << std::endl;
+	//if (testPrintObjectsData(creds))
+	//{
+	//	std::cout << "SUCCEEDED: Test print objects data method" << std::endl;
+	//}
 	
-	if (testCustomConnectionMethod(creds))
+	//std::string getObjects =
+	//	"SELECT /*sequences */\
+	//			f.sequence_schema AS obj_schema, f.sequence_name AS obj_name, 'sequence' AS obj_type\
+	//			from information_schema.sequences f\
+	//		UNION ALL\
+	//		SELECT /*tables */\
+	//			f.table_schema AS obj_schema, f.table_name AS obj_name, 'tables' AS obj_type\
+	//			from information_schema.tables f\
+	//		WHERE f.table_schema in('public', 'io', 'common', 'secure')";
+
+	//auto resOfQuery = dbProvider->query(getObjects);
+	//std::string q = "SELECT * FROM public.role_action";
+	//
+	//std::string createTable = "CREATE TABLE account("
+	//	"user_id serial PRIMARY KEY,"
+	//	"username VARCHAR(50) UNIQUE NOT NULL,"
+	//	"password VARCHAR(50) NOT NULL,"
+	//	"email VARCHAR(355) UNIQUE NOT NULL,"
+	//	"created_on TIMESTAMP NOT NULL,"
+	//	"last_login TIMESTAMP"
+	//	"); ";
+	//
+	//std::string k = "SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'; ";
+	//
+	//resOfQuery = dbProvider->query(k);
+	//
+	//pqxx::result::const_iterator row;
+	//
+	//for (row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
+	//{
+	//	std::cout << row["tablename"].as<std::string>() << "\t" << std::endl;
+	//}
+
+
+	//for (	row = resOfQuery.begin();
+	//		row != resOfQuery.end();
+	//		++row)
+	//{
+	//	std::cout
+	//		<< row["obj_name"].as<std::string>() << "\t"
+	//		<< row["obj_type"].as<std::string>() << "\t"
+	//		<< row["obj_schema"].as<std::string>()
+	//		<< std::endl;
+	//}
+
+	//std::vector<ObjectData> objects;
+
+	//for (row = resOfQuery.begin();
+	//	row != resOfQuery.end();
+	//	++row)
+	//{
+	//	std::vector<std::string> parameters;
+	//	objects.push_back(ObjectData(row["obj_name"].as<std::string>(), row["obj_type"].as<std::string>(), row["obj_schema"].as<std::string>(), parameters));
+	//}
+	
+	auto *dbProvider = new DBProvider(creds);
+	vector<ObjectData> objs = dbProvider->getObjects();
+
+	std::cout << "|   NAME   " << "\t";
+	std::cout << "|   TYPE   " << "\t";
+	std::cout << "|  SCHEME  " << "\t";
+	std::cout << "|  PARAMS  |" << std::endl;
+	
+	for (auto i = 0; i < objs.size(); ++i)
 	{
-		std::cout << "SUCCEEDED: Test custom connection method" << std::endl;
+		std::cout << objs[i].name << "\t";
+		std::cout << objs[i].type << "\t";
+		std::cout << objs[i].scheme << "\t";
+
+		for (auto param : objs[i].paramsVector)
+		{
+			std::cout << param << "\t";
+		}
+
+		std::cout << std::endl;
 	}
-	
-	std::cout << "\nRUNNING: Test print objects data method" << std::endl;
-	if (testPrintObjectsData(creds))
-	{
-		std::cout << "SUCCEEDED: Test print objects data method" << std::endl;
-	}
-	
+
+	delete dbProvider;
 	return 0;
 }
