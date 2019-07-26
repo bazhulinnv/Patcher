@@ -45,17 +45,31 @@ bool PatchInstaller::startInstallation() {
 	std::string dataForInfoLog;
 	std::string buffer;
 	
-	while (getline(errors, buffer)) {
-		dataForErrorLog += buffer;
-		dataForErrorLog += "\n";
-	}
-	buffer = "";
+	std::cerr << "INSTALLATION PROCESS:\n";
 	while (getline(info, buffer)) {
 		dataForInfoLog += buffer;
 		dataForInfoLog += "\n";
+		std::cerr << buffer << "\n";
+	}
+	buffer = "";
+	std::cerr << "INSTALLATION ERRORS:\n";
+	while (getline(errors, buffer)) {
+		dataForErrorLog += buffer;
+		dataForErrorLog += "\n";
+		std::cerr << buffer << "\n";
 	}
 
 	dataForErrorLog += "Installation completed";
+	std::cerr << "Installation completed";
+	if (dataForErrorLog == "") {
+		resultOfInstall = true;
+		dataForErrorLog += " without errors.\n";
+		std::cerr << " without errors.\n";
+	}
+	else {
+		dataForErrorLog += " with errors.\n";
+		std::cerr << " with errors.\n";
+	}
 
 	auto *errorLog = new Log();
 	errorLog->setLogByPath("Temp/InstallationErrors.log");
@@ -66,19 +80,6 @@ bool PatchInstaller::startInstallation() {
 	errorLog->setLogByPath("Temp/InstallationInfo.log");
 	errorLog->addLog(INFO, dataForInfoLog);
 	delete infoLog;
-
-	if (dataForErrorLog == "") {
-		resultOfInstall = true;
-		dataForErrorLog += " without errors.\n";
-	}
-	else {
-		dataForErrorLog += " with errors.\n";
-	}
-
-	std::cerr << "INSTALLATION PROCESS:\n";
-	std::cerr << dataForInfoLog;
-	std::cerr << "INSTALLATION ERRORS:\n";
-	std::cerr << dataForErrorLog;
 
 	errors.close();
 	info.close();
