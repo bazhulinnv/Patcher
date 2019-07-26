@@ -22,7 +22,28 @@ vector<ObjectData> DBProvider::getObjects()
 	// example:
 	// output - public, myFunction, function, <param1, param2, param3>
 	//          common, myTable,    table,    <>
-	return vector<ObjectData>();
+	std::string getObjects =
+		"SELECT /*sequences */\
+				f.sequence_schema AS obj_schema, f.sequence_name AS obj_name, 'sequence' AS obj_type\
+				from information_schema.sequences f\
+			UNION ALL\
+			SELECT /*tables */\
+				f.table_schema AS obj_schema, f.table_name AS obj_name, 'tables' AS obj_type\
+				from information_schema.tables f\
+			WHERE f.table_schema in('public', 'io', 'common', 'secure')";
+
+	auto resOfQuery = query(getObjects);
+	pqxx::result::const_iterator row;
+	std::vector<ObjectData> objects;
+
+	for (row = resOfQuery.begin();
+		row != resOfQuery.end();
+		++row)
+	{
+		std::vector<std::string> parameters;
+		objects.push_back(ObjectData(row["obj_name"].as<std::string>(), row["obj_type"].as<std::string>(), row["obj_schema"].as<std::string>(), parameters));
+	}
+	return objects;
 }
 
 ScriptData DBProvider::getScriptData(ObjectData)
