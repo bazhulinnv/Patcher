@@ -6,9 +6,9 @@
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
-#include "DBProvider/DBProviderLogger.h"
+#include "Shared/Logger.h"
 
-using namespace DBProviderLogger;
+using namespace PatcherLogger;
 
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
@@ -36,47 +36,39 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 #endif
 
 /** When the method starts, the dependency check is considered successful. */
-bool PatchInstaller::startInstallation(std::string directory) {
-	std::string command0("cd " + directory);
-	std::string command1("Install.bat");
-	//command("Install.bat");
+bool PatchInstaller::startInstallation(char* directory) {
+	chdir(directory);
 	std::array<char, 128> buffer;
-	std::string dataForLog;
+	std::string result;
 
-#if defined(__WIN32__)
-	FILE* pipe0 = _popen(command0.c_str(), "r");
-	if (!pipe0) {
-		std::cerr << "Couldn't start command." << std::endl;
-		return 0;
-	}
-	while (fgets(buffer.data(), 128, pipe0) != NULL) {
-		dataForLog += buffer.data();
-	}
-	std::cout << "!!!!!!" << dataForLog << "!!!\n";
-
-	FILE* pipe1 = _popen(command1.c_str(), "r");
-	if (!pipe1) {
-		std::cerr << "Couldn't start command." << std::endl;
-		return 0;
-	}
-	while (fgets(buffer.data(), 128, pipe1) != NULL) {
-		dataForLog += buffer.data();
-	}
-	std::cout << "!!!!!!" << dataForLog << "!!!\n";
-	//auto returnCode = _pclose(pipe0);
-	//auto returnCode = _pclose(pipe1);
-#endif
-
-#if (defined(__unix__)) 
-	FILE* pipe = popen(command.c_str(), "r");
-	if (!pipe) {
+#if (defined(__WIN32__))
+	FILE* pipe = _popen("Install.bat", "r");
+	if (!pipe)
+	{
 		std::cerr << "Couldn't start command." << std::endl;
 		return 0;
 	}
 	while (fgets(buffer.data(), 128, pipe) != NULL) {
-		dataForLog += buffer.data();
+		result += buffer.data();
+	}
+	auto returnCode = _pclose(pipe);
+
+	std::cout << "!!!" << result << "!!" << std::endl;
+	//std::cout << returnCode << std::endl;
+#endif
+#if (defined(__unix__)) 
+	FILE* pipe = popen("Install.bat", "r");
+	if (!pipe)
+	{
+		std::cerr << "Couldn't start command." << std::endl;
+		return 0;
+	}
+	while (fgets(buffer.data(), 128, pipe) != NULL) {
+		result += buffer.data();
 	}
 	auto returnCode = pclose(pipe);
+
+	std::cout << "!!!" << result << "!!" << std::endl;
+	//std::cout << returnCode << std::endl;
 #endif
-	return true;
 }

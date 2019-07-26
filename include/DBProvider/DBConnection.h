@@ -26,13 +26,28 @@ public:
 		std::string result;
 	} info;
 
-	DBConnection(std::string loginCredentials);
+	/* 
+	*/
+	explicit DBConnection(std::string loginCredentials);
+	
+	// Safely deletes connection.
 	~DBConnection();
+	
+	/*	Sets connection using login credentials.
+		Login credentials is assumed to have been passed
+		to the constructor when the object was created.
+	*/
 	void setConnection();
+	
+	// Returns pointer to current connection object.
 	pqxx::connection* getConnection();
 
 private:
-	// field stores current connection
+	// Points to current active connection.
 	pqxx::connection *current = nullptr;
+	
+	/*	Drops current connection; disconects from database.
+		Can be called only by destructor, when the lifetime of an object ends.
+	*/
 	void disconnect();
 };

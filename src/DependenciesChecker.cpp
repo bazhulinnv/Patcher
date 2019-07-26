@@ -6,8 +6,6 @@ DependenciesChecker::DependenciesChecker() {
 	allObjectsExists = true;
 };
 DependenciesChecker::~DependenciesChecker() {
-	//this->dataForLog.~string();
-	//this->existenceEachObject.~list<bool>();
 };
 
 bool DependenciesChecker::check(std::list<std::tuple<std::string, std::string, std::string>> &objectsNameAndType, DBProvider &dbProvider) {

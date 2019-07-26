@@ -56,13 +56,13 @@ set(PATCH_INSTALLER PatchInstaller)
 
 #---------------------------------
 set(patcher_INCS_prov
-  include/DBProvider/DBProviderLogger.h
+  include/Shared/Logger.h
   include/DBProvider/DBConnection.h
   include/DBProvider/DBProvider.h
   )
 
 set(patcher_SRCS_prov
-  src/DBProviderLogger.cpp
+  src/Logger.cpp
   src/DBConnection.cpp
   src/DBProvider.cpp
   )
@@ -79,6 +79,7 @@ set(patcher_SRCS_bld
 
 #---------------------------------
 set(patcher_INCS_inst
+	include/Shared/Logger.h
 	include/DBProvider/DBProvider.h
 	include/PatchInstaller/DependenciesChecker.h
 	include/PatchInstaller/FileParser.h
@@ -86,6 +87,7 @@ set(patcher_INCS_inst
   )
 
 set(patcher_SRCS_inst
+	src/Logger.cpp
 	src/PatchInstaller.cpp
   	src/DependenciesChecker.cpp
 	src/FileParser.cpp

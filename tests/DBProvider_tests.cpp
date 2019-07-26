@@ -1,9 +1,9 @@
-#include <DBProvider/DBProvider.h>
-#include <DBProvider/DBProviderLogger.h>
+#include "DBProvider/DBProvider.h"
+#include "Shared/Logger.h"
 #include <iostream>
 #include <pqxx/pqxx>
 
-bool testStandardConnectionMethod()
+bool testPqxxConnectionMethod()
 {
 	using namespace pqxx;
 
@@ -32,18 +32,28 @@ bool testStandardConnectionMethod()
 
 }
 
-bool testDBProviderLogger()
+bool testLogger()
 {
-	using namespace DBProviderLogger;
+	using namespace PatcherLogger;
 	try
 	{
-		auto testLog = new DBLog();
-		testLog->setPathAndOpen("../build/DBProvider.dir/log.txt");
-		testLog->addLog(DEBUG, "test my log");
-		testLog->addLog(DEBUG, "test my log one more time");
+		auto *testLog = new Log();
+		testLog->setLogByPath("../build/DBProvider.dir/log_test.txt");
+		
+		testLog->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
+		testLog->addLog(DEBUG, "TEST - 01");
 
-		startLog("../build/DBProvider.dir/global_log.txt");
-		logDebug("test my global log");
+		auto *logInStdDir = new Log();
+		logInStdDir->setLogByName("new_log.log");
+
+		logInStdDir->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
+		logInStdDir->addLog(DEBUG, "TEST - 02");
+
+		startGlobalLog("../build/DBProvider.dir/global_log.txt");
+		logDebug("Test GLOBAL LOG");
+		delete logInStdDir;
+		delete testLog;
+		stopGlobalLog();
 	}
 	catch (const std::exception& e)
 	{
@@ -102,6 +112,13 @@ bool testPrintObjectsData(std::string creds)
 int main()
 {
 	std::string creds = "Doors:doo:rc:127.0.0.1:5432";
+
+	std::cout << "\nRUNNING: Test Logger" << std::endl;
+	if (testLogger())
+	{
+		std::cout << "SUCCEEDED: Test Logger" << std::endl;
+	}
+  
 	bool isStdConnectionWorks = testStandardConnectionMethod();
 	// bool isLogWorks = testDBProviderLogger();
 

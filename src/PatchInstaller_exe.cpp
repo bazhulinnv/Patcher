@@ -21,8 +21,8 @@ int main(int argc, char* argv[]) {
 	{
 		//std::cout << installerDirectory;
 		std::cout << "start installation:";
-		std::string installerDirectory(argv[3]);
-		patchInstaller.startInstallation(installerDirectory);
+		//std::string installerDirectory(argv[3]);
+		patchInstaller.startInstallation(argv[3]);
 	}
 	//delete dbProvider;
 	return 0;
