@@ -9,9 +9,10 @@
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(const string pPatchListFullName, const DBProvider &provider, const string pTemplatesFullName)
+PatchBuilder::PatchBuilder(const string pPatchListFullName, DBProvider &pProvider, const string pTemplatesFullName)
 {
 	patchListFullName = pPatchListFullName;
+	provider = &pProvider;
 	// Check tamplate file
 	ifstream input;
 	input.open(pTemplatesFullName);
@@ -122,20 +123,8 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(objectDataVectorType obje
 objectDataVectorType PatchBuilder::getObjectDataVector() const
 {
 	// Getting all source database objects
-	// Not implementeds
-	objectDataVectorType objectVector;
-	ifstream input("C://Users//Timur//Documents//Temp//ObjectList.txt");
-	if (input.is_open())
-	{
-		while (!input.eof())
-		{
-			ObjectData data;
-			input >> data.scheme;
-			input >> data.name;
-			input >> data.type;
-			objectVector.push_back(data);
-		}
-	}
+	objectDataVectorType objectVector = provider->getObjects();
+
 	string message = "Object vector created\n";
 	cout << message;
 	addLog(message);
