@@ -119,7 +119,7 @@ int main()
 		std::cout << "SUCCEEDED: Test Logger" << std::endl;
 	}
   
-	bool isStdConnectionWorks = testStandardConnectionMethod();
+	bool isStdConnectionWorks = testPqxxConnectionMethod();
 	// bool isLogWorks = testDBProviderLogger();
 
 	//std::cout << "\nRUNNING: Test custom connection method" << std::endl;
