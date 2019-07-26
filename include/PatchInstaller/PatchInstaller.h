@@ -4,7 +4,8 @@
 #include <cstdio>
 #include <string>
 #include "DBProvider/DBProvider.h"
-#include "FileParser.h"
+
+using DBProviderListParameters = std::list<std::tuple<std::string, std::string, std::string>>;
 
 class PatchInstaller {
 public:

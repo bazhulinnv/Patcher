@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
 
 DependenciesChecker::DependenciesChecker() {
@@ -8,7 +9,7 @@ DependenciesChecker::DependenciesChecker() {
 DependenciesChecker::~DependenciesChecker() {
 };
 
-bool DependenciesChecker::check(std::list<std::tuple<std::string, std::string, std::string>> &objectsNameAndType, DBProvider &dbProvider) {
+bool DependenciesChecker::check(DBProviderListParameters &objectsNameAndType, DBProvider &dbProvider) {
 	for (auto i : objectsNameAndType) {
 		bool doesCurrentObjectExist = dbProvider.doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
 		allObjectsExists = allObjectsExists && doesCurrentObjectExist;
@@ -26,9 +27,7 @@ bool DependenciesChecker::check(std::list<std::tuple<std::string, std::string, s
 
 void DependenciesChecker::printExistenceOfEachObject() {
 	std::list <bool> ::iterator iterator;
-	//std::cout << checker.existenceEachObject.size() << "\n";
 	for (auto x : existenceEachObject) {
-		//std::cout << checker.existenceEachObject.size() << "\n";
 		std::cout << x;
 	}
 }

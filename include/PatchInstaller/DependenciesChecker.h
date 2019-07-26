@@ -6,8 +6,6 @@
 
 #include "DBProvider/DBProvider.h"
 
-//DBobjectList using std::list<std::tuple<std::string, std::string, std::string>>;
-
 class DependenciesChecker {
 public:
 	DependenciesChecker();

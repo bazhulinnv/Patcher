@@ -4,11 +4,11 @@
 #include <time.h>
 #include <filesystem>
 #include <direct.h>
-//#include <dir.h>
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
 #include "Shared/Logger.h"
+#include "PatchInstaller/FileParser.h"
 
 using namespace PatcherLogger;
 
@@ -19,11 +19,16 @@ PatchInstaller::~PatchInstaller() {}
 /** The function checks the presence of objects in the database according to the list of objects specified in the file. */
 bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider dbProvider) {
 	FileParser fileParser;
-	std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType = fileParser.parse(nameOfFile);
+	DBProviderListParameters objectsNameAndType = fileParser.parse(nameOfFile);
 	DependenciesChecker checker;
 	bool result = checker.check(objectsNameAndType, dbProvider);
+
 	std::cerr << "CHECKING DEPENDENCIES PROCESS:\n";
 	std::cerr << checker.dataForLog;
+	if (!result) {
+		std::cerr << "Check failed. Some objects does not exist in current database.\n";
+	}
+	std::cerr << "Check completed succesful.\n";
 	checker.printExistenceOfEachObject();
 
 	auto *infoLog = new Log();
