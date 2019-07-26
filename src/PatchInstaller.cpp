@@ -4,6 +4,7 @@
 #include <time.h>
 #include <filesystem>
 #include <direct.h>
+//#include <dir.h>
 
 #include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
@@ -21,48 +22,20 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 	std::list<std::tuple<std::string, std::string, std::string>> objectsNameAndType = fileParser.parse(nameOfFile);
 	DependenciesChecker checker;
 	bool result = checker.check(objectsNameAndType, dbProvider);
+	std::cerr << "CHECKING DEPENDENCIES PROCESS:\n";
+	std::cerr << checker.dataForLog;
 	checker.printExistenceOfEachObject();
+
+	auto *infoLog = new Log();
+	infoLog->setLogByPath("Temp/CheckingDependenciesErrors.log");
+	infoLog->addLog(INFO, checker.dataForLog);
+
+	delete infoLog;
 	return result;
 }
 
-
 /** When the method starts, the dependency check is considered successful. */
-
-// You can use a simple guard class to make sure the buffer is always reset:
-struct cerrRedirect
-{
-	cerrRedirect(std::streambuf *new_buffer) : old(std::cerr.rdbuf(new_buffer)) {}
-	~cerrRedirect() { std::cerr.rdbuf(old); }
-private:
-	std::streambuf *old;
-};
-
-struct cout_redirect {
-	cout_redirect(std::streambuf * new_buffer)
-		: old(std::cout.rdbuf(new_buffer))
-	{ }
-
-	~cout_redirect() {
-		std::cout.rdbuf(old);
-	}
-
-private:
-	std::streambuf * old;
-};
-
-	/** When the method starts, the dependency check is considered successful. */
-/** Figuring out the operating system. */
-#if !defined(__WIN32__) && (defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__))
-#  define __WIN32__
-#endif
-
-#if defined(__unix__) || defined(__unix) || defined(_UNIXWARE7)
-#define __unix__
-#endif
-
-/** When the method starts, the dependency check is considered successful. */
-bool PatchInstaller::startInstallation(char* directory) {
-	chdir(directory);
+bool PatchInstaller::startInstallation() {
 	system("Install.bat");
 	std::ifstream errors("tempError.txt", ios::in);
 	std::ifstream info("tempInfo.txt", ios::in);
@@ -82,16 +55,34 @@ bool PatchInstaller::startInstallation(char* directory) {
 		dataForInfoLog += "\n";
 	}
 
-	std::ofstream logError("logError.log", ios::out | ios::app);
-	logError << dataForErrorLog;
-	std::ofstream logInfo("logInfo.log", ios::out | ios::app);
-	logInfo << dataForInfoLog;
+	dataForErrorLog += "Installation completed";
+
+	auto *errorLog = new Log();
+	errorLog->setLogByPath("Temp/InstallationErrors.log");
+	errorLog->addLog(ERROR, dataForErrorLog);
+	delete errorLog;
+
+	auto *infoLog = new Log();
+	errorLog->setLogByPath("Temp/InstallationInfo.log");
+	errorLog->addLog(INFO, dataForInfoLog);
+	delete infoLog;
+
 	if (dataForErrorLog == "") {
 		resultOfInstall = true;
+		dataForErrorLog += " without errors.\n";
 	}
-	logError.close();
-	logInfo.close();
+	else {
+		dataForErrorLog += " with errors.\n";
+	}
+
+	std::cerr << "INSTALLATION PROCESS:\n";
+	std::cerr << dataForInfoLog;
+	std::cerr << "INSTALLATION ERRORS:\n";
+	std::cerr << dataForErrorLog;
+
 	errors.close();
 	info.close();
+	remove("tempError.txt");
+	remove("tempInfo.txt");
 	return resultOfInstall;
 }
