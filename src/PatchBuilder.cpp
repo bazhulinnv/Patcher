@@ -157,15 +157,19 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 		outputScript << data.text;
 
 		// Creating install command
-		string installStr = string("psql -U ") + "user" + " -d " + "database" + " -f " + data.scheme + "/";
+		string installBatStr = string("psql -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.scheme + "/";
+		string installShStr = string("psql -U ") + "$1" + " -d " + "$2" + " -h " + "$3" + " -p " + "$4" " -f " + data.scheme + "/";
 		if (data.type != "")
 		{
-			installStr += data.type + "/";
+			installBatStr += data.type + "/";
+			installShStr += data.type + "/";
 		}
-		installStr += data.name + "\n";
+		installBatStr += data.name + "\n";
+		installShStr += data.name + "\n";
 
-		outputInstallScriptBat << installStr; // Writing psql command in InstallScript with .bat format
-		outputInstallScriptSh << installStr; // Writing psql command in InstallScript with .sh format	
+
+		outputInstallScriptBat << installBatStr; // Writing psql command in InstallScript with .bat format
+		outputInstallScriptSh << installShStr; // Writing psql command in InstallScript with .sh format	
 	}
 	string message = "Install pocket created\n";
 	cout << message;
