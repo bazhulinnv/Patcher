@@ -51,21 +51,21 @@ namespace PatcherLogger
 
 	private:
 		// File for logging.
-		std::ofstream currentLog;
+		std::ofstream _currentLog;
 
 		// Path to log.
-		std::string logPath;
+		std::string _logPath;
 
 		// Path to standard log directory.
-		std::string stdLoggingPath = "../build/DBProvider.dir/";
+		std::string _stdLoggingPath = "../build/DBProvider.dir/";
 		
 		// Message levels
-		std::string levels[5] = { "Debug", "Info", "Warning", "Error", "Fatal" };
+		std::string _levels[5] = { "Debug", "Info", "Warning", "Error", "Fatal" };
 
 		/*	Opens log if path is correct,
 			otherwise throws exception.
 		*/
-		void tryOpenLog(const std::string& filePath);
+		void tryToOpenLog(const std::string& filePath);
 	};
 
 	// Initalizes global log.
