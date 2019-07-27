@@ -8,6 +8,14 @@
 FileParser::FileParser() {}
 FileParser::~FileParser() {}
 
+DBProviderListParameters FileParser::getResultOfParsing(std::string nameOfFile)
+{
+	FileParser parser;
+	return parser.parse(nameOfFile);
+}
+
+
+
 DBProviderListParameters FileParser::parse(std::string nameOfFile)
 {
 	DBProviderListParameters objectParametersFromFile;

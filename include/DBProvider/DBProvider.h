@@ -52,7 +52,7 @@ public:
 	~DBProvider();
 	vector<ObjectData> getObjects(); // Returns all objects of database
 	ScriptData getScriptData(ObjectData); // Returns script data by object data
-	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type) { return true; };
+	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type) { return false; };
 	pqxx::result query(std::string strSQL);
 
 private:

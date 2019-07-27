@@ -18,22 +18,23 @@ PatchInstaller::~PatchInstaller() {}
 
 /** The function checks the presence of objects in the database according to the list of objects specified in the file. */
 bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider dbProvider) {
-	FileParser fileParser;
-	DBProviderListParameters objectsNameAndType = fileParser.parse(nameOfFile);
+	DBProviderListParameters objectsNameAndType = FileParser::getResultOfParsing(nameOfFile);
 	DependenciesChecker checker;
-	bool result = checker.check(objectsNameAndType, dbProvider);
+	bool result = checker.getCheck(objectsNameAndType, dbProvider);
 
 	std::cerr << "CHECKING DEPENDENCIES PROCESS:\n";
-	std::cerr << checker.dataForLog;
+	std::cerr << checker.getDataForLog();
 	if (!result) {
 		std::cerr << "Check failed. Some objects does not exist in current database.\n";
 	}
-	std::cerr << "Check completed succesful.\n";
-	checker.printExistenceOfEachObject();
+	else {
+		std::cerr << "Check completed succesful.\n";
+	}
+	checker.print();
 
 	auto *infoLog = new Log();
 	infoLog->setLogByPath("Temp/CheckingDependenciesErrors.log");
-	infoLog->addLog(INFO, checker.dataForLog);
+	infoLog->addLog(INFO, checker.getDataForLog());
 
 	delete infoLog;
 	return result;

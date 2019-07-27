@@ -10,6 +10,8 @@ class FileParser {
 public:
 	FileParser();
 	~FileParser();
-	static DBProviderListParameters parse(std::string nameOfFile);
+	static DBProviderListParameters getResultOfParsing(std::string nameOfFile);
+private:
+	DBProviderListParameters parse(std::string nameOfFile);
 };
 #endif

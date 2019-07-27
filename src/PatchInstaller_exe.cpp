@@ -18,7 +18,6 @@ inline bool fileExists(char* directory) {
 }
 
 int main(int argc, char* argv[]) { 
-	std::string nameOfFile =  "DependencyList.dpn";
 	PatchInstaller patchInstaller;
 	if (argv[1] == nullptr) {
 		std::cerr << "Please, enter database connection parameters. \n";
@@ -45,7 +44,7 @@ int main(int argc, char* argv[]) {
 					if (fileExists(argv[3])) {
 						mkdir("Temp");
 						if (strcmp(argv[2], "check") == 0) {
-							patchInstaller.checkObjectsForExistenceFromFile(nameOfFile, *dbProvider);
+							patchInstaller.checkObjectsForExistenceFromFile("DependencyList.dpn", *dbProvider);
 							return 0;
 						}
 						if (strcmp(argv[2], "install") == 0) {
