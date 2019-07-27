@@ -128,6 +128,7 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 	string message = "Object vector created\n";
 	cout << message;
 	addLog(message);
+
 	return objectVector;
 }
 
@@ -208,7 +209,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 			ObjectData data;
 			input >> data.scheme;
 			// If this is script from outside - type field is empty
-			if (data.scheme == "script")
+			if (data.scheme == "scripts")
 			{
 				input >> data.name;
 				data.type = "";
@@ -219,7 +220,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 				input >> data.type;
 			}
 			// If type is "function" reading params of it
-			if (data.type == "function")
+			if (data.type == "functions")
 			{
 				string currentWord;
 				input >> currentWord;
@@ -233,6 +234,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 			patchListVector.push_back(data);
 		}
 	}
+
 	return patchListVector;
 }
 
@@ -244,7 +246,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "roles.sql";
 		data.type = "table";
 		data.scheme = "public";
-		ifstream input("C://Users//Timur//Documents//Doors//public//tables//roles.sql");
+		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/roles.sql");
 		string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
 		str.erase(0, 3); //Utf8 mark delition
 		data.text = str;
@@ -254,7 +256,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "users.sql";
 		data.type = "table";
 		data.scheme = "public";
-		ifstream input("C://Users//Timur//Documents//Doors//public//tables//users.sql");
+		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/roles.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		str.erase(0, 3); //Utf8 mark delition
@@ -265,7 +267,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "placeholder.sql";
 		data.type = "table";
 		data.scheme = "public";
-		ifstream input("C://Users//Timur//Documents//Doors//public//tables//placeholder.sql");
+		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/placeholder.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
@@ -275,7 +277,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "user_full_info.sql";
 		data.type = "view";
 		data.scheme = "public";
-		ifstream input("C://Users//Timur//Documents//Doors//public//views//user_full_info.sql");
+		ifstream input("G:/Timur/ProjectFiles/Doors/public/views/user_full_info.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
@@ -285,17 +287,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.name = "init_test.sql";
 		data.type = "functions";
 		data.scheme = "common";
-		ifstream input("C://Users//Timur//Documents//Doors//common//functions//init_test.sql");
-		string str((std::istreambuf_iterator<char>(input)),
-			std::istreambuf_iterator<char>());
-		data.text = str;
-		scriptDataVector.push_back(data);
-	}
-	{
-		data.name = "test.sql";
-		data.type = "tables";
-		data.scheme = "test";
-		ifstream input("C://Users//Timur//Documents//Doors//test//tables//test.sql");
+		ifstream input("G:/Timur/ProjectFiles/Doors/common/functions/init_test.sql");
 		string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
