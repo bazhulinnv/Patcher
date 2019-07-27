@@ -209,7 +209,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 			ObjectData data;
 			input >> data.scheme;
 			// If this is script from outside - type field is empty
-			if (data.scheme == "scripts")
+			if (data.scheme == "script")
 			{
 				input >> data.name;
 				data.type = "";
@@ -220,7 +220,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 				input >> data.type;
 			}
 			// If type is "function" reading params of it
-			if (data.type == "functions")
+			if (data.type == "function")
 			{
 				string currentWord;
 				input >> currentWord;

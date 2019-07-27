@@ -32,7 +32,7 @@ vector<ObjectData> DBProvider::getObjects()
 		"SELECT /*tables */ "
 		"f.table_schema AS obj_schema,"
 		"f.table_name AS obj_name,"
-		"'tables' AS obj_type "
+		"'table' AS obj_type "
 		"FROM information_schema.tables f "
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";;
