@@ -3,40 +3,12 @@
 #include<iostream>
 #include "DBProvider/DBProvider.h"
 
-bool tableExists(DBProvider *dbProv)
-{
-	std::string q = "SELECT EXISTS (SELECT * FROM information_schema.tables WHERE table_schema = ?"
-					"AND table_name = ?)";
-	auto resOfQuery = dbProv->query(q);
-	return false;
-}
+bool tableExists(DBProvider* dbProv);
 
-bool sequenceExists(DBProvider* dbProv)
-{
-	std::string q = "SELECT EXISTS (SELECT * FROM information_schema.sequences WHERE sequence_schema = ?"
-					"AND sequence_name = ?)";
-	auto resOfQuery = dbProv->query(q);
-	return false;
-}
+bool sequenceExists(DBProvider* dbProv);
 
-bool functionExists(DBProvider* dbProv)
-{
-	return true;
-}
+bool functionExists(DBProvider* dbProv);
 
-bool viewExists(DBProvider* dbProv)
-{
-	std::string q = "SELECT EXISTS (SELECT * FROM information_schema.views WHERE table_schema = ?"
-					"AND table_name = ?)";
-	auto resOfQuery = dbProv->query(q);
-	return false;
-}
+bool viewExists(DBProvider* dbProv);
 
-bool triggerExists(DBProvider* dbProv)
-{
-
-	std::string q = "SELECT EXISTS (SELECT * FROM information_schema.triggers WHERE trigger_schema = ?"
-					"AND trigger_name = ?)";
-	auto resOfQuery = dbProv->query(q);
-	return false;
-}
+bool triggerExists(DBProvider* dbProv);
