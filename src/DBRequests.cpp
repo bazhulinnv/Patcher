@@ -1,4 +1,4 @@
-#include "..\include\DBProvider\DBRequests.h"
+#include "../include/DBProvider/DBRequests.h"
 
 bool tableExists(DBProvider* dbProv)
 {

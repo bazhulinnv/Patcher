@@ -1,216 +1,203 @@
 #include "DBProvider/DBProvider.h"
 #include "Shared/Logger.h"
+#include "Shared/TextTable.h"
 #include <iostream>
 #include <pqxx/pqxx>
+#include <functional>
 
-bool testPqxxConnectionMethod()
+using namespace std;
+
+bool testPqxxConnection()
 {
-	using namespace pqxx;
-
 	try
 	{
-		connection conn("dbname = Doors user = doo password = rc hostaddr = 127.0.0.1 port = 5432");
-
-		if (conn.is_open())
+		pqxx::connection conn("dbname = Doors user = doo password = rc hostaddr = 127.0.0.1 port = 5432");
+		if (!conn.is_open())
 		{
-			std::cout << "Opened database successfully: " << conn.dbname() << std::endl;
-			std::cout << "Disconnecting from: " << conn.dbname() << std::endl;
-			conn.disconnect();
-			return true;
+			cout << "Can't open database" << endl;
+			cout << "[No exception thrown]" << endl;
+			return false;
 		}
-		
-		std::cout << "Can't open database" << std::endl;
+
+		cout << "Opened database successfully: " << conn.dbname() << endl;
+		cout << "Disconnecting from: " << conn.dbname() << endl;
 		conn.disconnect();
-
-		return false;
 	}
-	catch (const std::exception& e)
+	catch (const exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		cerr << e.what() << endl;
 		return false;
 	}
 
+	return true;
 }
 
 bool testLogger()
 {
-	using namespace PatcherLogger;
 	try
 	{
+		using namespace PatcherLogger;
+
+		// create two different logs
 		auto *testLog = new Log();
+
+		// write some messages to both
 		testLog->setLogByPath("../build/DBProvider.dir/log_test.txt");
-		
 		testLog->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
 		testLog->addLog(DEBUG, "TEST - 01");
 
 		auto *logInStdDir = new Log();
-		logInStdDir->setLogByName("new_log.log");
 
+		logInStdDir->setLogByName("new_log.log");
 		logInStdDir->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
 		logInStdDir->addLog(DEBUG, "TEST - 02");
 
+		// init global log 
 		startGlobalLog("../build/DBProvider.dir/global_log.txt");
+		
+		// write some messages to global log
 		logDebug("Test GLOBAL LOG");
+
+		// delete logs (not files)
 		delete logInStdDir;
 		delete testLog;
+
 		stopGlobalLog();
 	}
-	catch (const std::exception& e)
+	catch (const exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		cerr << e.what() << endl;
 		return false;
 	}
 
 	return true;
 }
 
-bool testCustomConnectionMethod(std::string credentials)
+bool testCustomConnection()
 {
 	try
 	{
-		auto *customConn = new DBConnection(credentials);
-		customConn->setConnection();
+		auto *dbConn = new DBConnection("Doors:doo:rc:127.0.0.1:5432");
+		dbConn->setConnection();
 
-		std::cout << "dbname= " << customConn->info.databaseName << std::endl;
-		std::cout << "user= " << customConn->info.username << std::endl;
-		std::cout << "password= " << customConn->info.password << std::endl;
-		std::cout << "hostaddr= " << customConn->info.host << std::endl;
-		std::cout << "port= " << customConn->info.portNumber << std::endl;
+		cout << "dbname= " << dbConn->info.databaseName << endl;
+		cout << "user= " << dbConn->info.username << endl;
+		cout << "password= " << dbConn->info.password << endl;
+		cout << "hostaddr= " << dbConn->info.host << endl;
+		cout << "port= " << dbConn->info.portNumber << endl;
 
-		delete customConn;
+		delete dbConn;
 	}
-	catch (const std::exception& e)
+	catch (const exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		cerr << e.what() << endl;
 		return false;
 	}
 
 	return true;
 }
 
-bool testPrintObjectsData(std::string creds)
+bool testPrintObjectsData()
 {
-	auto *dbProvider = new DBProvider(creds);
-	std::string getObjects =
-		"SELECT /*sequences */\
-				f.sequence_schema AS obj_schema, f.sequence_name AS obj_name, 'sequence' AS obj_type\
-				from information_schema.sequences f\
-			UNION ALL\
-			SELECT /*tables */\
-				f.table_schema AS obj_schema, f.table_name AS obj_name, 'tables' AS obj_type\
-				from information_schema.tables f\
-			WHERE f.table_schema in('public', 'io', 'common', 'secure')";
+	auto *dbProvider = new DBProvider("Doors:doo:rc:127.0.0.1:5432");
+	string getObjects =
+		"SELECT /*sequences */"
+		"f.sequence_schema AS obj_schema,"
+		"f.sequence_name AS obj_name,"
+		"'sequence' AS obj_type "
+		"FROM information_schema.sequences f "
+		"UNION ALL "
+		"SELECT /*tables */ "
+		"f.table_schema AS obj_schema,"
+		"f.table_name AS obj_name,"
+		"'tables' AS obj_type "
+		"FROM information_schema.tables f "
+		"WHERE f.table_schema in"
+		"('public', 'io', 'common', 'secure');";
 	
-	auto resOfQuery = dbProvider->query(getObjects);
+	auto result = dbProvider->query(getObjects);
+	printObjectsData(result);
 
-	printObjectsData(resOfQuery);
 	delete dbProvider;
 	return true;
 }
 
+void runTestFunction(const string &testInfo, function<bool()> sut)
+{
+	cout << "\nRUNNING: " << testInfo << endl;
+	
+	if (!sut())
+	{
+		cout << "FAILED: " << testInfo << endl;
+		//throw exception("\nSome test(s) failed.\n");
+		return;
+	}
+	
+	cout << "SUCCEEDED: " << testInfo << endl;
+	cout << endl;
+};
+
+void runAllTests(vector<pair<const string, function<bool()>>> allTests)
+{
+	cout << "\t##########\t" << "TESTING STARTED" << "\t##########" << endl;
+	for (auto& test : allTests)
+	{
+		runTestFunction(test.first, test.second);
+	}
+	
+	cout << "\t##########\t" << "TESTING FINISHED." << "\t##########" << endl;
+};
+
 
 int main()
-{
-	std::string creds = "Doors:doo:rc:127.0.0.1:5432";
+{		
+	string sql_publicRoleAction =	"SELECT * FROM public.role_action";
+	string sql_listTables = "SELECT * FROM pg_catalog.pg_tables "
+							"WHERE schemaname != 'pg_catalog' "
+							"AND schemaname != 'information_schema'; ";
+	
+	string sql_getObjects =	"SELECT /*sequences */"
+								"f.sequence_schema AS obj_schema,"
+								"f.sequence_name AS obj_name,"
+								"'sequence' AS obj_type "
+							"FROM information_schema.sequences f "
+							"UNION ALL "
+							"SELECT /*tables */ "
+								"f.table_schema AS obj_schema,"
+								"f.table_name AS obj_name,"
+								"'tables' AS obj_type "
+							"FROM information_schema.tables f "
+							"WHERE f.table_schema in"
+								"('public', 'io', 'common', 'secure');";
+	
+	string loginData = "Doors:doo:rc:127.0.0.1:5432";
+	auto* dbProvider = new DBProvider(loginData);
 
-	std::cout << "\nRUNNING: Test Logger" << std::endl;
-	if (testLogger())
+	// Init vectors with < test_info, pointer_to_test_function >
+	vector<pair<const string, function<bool()>>> testList;
+	
+	testList.push_back(make_pair("Standart Test : make shure pqxx::connection works", testPqxxConnection));
+	testList.push_back(make_pair("Test PatchLogger::Log : write to different logs", testLogger));
+	testList.push_back(make_pair("Test DBConnection : connect to 'Doors'", testCustomConnection));
+	testList.push_back(make_pair("Test PrintObjectsData : printing all objects raw data", testPrintObjectsData));
+
+	// Run all test functions
+	runAllTests(testList);
+
+	// Print all tables in database
+	auto queryResult = dbProvider->query(sql_listTables);
+
+	cout << "\nList of all available tables:" << endl;
+	for (pqxx::result::const_iterator row = queryResult.begin();
+		row != queryResult.end(); ++row)
 	{
-		std::cout << "SUCCEEDED: Test Logger" << std::endl;
+		cout << row["tablename"].as<string>() << "\t" << endl;
 	}
-  
-	bool isStdConnectionWorks = testPqxxConnectionMethod();
-	// bool isLogWorks = testDBProviderLogger();
 
-	//std::cout << "\nRUNNING: Test custom connection method" << std::endl;
-	//
-	//if (testCustomConnectionMethod(creds))
-	//{
-	//	std::cout << "SUCCEEDED: Test custom connection method" << std::endl;
-	//}
-	//
-	//std::cout << "\nRUNNING: Test print objects data method" << std::endl;
-	//if (testPrintObjectsData(creds))
-	//{
-	//	std::cout << "SUCCEEDED: Test print objects data method" << std::endl;
-	//}
-	
-	//std::string getObjects =
-	//	"SELECT /*sequences */\
-	//			f.sequence_schema AS obj_schema, f.sequence_name AS obj_name, 'sequence' AS obj_type\
-	//			from information_schema.sequences f\
-	//		UNION ALL\
-	//		SELECT /*tables */\
-	//			f.table_schema AS obj_schema, f.table_name AS obj_name, 'tables' AS obj_type\
-	//			from information_schema.tables f\
-	//		WHERE f.table_schema in('public', 'io', 'common', 'secure')";
+	queryResult.clear();
 
-	//auto resOfQuery = dbProvider->query(getObjects);
-	//std::string q = "SELECT * FROM public.role_action";
-	//
-	//std::string createTable = "CREATE TABLE account("
-	//	"user_id serial PRIMARY KEY,"
-	//	"username VARCHAR(50) UNIQUE NOT NULL,"
-	//	"password VARCHAR(50) NOT NULL,"
-	//	"email VARCHAR(355) UNIQUE NOT NULL,"
-	//	"created_on TIMESTAMP NOT NULL,"
-	//	"last_login TIMESTAMP"
-	//	"); ";
-	//
-	//std::string k = "SELECT * FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'; ";
-	//
-	//resOfQuery = dbProvider->query(k);
-	//
-	//pqxx::result::const_iterator row;
-	//
-	//for (row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
-	//{
-	//	std::cout << row["tablename"].as<std::string>() << "\t" << std::endl;
-	//}
-
-
-	//for (	row = resOfQuery.begin();
-	//		row != resOfQuery.end();
-	//		++row)
-	//{
-	//	std::cout
-	//		<< row["obj_name"].as<std::string>() << "\t"
-	//		<< row["obj_type"].as<std::string>() << "\t"
-	//		<< row["obj_schema"].as<std::string>()
-	//		<< std::endl;
-	//}
-
-	//std::vector<ObjectData> objects;
-
-	//for (row = resOfQuery.begin();
-	//	row != resOfQuery.end();
-	//	++row)
-	//{
-	//	std::vector<std::string> parameters;
-	//	objects.push_back(ObjectData(row["obj_name"].as<std::string>(), row["obj_type"].as<std::string>(), row["obj_schema"].as<std::string>(), parameters));
-	//}
-	
-	auto *dbProvider = new DBProvider(creds);
-	vector<ObjectData> objs = dbProvider->getObjects();
-
-	std::cout << "|   NAME   " << "\t";
-	std::cout << "|   TYPE   " << "\t";
-	std::cout << "|  SCHEME  " << "\t";
-	std::cout << "|  PARAMS  |" << std::endl;
-	
-	for (auto i = 0; i < objs.size(); ++i)
-	{
-		std::cout << objs[i].name << "\t";
-		std::cout << objs[i].type << "\t";
-		std::cout << objs[i].scheme << "\t";
-
-		for (auto param : objs[i].paramsVector)
-		{
-			std::cout << param << "\t";
-		}
-
-		std::cout << std::endl;
-	}
+	// Print all objects to std::cout
+	dbProvider->printObjectsData();
 
 	delete dbProvider;
 	return 0;

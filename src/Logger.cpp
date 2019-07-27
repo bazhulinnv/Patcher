@@ -7,7 +7,7 @@
 
 namespace PatcherLogger
 {	
-	// Returns current date-time formatted like [YYYY-MM-DD][HH:mm:ss]
+	// Returns current date-time formatted like [YYYY-MM-DD] [HH:mm:ss]
 	inline const std::string GetCurrentDateTime()
 	{
 		time_t currentTime = time(0);
@@ -15,7 +15,7 @@ namespace PatcherLogger
 		char buf[80];
 
 		localtime_s(&localDateTime, &currentTime);
-		strftime(buf, sizeof(buf), "[%Y-%m-%d][%X]", &localDateTime);
+		strftime(buf, sizeof(buf), "[%Y-%m-%d] [%X]", &localDateTime);
 
 		return buf;
 	}
@@ -24,10 +24,10 @@ namespace PatcherLogger
 	{
 	}
 
-	Log::Log(const std::string &filePath) : currentLog{}
+	Log::Log(const std::string &filePath) : _currentLog{}
 	{
-		tryOpenLog(filePath);
-		logPath = filePath;
+		tryToOpenLog(filePath);
+		_logPath = filePath;
 	}
 
 	Log::~Log()
@@ -37,7 +37,7 @@ namespace PatcherLogger
 
 	void Log::addLog(Level s, const std::string &msg)
 	{
-		if (!currentLog.is_open())
+		if (!_currentLog.is_open())
 		{
 			std::cerr	<<	"\nFirst you need to set up custom log path\nExample:\n\t"
 							"auto customLog = new DBLog();\n\t"
@@ -46,58 +46,57 @@ namespace PatcherLogger
 			throw new std::exception("ERROR: Log file was not set or missing.\n");
 		}
 
-		currentLog << GetCurrentDateTime() << " ";
-		currentLog << levels[static_cast<int>(s)] << ": " << msg << std::endl;
-	}
-
-	// Closes current log
-
-	inline void Log::closeLog()
-	{
-		currentLog.close();
+		_currentLog << GetCurrentDateTime() << " ";
+		_currentLog << _levels[static_cast<int>(s)] << ": " << msg << std::endl;
 	}
 
 	void Log::setLogByPath(const std::string &filePath)
 	{
-		tryOpenLog(filePath);
-		logPath = filePath;
+		tryToOpenLog(filePath);
+		_logPath = filePath;
 	}
 
-	void Log::setLogByName(const std::string& logName)
+	void Log::setLogByName(const std::string &logName)
 	{
-		tryOpenLog(stdLoggingPath + logName);
-		logPath = stdLoggingPath + logName;
+		tryToOpenLog(_stdLoggingPath + logName);
+		_logPath = _stdLoggingPath + logName;
 	}
 
 	// Returns current log path
-	inline std::string Log::getCurrentLogPath()
+	std::string Log::getCurrentLogPath()
 	{
-		return logPath;
+		return _logPath;
 	}
 
 	// Returns standard logging directory
-	inline std::string Log::getStdLoggingPath()
+	std::string Log::getStdLoggingPath()
 	{
-		return stdLoggingPath;
+		return _stdLoggingPath;
 	}
 
 	// Resets standard logging directory
-	inline void Log::setStdLoggingPath(const std::string& path)
+	void Log::setStdLoggingPath(const std::string& path)
 	{
-		stdLoggingPath = path;
+		_stdLoggingPath = path;
 	}
 
-	inline void Log::tryOpenLog(const std::string& filePath)
+	void Log::tryToOpenLog(const std::string& filePath)
 	{
 		// handle ofstream properly
 		const char *filename = filePath.c_str();
-		currentLog.open(filename, std::ios::app);
+		_currentLog.open(filename, std::ios::app);
 
-		if (!currentLog.is_open())
+		if (!_currentLog.is_open())
 		{
 			std::cerr << "Logger: incorrect path to log." << std::endl;
 			throw new std::exception("ERROR: Failed opening log file.\n");
 		}
+	}
+
+	// Closes current log
+	inline void Log::closeLog()
+	{
+		_currentLog.close();
 	}
 
 	// Global Log Object.
