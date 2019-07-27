@@ -59,6 +59,7 @@ class DBProvider
 {
 public:
 	explicit DBProvider(std::string args);
+	
 	~DBProvider();
 	
 	// Returns all objects of database
@@ -95,18 +96,20 @@ public:
 	{
 	}
 
-	// Use specified view
+	// Uses specified view
 	vector<ObjectData> useViewToGetData(std::string nameOfView)
 	{
 	}
 
-	// Create new view
+	// Creates new view
 	vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
 	{
 	}
 
+	void printObjectsData();
+
 private:
-	DBConnection *conn = nullptr;
+	DBConnection *_connection = nullptr;
 };
 
 #endif
