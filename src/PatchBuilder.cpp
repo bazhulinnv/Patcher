@@ -9,9 +9,10 @@
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(const string pPatchListFullName, const DBProvider &provider, const string pTemplatesFullName)
+PatchBuilder::PatchBuilder(const string pPatchListFullName, DBProvider &pProvider, const string pTemplatesFullName)
 {
 	patchListFullName = pPatchListFullName;
+	provider = &pProvider;
 	// Check tamplate file
 	ifstream input;
 	input.open(pTemplatesFullName);
@@ -122,20 +123,8 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(objectDataVectorType obje
 objectDataVectorType PatchBuilder::getObjectDataVector() const
 {
 	// Getting all source database objects
-	// Not implementeds
-	objectDataVectorType objectVector;
-	ifstream input("C://Users//Timur//Documents//Temp//ObjectList.txt");
-	if (input.is_open())
-	{
-		while (!input.eof())
-		{
-			ObjectData data;
-			input >> data.scheme;
-			input >> data.name;
-			input >> data.type;
-			objectVector.push_back(data);
-		}
-	}
+	objectDataVectorType objectVector = provider->getObjects();
+
 	string message = "Object vector created\n";
 	cout << message;
 	addLog(message);
@@ -157,15 +146,19 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 		outputScript << data.text;
 
 		// Creating install command
-		string installStr = string("psql -U ") + "user" + " -d " + "database" + " -f " + data.scheme + "/";
+		string installBatStr = string("psql -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.scheme + "/";
+		string installShStr = string("psql -U ") + "$1" + " -d " + "$2" + " -h " + "$3" + " -p " + "$4" " -f " + data.scheme + "/";
 		if (data.type != "")
 		{
-			installStr += data.type + "/";
+			installBatStr += data.type + "/";
+			installShStr += data.type + "/";
 		}
-		installStr += data.name + "\n";
+		installBatStr += data.name + "\n";
+		installShStr += data.name + "\n";
 
-		outputInstallScriptBat << installStr; // Writing psql command in InstallScript with .bat format
-		outputInstallScriptSh << installStr; // Writing psql command in InstallScript with .sh format	
+
+		outputInstallScriptBat << installBatStr; // Writing psql command in InstallScript with .bat format
+		outputInstallScriptSh << installShStr; // Writing psql command in InstallScript with .sh format	
 	}
 	string message = "Install pocket created\n";
 	cout << message;

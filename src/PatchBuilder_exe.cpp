@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
-#include <PatchBuilder/PatchBuilder.h>
+#include <ctype.h>
+#include "PatchBuilder/PatchBuilder.h"
 #include "DBProvider/DBProvider.h"
 
 using namespace std;
@@ -30,6 +31,7 @@ struct ArgData // Structure for input arguments information
 
 ArgData *const getArgByFlag(vector<ArgData> &args, string flag) // Get argument from vector by flag
 {
+	transform(flag.begin(), flag.end(), flag.begin(), tolower);
 	for (ArgData &arg : args)
 	{
 		for (string &currentFlag : arg.flags)
