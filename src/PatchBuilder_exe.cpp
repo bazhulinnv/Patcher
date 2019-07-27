@@ -7,15 +7,16 @@
 using namespace std;
 
 // Key values for ArgData
-constexpr auto DIR_KEY = "d";
-constexpr auto CON_KEY = "c";
-constexpr auto PATCH_KEY = "p";
-constexpr auto TEMPLATE_KEY = "t";
+enum ArgKey
+{
+	DIR_KEY, CON_KEY, PATCH_KEY, TEMPLATE_KEY
+};
+
 
 struct ArgData // Structure for input arguments information
 {
 	ArgData() {}
-	ArgData(string pDesciprion, vector<string> pFlags, string pKey, bool pIsRequired = true) 
+	ArgData(string pDesciprion, vector<string> pFlags, ArgKey pKey, bool pIsRequired = true) 
 	{
 		description = pDesciprion;
 		flags = pFlags;
@@ -24,7 +25,7 @@ struct ArgData // Structure for input arguments information
 	}
 	string description; // description for help information
 	vector<string> flags; // all flags for argument
-	string key; // unic key
+	ArgKey key; // unic key
 	string value; // value of argument
 	bool isRequired; // is required to build patch
 };
@@ -45,7 +46,7 @@ ArgData *const getArgByFlag(vector<ArgData> &args, string flag) // Get argument 
 	return nullptr;
 }
 
-ArgData *const getArgByKey(vector<ArgData> &args, string key) // Get argument from vector by key
+ArgData *const getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument from vector by key
 {
 	for (ArgData &arg : args)
 	{
