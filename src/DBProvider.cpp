@@ -1,4 +1,5 @@
 #include "DBProvider/DBProvider.h"
+#include "Shared/TextTable.h"
 
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
@@ -8,13 +9,13 @@ using namespace std;
 
 DBProvider::DBProvider(std::string args)
 {
-	conn = new DBConnection(args);
-	conn->setConnection();
+	_connection = new DBConnection(args);
+	_connection->setConnection();
 }
 
 DBProvider::~DBProvider()
 {
-	delete conn;
+	delete _connection;
 }
 
 vector<ObjectData> DBProvider::getObjects()
@@ -22,7 +23,33 @@ vector<ObjectData> DBProvider::getObjects()
 	// example:
 	// output - public, myFunction, function, <param1, param2, param3>
 	//          common, myTable,    table,    <>
-	return vector<ObjectData>();
+	std::string sql_getObjects = "SELECT /*sequences */"
+		"f.sequence_schema AS obj_schema,"
+		"f.sequence_name AS obj_name,"
+		"'sequence' AS obj_type "
+		"FROM information_schema.sequences f "
+		"UNION ALL "
+		"SELECT /*tables */ "
+		"f.table_schema AS obj_schema,"
+		"f.table_name AS obj_name,"
+		"'tables' AS obj_type "
+		"FROM information_schema.tables f "
+		"WHERE f.table_schema in"
+		"('public', 'io', 'common', 'secure');";;
+
+	auto resOfQuery = query(sql_getObjects);
+	pqxx::result::const_iterator row;
+	std::vector<ObjectData> objects;
+
+	for (row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
+	{
+		std::vector<std::string> parameters;
+		objects.push_back(ObjectData(	row["obj_name"].as<std::string>(),
+										row["obj_type"].as<std::string>(),
+										row["obj_schema"].as<std::string>(), parameters));
+	}
+
+	return objects;
 }
 
 ScriptData DBProvider::getScriptData(ObjectData)
@@ -36,12 +63,12 @@ ScriptData DBProvider::getScriptData(ObjectData)
 pqxx::result DBProvider::query(std::string stringSQL)
 {	
 	// Connection must be already set
-	if (!conn->getConnection())
+	if (!_connection->getConnection())
 	{
 		throw new std::exception("ERROR: Connection was not set.\n");
 	}
 
-	pqxx::work trans(*conn->getConnection(), "trans");
+	pqxx::work trans(*_connection->getConnection(), "trans");
 
 	// Get result from database
 	pqxx::result res = trans.exec(stringSQL);
@@ -52,7 +79,7 @@ pqxx::result DBProvider::query(std::string stringSQL)
 void printObjectsData(pqxx::result queryResult)
 {
 	// Iterate over the rows in our result set.
-	// Results objects are containers similar to std::vector and such.
+	// Result objects are containers similar to std::vector and such.
 	for (	pqxx::result::const_iterator row = queryResult.begin();
 			row != queryResult.end();
 			++row )

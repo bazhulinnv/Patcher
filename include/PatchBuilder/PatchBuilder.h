@@ -31,16 +31,15 @@ using namespace std;
 class PatchBuilder 
 {
 public:
-  PatchBuilder(const string pPatchListFullName, const string userName, const string databaseName, const string pTemplatesFullName = ""); // Constructor
+  PatchBuilder(const string pPatchListFullName, DBProvider &pProvider, const string pTemplatesFullName = ""); // Constructor
   ~PatchBuilder(); // Distructor
   void buildPatch(const string directory); // Build patch in choosen directory
 
 private:
 	string patchListFullName; // Directory and name of PatchList
 	string templateString = ""; // Teplate text
-	string userName; // Name of user, who want to build patch
-	string databaseName; // Name ob database
 	string logFileFullName; // Directory and name of file for logs
+	DBProvider *provider; // Ptr to provider class
 	bool isWithErrors = false; // Become true after some error
 	bool isWithWarnings = false; // Become true after some warning
 	scriptDataVectorType getScriptDataVector(objectDataVectorType objectDataVector) /*const*/; // Getting vector of scripts, created by DBProvider
