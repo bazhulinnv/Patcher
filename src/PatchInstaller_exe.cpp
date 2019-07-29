@@ -27,8 +27,7 @@ int main(int argc, char* argv[]) {
 	else {
 		std::string parameters(argv[1]);
 		try {
-			DBProvider *dbProvider = new DBProvider(parameters);
-			//DBProvider dbProvider(parameters);
+			auto *dbProvider = new DBProvider(parameters);
 			if (argv[2] == nullptr || !(strcmp(argv[2], "check") == 0 || strcmp(argv[2], "install") == 0)) {
 				std::cerr << "Wrong command of installer. Choose install/check. \n";
 				//return -1;
@@ -47,7 +46,7 @@ int main(int argc, char* argv[]) {
 					if (fileExists(argv[3])) {
 						mkdir("Temp");
 						if (strcmp(argv[2], "check") == 0) {
-							patchInstaller.checkObjectsForExistenceFromFile("DependencyList.dpn", *dbProvider);
+							patchInstaller.checkObjectsForExistenceFromFile("DependencyList.dpn", dbProvider);
 							std::cout << "check completed.\n";
 						}
 						if (strcmp(argv[2], "install") == 0) {
@@ -60,12 +59,15 @@ int main(int argc, char* argv[]) {
 					}
 				}
 			}
+
+			std::cout << "Deleting DBProvider\n";
 			delete dbProvider;
 		}
 		catch (...) {
 			std::cerr << "Please, enter right database connection parameters. \n";
 			returnCode = true;
 		}
+
 	}
 	if (returnCode) {
 		return -1;

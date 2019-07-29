@@ -17,7 +17,7 @@ PatchInstaller::~PatchInstaller() {}
 
 
 /** The function checks the presence of objects in the database according to the list of objects specified in the file. */
-bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider dbProvider) {
+bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider *dbProvider) {
 	DBProviderListParameters objectsNameAndType = FileParser::getResultOfParsing(nameOfFile);
 	DependenciesChecker checker;
 	bool result = checker.getCheck(objectsNameAndType, dbProvider);

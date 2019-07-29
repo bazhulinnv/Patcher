@@ -23,7 +23,8 @@ DBConnection::DBConnection(std::string loginCredentials)
 
 DBConnection::~DBConnection()
 {
-	disconnect();
+	current->disconnect();
+	delete current;
 }
 
 void DBConnection::setConnection()

@@ -11,7 +11,7 @@ class PatchInstaller {
 public:
   PatchInstaller();
   ~PatchInstaller();
-  bool checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider dbProvider);
+  bool checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider *dbProvider);
   bool startInstallation();
 };
 
