@@ -34,7 +34,7 @@ DBProviderListParameters FileParser::parse(std::string nameOfFile)
 			dependencies >> scheme >> objectName >> objectType;
 		}
 	}
-
+	objectParametersFromFile.emplace_back(scheme, objectName, objectType);
 	dependencies.close();
 	return objectParametersFromFile;
 }

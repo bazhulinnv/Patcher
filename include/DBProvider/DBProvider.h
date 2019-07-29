@@ -57,7 +57,8 @@ class DBProvider
 public:
 	explicit DBProvider(std::string args);
 	
-	~DBProvider();	
+	~DBProvider();
+
 	// Returns all objects of database
 	std::vector<ObjectData> getObjects();
 	
@@ -65,41 +66,7 @@ public:
 	ScriptData getScriptData(ObjectData);
 	
 	// Checks if specified object exists in database
-	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type)
-	{
-		bool res = false;
-		if (type == "table")
-		{
-			res = tableExists(scheme, name);
-		}
-
-		if (type == "sequence")
-		{
-			res = sequenceExists(scheme, name);
-		}
-
-		if (type == "view")
-		{
-			res = viewExists(scheme, name);
-		}
-
-		if (type == "trigger")
-		{
-			res = triggerExists(scheme, name);
-		}
-
-		if (type == "function")
-		{
-			res = functionExists(name);
-		}
-
-		if (type == "index")
-		{
-			res = indexExists(name);
-		}
-
-		return res;
-	}
+	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type);
 
 	pqxx::result query(std::string strSQL);
 

@@ -43,8 +43,8 @@ bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DB
 /** When the method starts, the dependency check is considered successful. */
 bool PatchInstaller::startInstallation() {
 	system("Install.bat");
-	std::ifstream errors("tempError.txt", ios::in);
-	std::ifstream info("tempInfo.txt", ios::in);
+	std::ifstream errors("tempError.txt", std::ios::in);
+	std::ifstream info("tempInfo.txt", std::ios::in);
 	bool resultOfInstall = false;
 
 	std::string dataForErrorLog;

@@ -321,7 +321,7 @@ int main()
 {
 	string sql_publicRoleAction =	"SELECT * FROM public.role_action";
 
-	string loginData = "Doors:doo:rc:127.0.0.1:5432";
+	string loginData = "Doors:doo:rs:127.0.0.1:5432";
 	DBProvider *dbProvider = new DBProvider(loginData);
 	
 	// < test_info, pointer_to_test_function >

@@ -19,49 +19,56 @@ inline bool fileExists(char* directory) {
 
 int main(int argc, char* argv[]) { 
 	PatchInstaller patchInstaller;
+	bool returnCode = false;
 	if (argv[1] == nullptr) {
 		std::cerr << "Please, enter database connection parameters. \n";
-		return -1;
+		returnCode = true;
 	}
 	else {
 		std::string parameters(argv[1]);
 		try {
 			DBProvider *dbProvider = new DBProvider(parameters);
+			//DBProvider dbProvider(parameters);
 			if (argv[2] == nullptr || !(strcmp(argv[2], "check") == 0 || strcmp(argv[2], "install") == 0)) {
 				std::cerr << "Wrong command of installer. Choose install/check. \n";
-				return -1;
+				//return -1;
+				returnCode = true;
 			}
 			else {
 				if (argv[3] == nullptr) {
 					std::cerr << "Please, enter the directory of installation script.\n";
-					return -1;
+					returnCode = true;
 				}
 				if (!directoryExists(argv[3])) {
 					std::cerr << "Directory does not exists or wrong.\n";
-					return -1;
+					returnCode = true;
 				}
 				else {
 					if (fileExists(argv[3])) {
 						mkdir("Temp");
 						if (strcmp(argv[2], "check") == 0) {
 							patchInstaller.checkObjectsForExistenceFromFile("DependencyList.dpn", *dbProvider);
-							return 0;
+							std::cout << "check completed.\n";
 						}
 						if (strcmp(argv[2], "install") == 0) {
 							patchInstaller.startInstallation();
-							return 0;
 						}
 					}
 					else {
 						std::cerr << "Directory does not exists or wrong.\n";
-						return -1;
+						returnCode = true;
 					}
 				}
 			}
+			delete dbProvider;
 		}
 		catch (...) {
 			std::cerr << "Please, enter right database connection parameters. \n";
-			return -1;
+			returnCode = true;
 		}
 	}
+	if (returnCode) {
+		return -1;
+	}
+	return 0;
 }
