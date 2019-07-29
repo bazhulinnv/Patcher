@@ -7,17 +7,15 @@
 #include <tuple>
 #include <string>
 
-using namespace std;
-
 struct ObjectData // Sctruct for containing objet data
 {
-	string name; // Name of object
-	string type; // Type of object
-	string scheme; // Scheme of object
-	vector<string> paramsVector; // Params of object
+	std::string name; // Name of object
+	std::string type; // Type of object
+	std::string scheme; // Scheme of object
+	std::vector<std::string> paramsVector; // Params of object
 
 	ObjectData() {}
-	ObjectData(string pName, string pType, string pScheme, vector<string> pParamsVector)
+	ObjectData(std::string pName, std::string pType, std::string pScheme, std::vector<std::string> pParamsVector)
 	{
 		name = pName;
 		type = pType;
@@ -33,27 +31,25 @@ struct ObjectData // Sctruct for containing objet data
 
 struct ScriptData : ObjectData // Sctruct for containing script data
 {
-	string text; // Script text
+	std::string text; // Script text
 
 	ScriptData()
 	{
 	}
 	
-	ScriptData(string pName, string pType, string pScheme, vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
+	ScriptData(std::string pName, std::string pType, std::string pScheme, std::vector<std::string> pParamsVector, std::string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
 	{
 		text = pText;
 	}
 	
-	ScriptData(ObjectData objectData, string pText = "") : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+	ScriptData(ObjectData objectData, std::string pText = "") : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
 };
 
 // Vector for containing object data
-typedef vector<ObjectData> objectDataVectorType;
+typedef std::vector<ObjectData> objectDataVectorType;
 
 // Vector for containing script data
-typedef vector<ScriptData> scriptDataVectorType;
-
-void printObjectsData(pqxx::result res);
+typedef std::vector<ScriptData> scriptDataVectorType;
 
 class DBProvider
 {
@@ -63,7 +59,7 @@ public:
 	~DBProvider();
 	
 	// Returns all objects of database
-	vector<ObjectData> getObjects();
+	std::vector<ObjectData> getObjects();
 	
 	// Returns script data by object data
 	ScriptData getScriptData(ObjectData);
@@ -97,19 +93,19 @@ public:
 	}
 
 	// Uses specified view
-	vector<ObjectData> useViewToGetData(std::string nameOfView)
+	std::vector<ObjectData> useViewToGetData(std::string nameOfView)
 	{
 	}
 
 	// Creates new view
-	vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
+	std::vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
 	{
 	}
-
-	void printObjectsData();
 
 private:
 	DBConnection *_connection = nullptr;
 };
+
+void printObjectsData(pqxx::result res);
 
 #endif

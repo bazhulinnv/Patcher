@@ -23,7 +23,7 @@ vector<ObjectData> DBProvider::getObjects()
 	// example:
 	// output - public, myFunction, function, <param1, param2, param3>
 	//          common, myTable,    table,    <>
-	std::string getObjects = "SELECT /*sequences */"
+	std::string sql_getObjects = "SELECT /*sequences */"
 		"f.sequence_schema AS obj_schema,"
 		"f.sequence_name AS obj_name,"
 		"'sequence' AS obj_type "
@@ -37,7 +37,7 @@ vector<ObjectData> DBProvider::getObjects()
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";;
 
-	auto resOfQuery = query(getObjects);
+	auto resOfQuery = query(sql_getObjects);
 	pqxx::result::const_iterator row;
 	std::vector<ObjectData> objects;
 
@@ -74,42 +74,6 @@ pqxx::result DBProvider::query(std::string stringSQL)
 	pqxx::result res = trans.exec(stringSQL);
 	trans.commit();
 	return res;
-}
-
-void DBProvider::printObjectsData()
-{
-	// Get all objects from database
-	vector<ObjectData> objs = getObjects();
-
-	// Print objs using TextTable
-	TextTable resultOutput('-', '|', '+');
-	resultOutput.add("NAME");
-	resultOutput.add("TYPE");
-	resultOutput.add("SCHEME");
-	resultOutput.add("PARAMS");
-	resultOutput.endOfRow();
-
-	for (auto i = 0; i < objs.size(); ++i)
-	{
-		resultOutput.add(objs[i].name);
-		resultOutput.add(objs[i].type);
-		resultOutput.add(objs[i].scheme);
-
-		std::string acc = "";
-		if (!objs[i].paramsVector.empty())
-		{
-			for (const auto& param : objs[i].paramsVector)
-			{
-				acc += param + " ";
-			}
-		}
-
-		resultOutput.add(acc);
-		resultOutput.endOfRow();
-	}
-
-	resultOutput.setAlignment(2, TextTable::Alignment::RIGHT);
-	std::cout << resultOutput;
 }
 
 void printObjectsData(pqxx::result queryResult)

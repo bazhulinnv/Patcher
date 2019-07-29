@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
 		//std::string installerDirectory(argv[3]);
 		patchInstaller.startInstallation(argv[3]);
 	}
+
 	//delete dbProvider;
 	return 0;
 }

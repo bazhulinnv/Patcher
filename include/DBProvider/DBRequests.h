@@ -1,14 +1,15 @@
-#include<pqxx/pqxx>
-#include<string>
-#include<iostream>
 #include "DBProvider/DBProvider.h"
 
-bool tableExists(DBProvider* dbProv);
+#include<string>
 
-bool sequenceExists(DBProvider* dbProv);
+bool tableExists(DBProvider* dbProv, const std::string& tableSchema, const std::string& tableName);
 
-bool functionExists(DBProvider* dbProv);
+bool sequenceExists(DBProvider* dbProv, const std::string& sequenceSchema, const std::string& sequenceName);
 
-bool viewExists(DBProvider* dbProv);
+bool functionExists(DBProvider* dbProv, const std::string& name);
 
-bool triggerExists(DBProvider* dbProv);
+bool indexExists(DBProvider* dbProv, const std::string& name);
+
+bool viewExists(DBProvider* dbProv, const std::string& tableSchema, const std::string& tableName);
+
+bool triggerExists(DBProvider* dbProv, const std::string& triggerSchema, const std::string& triggerName);
