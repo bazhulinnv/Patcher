@@ -5,11 +5,11 @@
 
 namespace ParsingTools
 {	
-	std::string interpolate(std::string original, const std::string& replacement, const std::string& toBeReplaced = "${}");
+	std::string interpolate(std::string original, const std::string& replacement, const std::string toBeReplaced = "${}");
 
-	std::string interpolateAll(const std::string& str, std::queue<std::string> replacements, const std::string& toBeReplaced = "${}");
+	std::string interpolateAll(const std::string& str, std::queue<std::string> replacements, const std::string toBeReplaced = "${}");
 
-	std::string interpolateAll(const std::string& str, std::vector<std::string> replacements, const std::string& toBeReplaced = "${}");
+	std::string interpolateAll(const std::string& str, std::vector<std::string> replacements, const std::string toBeReplaced = "${}");
 
 	// std::string string("hello $name");
 	// replace(string, "$name", "Somename");

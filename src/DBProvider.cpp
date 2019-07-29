@@ -3,6 +3,7 @@
 
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
+#include <string>
 #include <iostream>
 
 using namespace std;
@@ -75,6 +76,74 @@ pqxx::result DBProvider::query(std::string stringSQL)
 	trans.commit();
 	return res;
 }
+
+bool DBProvider::tableExists(const std::string& tableSchema, const std::string& tableName)
+{
+	// Define SQL request
+	string q =
+		ParsingTools::interpolateAll(
+			"SELECT EXISTS (SELECT * "
+			"FROM information_schema.tables "
+			"WHERE table_schema = '${}' "
+			"AND table_name = '${}');",
+			vector<string> { tableSchema, tableName });
+
+	auto queryResult = query(q);
+	return queryResult.begin()["exists"].as<bool>();
+}
+
+bool DBProvider::sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName)
+{
+	string q =
+		ParsingTools::interpolateAll(
+			"SELECT EXISTS (SELECT * "
+			"FROM information_schema.sequences "
+			"WHERE sequence_schema = '${}' "
+			"AND sequence_name = '${}');",
+			vector<string> { sequenceSchema, sequenceName });
+
+	auto queryResult = query(q);
+	return queryResult.begin()["exists"].as<bool>();
+}
+
+bool DBProvider::functionExists(const std::string& name)
+{
+	return true;
+}
+
+bool DBProvider::indexExists(const std::string& name)
+{
+	return true;
+}
+
+bool DBProvider::viewExists(const std::string& tableSchema, const std::string& tableName)
+{
+	string q =
+		ParsingTools::interpolateAll(
+			"SELECT EXISTS (SELECT * "
+			"FROM information_schema.views "
+			"WHERE table_schema = '${}' "
+			"AND table_name = '${}');",
+			vector<string> { tableSchema, tableName });
+
+	auto queryResult = query(q);
+	return queryResult.begin()["exists"].as<bool>();
+}
+
+bool DBProvider::triggerExists(const std::string& triggerSchema, const std::string& triggerName)
+{
+	string q =
+		ParsingTools::interpolateAll(
+			"SELECT EXISTS (SELECT * "
+			"FROM information_schema.triggers "
+			"WHERE trigger_schema = '${}' "
+			"AND trigger_name = '${}');",
+			vector<string> { triggerSchema, triggerName });
+
+	auto resOfQuery = query(q);
+	return false;
+}
+
 
 void printObjectsData(pqxx::result queryResult)
 {

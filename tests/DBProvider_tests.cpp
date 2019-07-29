@@ -1,8 +1,6 @@
 #include "DBProvider/DBProvider.h"
-#include "DBProvider/DBRequests.h"
 #include "Shared/Logger.h"
 #include "Shared/TextTable.h"
-#include "Shared/ParsingTools.h"
 
 #include <pqxx/pqxx>
 #include <iostream>
@@ -12,17 +10,12 @@ using namespace std;
 
 bool test_sequenceExists(DBProvider* dbProv)
 {
-	return sequenceExists(dbProv, "public", "math_blob_id_seq");
-}
-
-bool test_sequenceExists(DBProvider *dbProv)
-{
-	return sequenceExists(dbProv, "public", "math_blob_id_seq");
+	return dbProv->sequenceExists("public", "math_blob_id_seq");
 }
 
 bool test_tableExists(DBProvider* dbProv)
 {
-	return tableExists(dbProv, "public", "errors");
+	return dbProv->tableExists("public", "errors");
 }
 
 bool test_PrintTableList(DBProvider* dbProv)
@@ -285,7 +278,7 @@ void runTestFunction(const string& testInfo, function<bool(DBProvider*)> sut, DB
 void runAllTests(vector<pair<const string, function<bool(DBProvider *)>>> providerTests, DBProvider * dbProv)
 {
 	cout << yellow;
-	cout << "\t##########\t" << "TESTING STARTED\t\t" << "\t##########" << reset << endl;
+	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
 
 	for (auto& test : providerTests)
 	{
@@ -293,7 +286,7 @@ void runAllTests(vector<pair<const string, function<bool(DBProvider *)>>> provid
 	}
 	
 	cout << yellow;
-	cout << "\t##########\t" << "TESTING FINISHED.\t\t" << "\t##########" << reset << endl;
+	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
 };
 
 void runAllSimpleTests(vector<pair<const string, function<bool()>>> simpleTests)

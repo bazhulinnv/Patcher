@@ -58,7 +58,7 @@ ArgData *const getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument fr
 	return nullptr;
 }
 
-inline vector<ArgData> getArgsList() // Init all args data and return list of their
+vector<ArgData> getArgsList() // Init all args data and return list of their
 {
 	vector<ArgData> args;
 	args.push_back(ArgData("PatchList full path", { "-p", "-patch" }, PATCH_KEY));
@@ -68,7 +68,7 @@ inline vector<ArgData> getArgsList() // Init all args data and return list of th
 	return args;
 }
 
-inline void printHelp(const vector<ArgData> &params) // Print help information
+void printHelp(const vector<ArgData> &params) // Print help information
 {
 	cout << "PatchBuilder - program for patch building by list of objects\n" << endl;
 	cout << "To run the program with the necessary parameters, use the following flags:\n\n";
