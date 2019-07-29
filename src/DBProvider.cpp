@@ -61,6 +61,44 @@ ScriptData DBProvider::getScriptData(ObjectData)
 	return ScriptData();
 }
 
+
+// Checks if specified object exists in database
+ bool DBProvider::doesCurrentObjectExists(std::string scheme, std::string name, std::string type)
+{
+	bool res = false;
+	if (type == "table")
+	{
+		res = tableExists(scheme, name);
+	}
+
+	if (type == "sequence")
+	{
+		res = sequenceExists(scheme, name);
+	}
+
+	if (type == "view")
+	{
+		res = viewExists(scheme, name);
+	}
+
+	if (type == "trigger")
+	{
+		res = triggerExists(scheme, name);
+	}
+
+	if (type == "function")
+	{
+		res = functionExists(name);
+	}
+
+	if (type == "index")
+	{
+		res = indexExists(name);
+	}
+
+	return res;
+}
+
 pqxx::result DBProvider::query(std::string stringSQL)
 {	
 	// Connection must be already set
