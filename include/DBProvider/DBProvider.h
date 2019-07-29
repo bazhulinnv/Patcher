@@ -2,6 +2,7 @@
 #define DBPROVIDER_H
 
 #include "DBProvider/DBConnection.h"
+#include "Shared/ParsingTools.h"
 
 #include <pqxx/pqxx>
 #include <tuple>
@@ -66,9 +67,40 @@ public:
 	// Checks if specified object exists in database
 	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type)
 	{
-		return true;
+		bool res = false;
+		if (type == "table")
+		{
+			res = tableExists(scheme, name);
+		}
+
+		if (type == "sequence")
+		{
+			res = sequenceExists(scheme, name);
+		}
+
+		if (type == "view")
+		{
+			res = viewExists(scheme, name);
+		}
+
+		if (type == "trigger")
+		{
+			res = triggerExists(scheme, name);
+		}
+
+		if (type == "function")
+		{
+			res = functionExists(name);
+		}
+
+		if (type == "index")
+		{
+			res = indexExists(name);
+		}
+
+		return res;
 	}
-	
+
 	pqxx::result query(std::string strSQL);
 
 	// Inserts a new record into the content provider
@@ -101,8 +133,21 @@ public:
 	{
 	}
 
+	bool tableExists(const std::string& tableSchema, const std::string& tableName);
+
+	bool sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName);
+
+	bool functionExists(const std::string& name);
+
+	bool indexExists(const std::string& name);
+
+	bool viewExists(const std::string& tableSchema, const std::string& tableName);
+
+	bool triggerExists(const std::string& triggerSchema, const std::string& triggerName);
+
 private:
 	DBConnection *_connection = nullptr;
+
 };
 
 void printObjectsData(pqxx::result res);

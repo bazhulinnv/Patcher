@@ -5,13 +5,13 @@
 
 using namespace std;
 
-string ParsingTools::interpolate(string original, const string& replacement, const string& toBeReplaced)
+std::string ParsingTools::interpolate(std::string original, const std::string& replacement, const std::string toBeReplaced)
 {
 	string newString = original.replace(original.find(toBeReplaced), toBeReplaced.length(), replacement);
 	return newString;
 }
 
-string ParsingTools::interpolateAll(const string& str, queue<string> replacements, const string& toBeReplaced)
+std::string ParsingTools::interpolateAll(const std::string& str, std::queue<std::string> replacements, const std::string toBeReplaced)
 {
 	if (str.empty())
 	{
@@ -31,7 +31,7 @@ string ParsingTools::interpolateAll(const string& str, queue<string> replacement
 	return res;
 }
 
-string ParsingTools::interpolateAll(const string& str, vector<string> replacements, const string& toBeReplaced)
+std::string ParsingTools::interpolateAll(const std::string& str, std::vector<std::string> replacements, const std::string toBeReplaced)
 {
 	if (toBeReplaced.empty() || str.empty())
 	{
@@ -130,7 +130,7 @@ pair<vector<string>, string> ParsingTools::parseCredentials(string& input)
 
 	for (int i = 0; i < params.size(); ++i)
 	{
-		items.push_back(interpolate(params[i], values[i], "${}"));
+		items.push_back(interpolate(params[i], values[i]));
 	}
 
 	const char* delim = " ";
