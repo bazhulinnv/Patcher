@@ -52,16 +52,18 @@ vector<ObjectData> DBProvider::getObjects() const
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData &data) const
+ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary only for tables
 {
-	stringstream scriptStream;
-	
-	ObectInfo info;
+	// Getting information from database
 
-	stringstream queryStream;
-	queryStream << "select * from information_schema.columns c where c.table_schema = '" << data.scheme << "' and c.table_name = '" << data.name <<"'";
-	pqxx::result result = query(queryStream.str());
-	
+	ObjectInformation info; // Here will be all information about databse object
+
+	string queryString = string("select * from information_schema.columns c where c.table_schema = '") // SQL query;
+	+ data.scheme + "' and c.table_name = '" + data.name +"'";
+
+	pqxx::result result = query(queryString); // SQL query result, contains information in table format
+
+	// Getting columns information 
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
 		Column column;
@@ -73,22 +75,37 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const
 
 		info.columns.push_back(column);
 	}
-		
-	scriptStream << "CREATE TABLE " << data.scheme << "." << data.name << " (" << endl;
 
-	for (Column column : info.columns)
+	// Script text creating.
+	// Collect the text from parts of ObjectInformation
+
+	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
+
+	for (const Column &column : info.columns)
 	{
-		scriptStream << column.name << " " << column.type;
-		//if (!column.defaultValue.is)
+		scriptString += "\n" + column.name + " " + column.type;
+		if (column.maxLength != 0)
+		{
+			scriptString += "(" + to_string(column.maxLength) + ")";
+		}
+		if (!column.defaultValue.empty())
+		{
+			scriptString += " DEFAULT " + column.defaultValue;
+		}
 		if (!column.isNullable())
 		{
-			scriptStream << " NOT NULL";
+			scriptString += " NOT NULL";
 		}
+		scriptString += ",";
+	}
+	if (!info.columns.empty())
+	{
+		scriptString.pop_back(); // Removing an extra comma at the end
 	}
 
-	scriptStream << endl << ")";
+	scriptString += "\n);";
 
-	return ScriptData(data, scriptStream.str());
+	return ScriptData(data, scriptString);
 }
 
 // Checks if specified object exists in database

@@ -6,20 +6,20 @@
 
 using namespace std;
 
-// Key values for ArgData
-enum ArgKey
+// Key values for ArgumentData
+enum ArgumentKeys
 {
-	DIR_KEY, CON_KEY, PATCH_KEY, TEMPLATE_KEY
+	KEY_DIRECTORY, KEY_CONNECTION, KEY_PATH, KEY_TEMPLATE
 };
 
 
-struct ArgData // Structure for input arguments information
+struct ArgumentData // Structure for input arguments information
 {
-	ArgData(): key(), isRequired(false)
+	ArgumentData(): key(), isRequired(false)
 	{
 	}
 
-	ArgData(const string pDesciprion, const vector<string> pFlags, const ArgKey pKey, const bool pIsRequired = true) 
+	ArgumentData(const string pDesciprion, const vector<string> pFlags, const ArgumentKeys pKey, const bool pIsRequired = true) 
 	{
 		description = pDesciprion;
 		flags = pFlags;
@@ -28,16 +28,16 @@ struct ArgData // Structure for input arguments information
 	}
 	string description; // description for help information
 	vector<string> flags; // all flags for argument
-	ArgKey key; // unic key
+	ArgumentKeys key; // unic key
 	string value; // value of argument
 	bool isRequired; // is required to build patch
 };
 
-ArgData * getArgByFlag(vector<ArgData> &args, string flag) // Get argument from vector by flag
+ArgumentData * getArgByFlag(vector<ArgumentData> &args, string flag) // Get argument from vector by flag
 {
 	transform(flag.begin(), flag.end(), flag.begin(), tolower); // Transform to lower register
 	// Looking for a match with the flag
-	for (ArgData &arg : args)
+	for (ArgumentData &arg : args)
 	{
 		for (string &currentFlag : arg.flags)
 		{
@@ -50,10 +50,10 @@ ArgData * getArgByFlag(vector<ArgData> &args, string flag) // Get argument from 
 	return nullptr;
 }
 
-ArgData * getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument from vector by key
+ArgumentData * getArgumentByKey(vector<ArgumentData> &args, ArgumentKeys key) // Get argument from vector by key
 {
 	// Looking for a match with the лун
-	for (ArgData &arg : args)
+	for (ArgumentData &arg : args)
 	{
 		if (arg.key == key)
 		{
@@ -63,21 +63,21 @@ ArgData * getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument from ve
 	return nullptr;
 }
 
-vector<ArgData> getArgsList() // Init all args data and return list of their
+vector<ArgumentData> getArguments() // Init all args data and return list of their
 {
-	vector<ArgData> args;
-	args.push_back(ArgData("PatchList full path", { "-p", "-patch" }, PATCH_KEY));
-	args.push_back(ArgData("Patch building directory", { "-d", "-directory" }, DIR_KEY));
-	args.push_back(ArgData("Connection arguments", { "-c", "-connection"}, CON_KEY));
-	args.push_back(ArgData("Templates file full path", { "-t", "-template" }, TEMPLATE_KEY, false));
+	vector<ArgumentData> args;
+	args.push_back(ArgumentData("PatchList full path", { "-p", "-patch" }, KEY_PATH));
+	args.push_back(ArgumentData("Patch building directory", { "-d", "-directory" }, KEY_DIRECTORY));
+	args.push_back(ArgumentData("Connection arguments", { "-c", "-connection"}, KEY_CONNECTION));
+	args.push_back(ArgumentData("Templates file full path", { "-t", "-template" }, KEY_TEMPLATE, false));
 	return args;
 }
 
-void printHelp(const vector<ArgData> &params) // Print help information
+void printHelp(const vector<ArgumentData> &params) // Print help information
 {
 	cout << "PatchBuilder - program for patch building by list of objects\n" << endl;
 	cout << "To run the program with the necessary parameters, use the following flags:\n\n";
-	for (ArgData paramData : params) // Print help information
+	for (ArgumentData paramData : params) // Print help information
 	{
 		cout << paramData.description << endl << "flags: ";
 		for (const string flag : paramData.flags)
@@ -90,7 +90,7 @@ void printHelp(const vector<ArgData> &params) // Print help information
 
 int main(const int argc, char *argv[])
 {
-	vector<ArgData> args = getArgsList(); // Get list of arguments
+	vector<ArgumentData> args = getArguments(); // Get list of arguments
 
 	for (int argIndex = 1; argIndex < argc; argIndex++)
 	{
@@ -102,7 +102,7 @@ int main(const int argc, char *argv[])
 		}
 		else
 		{
-			ArgData *const param = getArgByFlag(args, argv[argIndex]); // Get argument by current flag
+			ArgumentData *const param = getArgByFlag(args, argv[argIndex]); // Get argument by current flag
 			if (param != nullptr && argIndex < argc - 1) // if exist argument with current flag and it is not las argument
 			{
 				argIndex++;
@@ -112,7 +112,7 @@ int main(const int argc, char *argv[])
 	}
 
 	// Checking on emptiness of required arguments values
-	for (ArgData &param : args)
+	for (ArgumentData &param : args)
 	{
 		if (param.value.empty() && param.isRequired )
 		{
@@ -124,11 +124,11 @@ int main(const int argc, char *argv[])
 	// If everything is fine with the arguments try to build path
 	try
 	{
-		DBProvider provider(getArgByKey(args, CON_KEY)->value);
+		DBProvider provider(getArgumentByKey(args, KEY_CONNECTION)->value);
 		cout << (provider.getScriptData(ObjectData("placeholder", "table", "public"))).text;
-		//string templatePath = getArgByKey(args, TEMPLATE_KEY)->value;
-		//PatchBuilder builder(getArgByKey(args, PATCH_KEY)->value, provider, templatePath);
-		//builder.buildPatch(getArgByKey(args, DIR_KEY)->value);
+		//string templatePath = getArgumentByKey(args, KEY_TEMPLATE)->value;
+		//PatchBuilder builder(getArgumentByKey(args, KEY_PATH)->value, provider, templatePath);
+		//builder.buildPatch(getArgumentByKey(args, KEY_DIRECTORY)->value);
 		return 1;
 	}
 	catch (exception &err)

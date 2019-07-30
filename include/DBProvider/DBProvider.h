@@ -59,7 +59,7 @@ private:
 	bool nullable_ = false;
 };
 
-struct ObectInfo // Sctructure for containing object structure information
+struct ObjectInformation // Sctructure for containing object structure information
 {
 	vector<Column> columns;
 };
