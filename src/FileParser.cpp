@@ -1,4 +1,6 @@
 #include "PatchInstaller/FileParser.h"
+#include "PatchInstaller/PatchInstaller.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -6,9 +8,17 @@
 FileParser::FileParser() {}
 FileParser::~FileParser() {}
 
-std::list<std::tuple<std::string, std::string, std::string>> FileParser::parse(std::string nameOfFile)
+DBProviderListParameters FileParser::getResultOfParsing(std::string nameOfFile)
 {
-	std::list<std::tuple<std::string, std::string, std::string>> objectParametersFromFile;
+	FileParser parser;
+	return parser.parse(nameOfFile);
+}
+
+
+
+DBProviderListParameters FileParser::parse(std::string nameOfFile)
+{
+	DBProviderListParameters objectParametersFromFile;
 	std::ifstream dependencies(nameOfFile, std::ios::in);
 
 	std::string buffer("");
@@ -24,7 +34,7 @@ std::list<std::tuple<std::string, std::string, std::string>> FileParser::parse(s
 			dependencies >> scheme >> objectName >> objectType;
 		}
 	}
-
+	objectParametersFromFile.emplace_back(scheme, objectName, objectType);
 	dependencies.close();
 	return objectParametersFromFile;
 }

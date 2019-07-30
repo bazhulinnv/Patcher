@@ -1,80 +1,10 @@
 #include "DBProvider/DBConnection.h"
+#include"Shared/ParsingTools.h"
 
 #include <iostream>
 #include <sstream>
 #include <iterator>
 #include <exception>
-
-namespace ParsingTools
-{
-	vector<string> splitToVector(string str, const string& delimiter)
-	{
-		vector<string> result;
-		
-		while (str.size())
-		{
-			size_t index = str.find(delimiter);
-			
-			if (index != string::npos)
-			{
-				result.push_back(str.substr(0, index));
-				str = str.substr(index + delimiter.size());
-				
-				if (str.size() == 0)
-				{
-					result.push_back(str);
-				}
-			}
-			else
-			{
-				result.push_back(str);
-				str = "";
-			}
-		}
-
-		return result;
-	}
-
-	string interpolate(string &original, const string &toBeReplaced, const string &replacement)
-	{
-		string newString = original.replace(original.find(toBeReplaced), toBeReplaced.length(), replacement);
-		return newString;
-	};
-
-	string joinAsStrings(const vector<string> &vec, const char *delimiter)
-	{
-		stringstream res;
-		copy(vec.begin(), vec.end(), ostream_iterator<string>(res, delimiter));
-		return res.str();
-	}
-
-
-	pair<vector<string>, string> parseCredentials(string &input)
-	{
-		vector<string> params =
-		{
-			"dbname=${}",
-			"user=${}",
-			"password=${}",
-			"hostaddr=${}",
-			"port=${}",
-		};
-
-		vector<string> values = splitToVector(input, ":");
-		vector<string> items;
-
-		for (int i = 0; i < params.size(); ++i)
-		{
-			items.push_back(interpolate(params[i], "${}", values[i]));
-		}
-
-		const char *delim = " ";
-
-		// Converts to a single string using stringstream
-		string result = joinAsStrings(items, delim);
-		return make_pair(values, result);
-	}
-}
 
 DBConnection::DBConnection(std::string loginCredentials)
 {
@@ -93,7 +23,8 @@ DBConnection::DBConnection(std::string loginCredentials)
 
 DBConnection::~DBConnection()
 {
-	disconnect();
+	current->disconnect();
+	delete current;
 }
 
 void DBConnection::setConnection()

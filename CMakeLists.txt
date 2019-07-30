@@ -58,17 +58,17 @@ set(PATCH_INSTALLER PatchInstaller)
 set(patcher_INCS_prov
   include/Shared/Logger.h
   include/Shared/TextTable.h
+  include/Shared/ParsingTools.h
   include/DBProvider/DBConnection.h
   include/DBProvider/DBProvider.h
-  include/DBProvider/DBRequests.h
   )
 
 set(patcher_SRCS_prov
   src/Logger.cpp
   src/TextTable.cpp
+  src/ParsingTools.cpp
   src/DBConnection.cpp
   src/DBProvider.cpp
-  src/DBRequests.cpp
   )
 
 #---------------------------------

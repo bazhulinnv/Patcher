@@ -2,22 +2,21 @@
 #define DBPROVIDER_H
 
 #include "DBProvider/DBConnection.h"
+#include "Shared/ParsingTools.h"
 
 #include <pqxx/pqxx>
 #include <tuple>
 #include <string>
 
-using namespace std;
-
 struct ObjectData // Sctruct for containing objet data
 {
-	string name; // Name of object
-	string type; // Type of object
-	string scheme; // Scheme of object
-	vector<string> paramsVector; // Params of object
+	std::string name; // Name of object
+	std::string type; // Type of object
+	std::string scheme; // Scheme of object
+	std::vector<std::string> paramsVector; // Params of object
 
 	ObjectData() {}
-	ObjectData(string pName, string pType, string pScheme, vector<string> pParamsVector)
+	ObjectData(std::string pName, std::string pType, std::string pScheme, std::vector<std::string> pParamsVector)
 	{
 		name = pName;
 		type = pType;
@@ -33,27 +32,25 @@ struct ObjectData // Sctruct for containing objet data
 
 struct ScriptData : ObjectData // Sctruct for containing script data
 {
-	string text; // Script text
+	std::string text; // Script text
 
 	ScriptData()
 	{
 	}
 	
-	ScriptData(string pName, string pType, string pScheme, vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
+	ScriptData(std::string pName, std::string pType, std::string pScheme, std::vector<std::string> pParamsVector, std::string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
 	{
 		text = pText;
 	}
 	
-	ScriptData(ObjectData objectData, string pText = "") : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+	ScriptData(ObjectData objectData, std::string pText = "") : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
 };
 
 // Vector for containing object data
-typedef vector<ObjectData> objectDataVectorType;
+typedef std::vector<ObjectData> objectDataVectorType;
 
 // Vector for containing script data
-typedef vector<ScriptData> scriptDataVectorType;
-
-void printObjectsData(pqxx::result res);
+typedef std::vector<ScriptData> scriptDataVectorType;
 
 class DBProvider
 {
@@ -61,19 +58,16 @@ public:
 	explicit DBProvider(std::string args);
 	
 	~DBProvider();
-	
+
 	// Returns all objects of database
-	vector<ObjectData> getObjects();
+	std::vector<ObjectData> getObjects();
 	
 	// Returns script data by object data
 	ScriptData getScriptData(ObjectData);
 	
 	// Checks if specified object exists in database
-	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type)
-	{
-		return true;
-	}
-	
+	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type);
+
 	pqxx::result query(std::string strSQL);
 
 	// Inserts a new record into the content provider
@@ -97,19 +91,32 @@ public:
 	}
 
 	// Uses specified view
-	vector<ObjectData> useViewToGetData(std::string nameOfView)
+	std::vector<ObjectData> useViewToGetData(std::string nameOfView)
 	{
 	}
 
 	// Creates new view
-	vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
+	std::vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
 	{
 	}
 
-	void printObjectsData();
+	bool tableExists(const std::string& tableSchema, const std::string& tableName);
+
+	bool sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName);
+
+	bool functionExists(const std::string& name);
+
+	bool indexExists(const std::string& name);
+
+	bool viewExists(const std::string& tableSchema, const std::string& tableName);
+
+	bool triggerExists(const std::string& triggerSchema, const std::string& triggerName);
 
 private:
 	DBConnection *_connection = nullptr;
+
 };
+
+void printObjectsData(pqxx::result res);
 
 #endif

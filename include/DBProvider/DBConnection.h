@@ -3,15 +3,6 @@
 #include <utility>
 #include <pqxx/pqxx>
 
-namespace ParsingTools
-{
-	using namespace std;
-	vector<string> splitToVector(string str, const string &delimiter);
-	string interpolate(string &original, const string &toBeReplaced, const string &replacement);
-	string joinAsStrings(const vector<string> &vec, const char *delimiter);
-	pair<vector<string>, string> parseCredentials(string &input);
-}
-
 class DBConnection
 {
 public:
@@ -24,7 +15,9 @@ public:
 		std::string host;
 		unsigned int portNumber;
 		std::string result;
-	} info;
+	};
+
+	LoginData info;
 
 	/* 
 	*/
