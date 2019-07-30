@@ -53,12 +53,43 @@ vector<ObjectData> DBProvider::getObjects()
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(ObjectData)
+ScriptData DBProvider::getScriptData(const ObjectData &data)
 {
-	// example:
-	// input  - public, myFunction,     function, <param1, param2, param3>
-	// output - public, myFunction.sql, function, <param1, param2, param3>, some script text
-	return ScriptData();
+	stringstream scriptStream;
+	
+	ObectInfo info;
+
+	stringstream queryStream;
+	queryStream << "select * from information_schema.columns c where c.table_schema = '" << data.scheme << "' and c.table_name = '" << data.name <<"'";
+	pqxx::result result = query(queryStream.str());
+	
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		Column column;
+		column.name = row["column_name"].c_str();
+		column.type = row["data_type"].c_str();
+		column.defaultValue = row["column_default"].c_str();
+		column.setNullabel(row["is_nullable"].c_str());
+		column.maxLength = atoi(row["character_maximum_length"].c_str());
+
+		info.columns.push_back(column);
+	}
+		
+	scriptStream << "CREATE TABLE " << data.scheme << "." << data.name << " (" << endl;
+
+	for (Column column : info.columns)
+	{
+		scriptStream << column.name << " " << column.type;
+		//if (!column.defaultValue.is)
+		if (!column.isNullable())
+		{
+			scriptStream << " NOT NULL";
+		}
+	}
+
+	scriptStream << endl << ")";
+
+	return ScriptData(data, scriptStream.str());
 }
 
 
@@ -196,5 +227,23 @@ void printObjectsData(pqxx::result queryResult)
 			<< row["obj_name"].as<std::string>() << "\t"
 			<< row["obj_type"].as<std::string>()
 			<< std::endl;
+	}
+}
+
+bool Column::isNullable()
+{
+	return this->nullable_;
+}
+
+void Column::setNullabel(string value)
+{
+	transform(value.begin(), value.end(), value.begin(), tolower);
+	if (value == "yes")
+	{
+		this->nullable_ = true;
+	}
+	else
+	{
+		this->nullable_ = false;
 	}
 }

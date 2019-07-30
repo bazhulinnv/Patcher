@@ -32,14 +32,15 @@ struct ArgData // Structure for input arguments information
 
 ArgData *const getArgByFlag(vector<ArgData> &args, string flag) // Get argument from vector by flag
 {
-	transform(flag.begin(), flag.end(), flag.begin(), tolower);
+	transform(flag.begin(), flag.end(), flag.begin(), tolower); // Transform to lower register
+	// Looking for a match with the flag
 	for (ArgData &arg : args)
 	{
 		for (string &currentFlag : arg.flags)
 		{
 			if (currentFlag == flag)
 			{
-				return &arg;
+				return &arg; // Return the argument with the right flag
 			}
 		}
 	}
@@ -48,11 +49,12 @@ ArgData *const getArgByFlag(vector<ArgData> &args, string flag) // Get argument 
 
 ArgData *const getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument from vector by key
 {
+	// Looking for a match with the лун
 	for (ArgData &arg : args)
 	{
 		if (arg.key == key)
 		{
-			return &arg;
+			return &arg; // Return the argument with the right лун
 		}
 	}
 	return nullptr;
@@ -120,9 +122,10 @@ int main(int argc, char *argv[])
 	try
 	{
 		DBProvider provider(getArgByKey(args, CON_KEY)->value);
-		string templatePath = getArgByKey(args, TEMPLATE_KEY)->value;
-		PatchBuilder builder(getArgByKey(args, PATCH_KEY)->value, provider, templatePath);
-		builder.buildPatch(getArgByKey(args, DIR_KEY)->value);
+		cout << (provider.getScriptData(ObjectData("placeholder", "table", "public"))).text;
+		//string templatePath = getArgByKey(args, TEMPLATE_KEY)->value;
+		//PatchBuilder builder(getArgByKey(args, PATCH_KEY)->value, provider, templatePath);
+		//builder.buildPatch(getArgByKey(args, DIR_KEY)->value);
 		return 1;
 	}
 	catch (exception &err)

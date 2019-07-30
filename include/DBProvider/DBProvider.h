@@ -8,15 +8,17 @@
 #include <tuple>
 #include <string>
 
-struct ObjectData // Sctruct for containing objet data
-{
-	std::string name; // Name of object
-	std::string type; // Type of object
-	std::string scheme; // Scheme of object
-	std::vector<std::string> paramsVector; // Params of object
+using namespace std;
 
-	ObjectData() {}
-	ObjectData(std::string pName, std::string pType, std::string pScheme, std::vector<std::string> pParamsVector)
+struct ObjectData // Sctructure for containing objet data
+{
+	string name; // Name of object
+	string type; // Type of object
+	string scheme; // Scheme of object
+	vector<string> paramsVector; // Params of object
+
+	ObjectData() = default;
+	ObjectData(string pName, string pType, string pScheme, vector<string> pParamsVector = vector<string>())
 	{
 		name = pName;
 		type = pType;
@@ -30,27 +32,43 @@ struct ObjectData // Sctruct for containing objet data
 	}
 };
 
-struct ScriptData : ObjectData // Sctruct for containing script data
+struct ScriptData : ObjectData // Sctructure for containing script data
 {
 	std::string text; // Script text
 
-	ScriptData()
-	{
-	}
+	ScriptData() = default;
 	
-	ScriptData(std::string pName, std::string pType, std::string pScheme, std::vector<std::string> pParamsVector, std::string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
+	ScriptData(std::string pName,string pType,string pScheme,vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
 	{
 		text = pText;
 	}
 	
-	ScriptData(ObjectData objectData, std::string pText = "") : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+	ScriptData(ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+};
+
+struct Column // Structure for containing information about column of table
+{
+public:
+	string name;
+	string type;
+	string defaultValue;
+	bool isNullable();
+	void setNullabel(string nullable);
+	unsigned int maxLength;
+private:
+	bool nullable_;
+};
+
+struct ObectInfo // Sctructure for containing object structure information
+{
+	vector<Column> columns;
 };
 
 // Vector for containing object data
-typedef std::vector<ObjectData> objectDataVectorType;
+typedef vector<ObjectData> objectDataVectorType;
 
 // Vector for containing script data
-typedef std::vector<ScriptData> scriptDataVectorType;
+typedef vector<ScriptData> scriptDataVectorType;
 
 class DBProvider
 {
@@ -60,10 +78,10 @@ public:
 	~DBProvider();
 
 	// Returns all objects of database
-	std::vector<ObjectData> getObjects();
+	vector<ObjectData> getObjects();
 	
-	// Returns script data by object data
-	ScriptData getScriptData(ObjectData);
+	// Returns script text by object data
+	ScriptData getScriptData(const ObjectData &data);
 	
 	// Checks if specified object exists in database
 	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type);
