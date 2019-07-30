@@ -18,7 +18,7 @@ struct ObjectData // Sctructure for containing objet data
 	vector<string> paramsVector; // Params of object
 
 	ObjectData() = default;
-	ObjectData(string pName, string pType, string pScheme, vector<string> pParamsVector = vector<string>())
+	ObjectData(const string pName, const string pType, const string pScheme, const vector<string> pParamsVector = vector<string>())
 	{
 		name = pName;
 		type = pType;
@@ -38,12 +38,12 @@ struct ScriptData : ObjectData // Sctructure for containing script data
 
 	ScriptData() = default;
 	
-	ScriptData(std::string pName,string pType,string pScheme,vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
+	ScriptData(const std::string pName,string pType,string pScheme,vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
 	{
 		text = pText;
 	}
 	
-	ScriptData(ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
 };
 
 struct Column // Structure for containing information about column of table
@@ -52,11 +52,11 @@ public:
 	string name;
 	string type;
 	string defaultValue;
-	bool isNullable();
+	bool isNullable() const;
 	void setNullabel(string nullable);
 	unsigned int maxLength;
 private:
-	bool nullable_;
+	bool nullable_ = false;
 };
 
 struct ObectInfo // Sctructure for containing object structure information
@@ -73,62 +73,65 @@ typedef vector<ScriptData> scriptDataVectorType;
 class DBProvider
 {
 public:
-	explicit DBProvider(std::string args);
+	explicit DBProvider(string args);
 	
 	~DBProvider();
 
 	// Returns all objects of database
-	vector<ObjectData> getObjects();
+	vector<ObjectData> getObjects() const;
 	
 	// Returns script text by object data
-	ScriptData getScriptData(const ObjectData &data);
+	ScriptData getScriptData(const ObjectData &data) const;
 	
 	// Checks if specified object exists in database
-	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type);
+	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type) const;
 
-	pqxx::result query(std::string strSQL);
+	pqxx::result query(std::string strSQL) const;
 
 	// Inserts a new record into the content provider
-	void insertToDB(ObjectData obj)
+	static void insertToDB(ObjectData obj)
 	{
 	}
 
 	// Deletes an existing record from the content provider
-	void deleteFromDB(ObjectData obj)
+	static void deleteFromDB(ObjectData obj)
 	{
 	}
 
 	// Updates an existing record from the content provider
-	void update(ObjectData obj)
+	static void update(ObjectData obj)
 	{
 	}
 
 	// Returns the MIME type of the data at the given URI
-	objectDataVectorType getType(ObjectData obj)
+	static objectDataVectorType getType(ObjectData obj)
 	{
+		return {};
 	}
 
 	// Uses specified view
-	std::vector<ObjectData> useViewToGetData(std::string nameOfView)
+	static std::vector<ObjectData> useViewToGetData(std::string nameOfView)
 	{
+		return {};
 	}
 
 	// Creates new view
-	std::vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
+	static std::vector<ObjectData> createAndUseView(std::string nameOfView, std::string bodyOfView)
 	{
+		return {};
 	}
 
-	bool tableExists(const std::string& tableSchema, const std::string& tableName);
+	bool tableExists(const std::string& tableSchema, const std::string& tableName) const;
 
-	bool sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName);
+	bool sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName) const;
 
-	bool functionExists(const std::string& name);
+	static bool functionExists(const std::string& name);
 
-	bool indexExists(const std::string& name);
+	static bool indexExists(const std::string& name);
 
-	bool viewExists(const std::string& tableSchema, const std::string& tableName);
+	bool viewExists(const std::string& tableSchema, const std::string& tableName) const;
 
-	bool triggerExists(const std::string& triggerSchema, const std::string& triggerName);
+	bool triggerExists(const std::string& triggerSchema, const std::string& triggerName) const;
 
 private:
 	DBConnection *_connection = nullptr;

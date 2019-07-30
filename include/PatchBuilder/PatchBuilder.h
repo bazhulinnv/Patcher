@@ -42,16 +42,16 @@ private:
 	DBProvider *provider; // Ptr to provider class
 	bool isWithErrors = false; // Become true after some error
 	bool isWithWarnings = false; // Become true after some warning
-	scriptDataVectorType getScriptDataVector(objectDataVectorType objectDataVector) /*const*/; // Getting vector of scripts, created by DBProvider
+	scriptDataVectorType getScriptDataVector(const objectDataVectorType &objectDataVector) const;// Getting vector of scripts, created by DBProvider
 	objectDataVectorType getObjectDataVector() const; // Getting vector of objects from source database
 	void createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file
 	bool isContains(const ObjectData data, const string &scriptText); // Returns true, if the object was found in the script
 	objectDataVectorType getPatchListVector() const; // Getting vector of objects that contains a patch
-	void fillScriptDataVector(scriptDataVectorType &scriptDataVector); // temp
-	void remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
-	void removeComments(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
-	regex createExpression(const ObjectData data); // Creating regular expression for data from params
-	string getCurrentDateTime() const; // Get current date
+	static void fillScriptDataVector(scriptDataVectorType &scriptDataVector); // temp
+	static void remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
+	static void removeComments(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
+	regex createExpression(const ObjectData &data); // Creating regular expression for data from params
+	static string getCurrentDateTime(); // Get current date
 	void addLog(const string message) const; // Add message in log file
 };
 #endif

@@ -22,7 +22,7 @@ PatchBuilder::PatchBuilder(const string pPatchListFullName, DBProvider &pProvide
 	}
 	else
 	{
-		string message = "Cannot open or find template file\nDependencyList will be formed by presence of names\n";
+		const string message = "Cannot open or find template file\nDependencyList will be formed by presence of names\n";
 		isWithWarnings = true;
 		cerr << message;
 		addLog(message);
@@ -34,12 +34,12 @@ void PatchBuilder::buildPatch(const string directory)
 {
 	// Creating log file
 	string logDirectory = (directory + "/" + LOG_FOLDER);
-	mkdir(&logDirectory[0]);
+	_mkdir(&logDirectory[0]);
 	logFileFullName = logDirectory + "/" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
 
 	// Executing all methods for patch building
 	ofstream output(directory + "/" + DEPENDENCY_LIST_NAME); // Dependency list directory
-	objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
+	const objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	scriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
 	createInstallPocket(directory, scriptDataVector); // Creaing all instalation components
 	removeComments(scriptDataVector);
@@ -50,10 +50,10 @@ void PatchBuilder::buildPatch(const string directory)
 	string message = string("Parsing started...\n")  +  BLOCK_LINE + "\n";
 	cout << message;
 	addLog(message);
-	for (ObjectData objectData : objectDataVector)
+	for (const ObjectData objectData : objectDataVector)
 	{
 		// Checking all objects for the presence in scripts
-		for (ScriptData scriptData : scriptDataVector)
+		for (const ScriptData scriptData : scriptDataVector)
 		{
 			if (isContains(objectData, scriptData.text))
 			{
@@ -61,7 +61,7 @@ void PatchBuilder::buildPatch(const string directory)
 				output << objectData.scheme << " ";
 				output << objectData.name << " ";
 				output << objectData.type << endl;
-				string message = " - " + objectData.name + " with " + objectData.type + " type included\n";
+				message = " - " + objectData.name + " with " + objectData.type + " type included\n";
 				cout << message;
 				addLog(message);
 				break;
@@ -91,7 +91,8 @@ void PatchBuilder::buildPatch(const string directory)
 	addLog(message);
 }
 
-scriptDataVectorType PatchBuilder::getScriptDataVector(objectDataVectorType objectDataVector) /*const*/
+scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorType &objectDataVector) const
+/*const*/
 {
 	// Not implemented
 	scriptDataVectorType scriptDataVector;
@@ -103,18 +104,18 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(objectDataVectorType obje
 		{
 			// Reading all text from file
 			ifstream input(objectData.name);
-			string text((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
+			const string text((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
 
 			// Remove path to file leave only name
-			size_t slashPos = objectData.name.find_last_of("\\");
+			const size_t slashPos = objectData.name.find_last_of("\\");
 			objectData.name.erase(0, slashPos+1);
 
 			// Add script in vector
-			ScriptData scriptData(objectData, text);
+			const ScriptData scriptData(objectData, text);
 			scriptDataVector.push_back(scriptData);
 		}
 	}
-	string message =  "Script vector created\n";
+	const string message =  "Script vector created\n";
 	cout << message;
 	addLog(message);
 	return scriptDataVector;
@@ -125,7 +126,7 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 	// Getting all source database objects
 	objectDataVectorType objectVector = provider->getObjects();
 
-	string message = "Object vector created\n";
+	const string message = "Object vector created\n";
 	cout << message;
 	addLog(message);
 
@@ -137,11 +138,11 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 	ofstream outputInstallScriptBat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
 	ofstream outputInstallScriptSh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
 	// Creating sql files for all scrpits and writing install script
-	for (ScriptData data : scriptDataVector)
+	for (const ScriptData data : scriptDataVector)
 	{
 		// Creating directory named as type of script
-		mkdir(&(directory + "/" + data.scheme)[0]);
-		mkdir(&(directory + "/" + data.scheme + "/" + data.type)[0]);
+		_mkdir(&(directory + "/" + data.scheme)[0]);
+		_mkdir(&(directory + "/" + data.scheme + "/" + data.type)[0]);
 		ofstream outputScript(directory + "/" + data.scheme + "/" + data.type + "/" + data.name);
 		// Writing script text in file
 		outputScript << data.text;
@@ -161,7 +162,7 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 		outputInstallScriptBat << installBatStr; // Writing psql command in InstallScript with .bat format
 		outputInstallScriptSh << installShStr; // Writing psql command in InstallScript with .sh format	
 	}
-	string message = "Install pocket created\n";
+	const string message = "Install pocket created\n";
 	cout << message;
 	addLog(message);
 }
@@ -177,7 +178,7 @@ bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
 	}
 
 	// Checking on the content of the object in current script
-	regex regularExpression = createExpression(data); // Creating regular expression 
+	const regex regularExpression = createExpression(data); // Creating regular expression 
 	try
 	{
 		return (regex_search(scriptText.c_str(), result, regularExpression));
@@ -268,7 +269,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.type = "table";
 		data.scheme = "public";
 		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/placeholder.sql");
-		string str((std::istreambuf_iterator<char>(input)),
+		const string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
 		scriptDataVector.push_back(data);
@@ -278,7 +279,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.type = "view";
 		data.scheme = "public";
 		ifstream input("G:/Timur/ProjectFiles/Doors/public/views/user_full_info.sql");
-		string str((std::istreambuf_iterator<char>(input)),
+		const string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
 		scriptDataVector.push_back(data);
@@ -288,7 +289,7 @@ void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
 		data.type = "functions";
 		data.scheme = "common";
 		ifstream input("G:/Timur/ProjectFiles/Doors/common/functions/init_test.sql");
-		string str((std::istreambuf_iterator<char>(input)),
+		const string str((std::istreambuf_iterator<char>(input)),
 			std::istreambuf_iterator<char>());
 		data.text = str;
 		scriptDataVector.push_back(data);
@@ -300,7 +301,7 @@ void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const ob
 	// Removing elements of second vector from first vector
 	for (size_t index = 0; index < objectDataVector_first.size(); index++)
 	{
-		for (ObjectData objectData : objectDataVector_second)
+		for (const ObjectData objectData : objectDataVector_second)
 		{
 			if (objectData == objectDataVector_first[index])
 			{
@@ -312,7 +313,7 @@ void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const ob
 	}
 }
 
-void PatchBuilder::removeComments(scriptDataVectorType & scriptDataVector)
+void PatchBuilder::removeComments(scriptDataVectorType &scriptDataVector)
 {
 	// Removing of all commits
 	for (ScriptData &data : scriptDataVector)
@@ -341,7 +342,7 @@ void PatchBuilder::removeComments(scriptDataVectorType & scriptDataVector)
 	}
 }
 
-regex PatchBuilder::createExpression(const ObjectData data)
+regex PatchBuilder::createExpression(const ObjectData &data)
 {
 	// Determine the type of the object and use the appropriate template
 	string currentWord = "";
@@ -367,21 +368,21 @@ regex PatchBuilder::createExpression(const ObjectData data)
 				while (currentWord != END_CODE)
 				{
 					// Replace name code word on current object name
-					size_t namePos = currentWord.find(NAME_CODE);
+					const size_t namePos = currentWord.find(NAME_CODE);
 					if (namePos != string::npos)
 					{
 						currentWord.replace(namePos, NAME_LENGTH, data.name);
 					}
 
 					// Replace scheme code word on current object schema
-					size_t schemaPos = currentWord.find(SCHEME_CODE);
+					const size_t schemaPos = currentWord.find(SCHEME_CODE);
 					if (schemaPos != string::npos)
 					{
 						currentWord.replace(schemaPos, SCHEME_LENGTH, data.scheme);
 					}
 
 					// Replace scheme code word on current object schema
-					size_t endlPos = currentWord.find("\n");
+					const size_t endlPos = currentWord.find("\n");
 					if (endlPos != string::npos)
 					{
 						currentWord.pop_back();
@@ -417,9 +418,10 @@ regex PatchBuilder::createExpression(const ObjectData data)
 			}
 		}
 	}
+	return {};
 }
 
-string PatchBuilder::getCurrentDateTime() const
+string PatchBuilder::getCurrentDateTime()
 {
 	// Getting current date
 	time_t now = time(0);

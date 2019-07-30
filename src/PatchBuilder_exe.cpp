@@ -15,8 +15,11 @@ enum ArgKey
 
 struct ArgData // Structure for input arguments information
 {
-	ArgData() {}
-	ArgData(string pDesciprion, vector<string> pFlags, ArgKey pKey, bool pIsRequired = true) 
+	ArgData(): key(), isRequired(false)
+	{
+	}
+
+	ArgData(const string pDesciprion, const vector<string> pFlags, const ArgKey pKey, const bool pIsRequired = true) 
 	{
 		description = pDesciprion;
 		flags = pFlags;
@@ -30,7 +33,7 @@ struct ArgData // Structure for input arguments information
 	bool isRequired; // is required to build patch
 };
 
-ArgData *const getArgByFlag(vector<ArgData> &args, string flag) // Get argument from vector by flag
+ArgData * getArgByFlag(vector<ArgData> &args, string flag) // Get argument from vector by flag
 {
 	transform(flag.begin(), flag.end(), flag.begin(), tolower); // Transform to lower register
 	// Looking for a match with the flag
@@ -47,7 +50,7 @@ ArgData *const getArgByFlag(vector<ArgData> &args, string flag) // Get argument 
 	return nullptr;
 }
 
-ArgData *const getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument from vector by key
+ArgData * getArgByKey(vector<ArgData> &args, ArgKey key) // Get argument from vector by key
 {
 	// Looking for a match with the лун
 	for (ArgData &arg : args)
@@ -77,7 +80,7 @@ void printHelp(const vector<ArgData> &params) // Print help information
 	for (ArgData paramData : params) // Print help information
 	{
 		cout << paramData.description << endl << "flags: ";
-		for (string flag : paramData.flags)
+		for (const string flag : paramData.flags)
 		{
 			cout << flag << " ";
 		}
@@ -85,7 +88,7 @@ void printHelp(const vector<ArgData> &params) // Print help information
 	}
 }
 
-int main(int argc, char *argv[])
+int main(const int argc, char *argv[])
 {
 	vector<ArgData> args = getArgsList(); // Get list of arguments
 

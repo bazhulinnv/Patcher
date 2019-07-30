@@ -8,7 +8,7 @@
 
 using namespace std;
 
-DBProvider::DBProvider(std::string args)
+DBProvider::DBProvider(const std::string args)
 {
 	_connection = new DBConnection(args);
 	_connection->setConnection();
@@ -19,7 +19,7 @@ DBProvider::~DBProvider()
 	delete _connection;
 }
 
-vector<ObjectData> DBProvider::getObjects()
+vector<ObjectData> DBProvider::getObjects() const
 {
 	// example:
 	// output - public, myFunction, function, <param1, param2, param3>
@@ -39,12 +39,11 @@ vector<ObjectData> DBProvider::getObjects()
 		"('public', 'io', 'common', 'secure');";;
 
 	auto resOfQuery = query(sql_getObjects);
-	pqxx::result::const_iterator row;
 	std::vector<ObjectData> objects;
 
-	for (row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
+	for (pqxx::result::const_iterator row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
 	{
-		std::vector<std::string> parameters;
+		const std::vector<std::string> parameters;
 		objects.push_back(ObjectData(	row["obj_name"].as<std::string>(),
 										row["obj_type"].as<std::string>(),
 										row["obj_schema"].as<std::string>(), parameters));
@@ -53,7 +52,7 @@ vector<ObjectData> DBProvider::getObjects()
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData &data)
+ScriptData DBProvider::getScriptData(const ObjectData &data) const
 {
 	stringstream scriptStream;
 	
@@ -92,10 +91,9 @@ ScriptData DBProvider::getScriptData(const ObjectData &data)
 	return ScriptData(data, scriptStream.str());
 }
 
-
 // Checks if specified object exists in database
- bool DBProvider::doesCurrentObjectExists(std::string scheme, std::string name, std::string type)
-{
+ bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::string name, const std::string type) const
+ {
 	bool res = false;
 	if (type == "table")
 	{
@@ -130,7 +128,7 @@ ScriptData DBProvider::getScriptData(const ObjectData &data)
 	return res;
 }
 
-pqxx::result DBProvider::query(std::string stringSQL)
+pqxx::result DBProvider::query(const std::string stringSQL) const
 {	
 	// Connection must be already set
 	if (!_connection->getConnection())
@@ -146,7 +144,7 @@ pqxx::result DBProvider::query(std::string stringSQL)
 	return res;
 }
 
-bool DBProvider::tableExists(const std::string& tableSchema, const std::string& tableName)
+bool DBProvider::tableExists(const std::string& tableSchema, const std::string& tableName) const
 {
 	// Define SQL request
 	string q =
@@ -161,7 +159,7 @@ bool DBProvider::tableExists(const std::string& tableSchema, const std::string& 
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName)
+bool DBProvider::sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName) const
 {
 	string q =
 		ParsingTools::interpolateAll(
@@ -185,7 +183,7 @@ bool DBProvider::indexExists(const std::string& name)
 	return true;
 }
 
-bool DBProvider::viewExists(const std::string& tableSchema, const std::string& tableName)
+bool DBProvider::viewExists(const std::string& tableSchema, const std::string& tableName) const
 {
 	string q =
 		ParsingTools::interpolateAll(
@@ -199,9 +197,9 @@ bool DBProvider::viewExists(const std::string& tableSchema, const std::string& t
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::triggerExists(const std::string& triggerSchema, const std::string& triggerName)
+bool DBProvider::triggerExists(const std::string& triggerSchema, const std::string& triggerName) const
 {
-	string q =
+	const string q =
 		ParsingTools::interpolateAll(
 			"SELECT EXISTS (SELECT * "
 			"FROM information_schema.triggers "
@@ -230,7 +228,7 @@ void printObjectsData(pqxx::result queryResult)
 	}
 }
 
-bool Column::isNullable()
+bool Column::isNullable() const
 {
 	return this->nullable_;
 }
