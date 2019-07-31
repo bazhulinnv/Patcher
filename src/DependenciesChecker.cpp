@@ -24,8 +24,8 @@ std::string DependenciesChecker::getDataForLog() {
 	return dataForLog;
 }
 
-bool DependenciesChecker::getCheck(DBProviderListParameters &objectsNameAndType, DBProvider *dbProvider) {
-	return check(objectsNameAndType, dbProvider);
+bool DependenciesChecker::getCheck(DBObjects &objectsParameters, DBProvider *dbProvider) {
+	return check(objectsParameters, dbProvider);
 }
 
 //Passing output in cout to GUI
@@ -36,14 +36,13 @@ void DependenciesChecker::printExistenceOfEachObject() {
 	}
 }
 
-void DependenciesChecker::print()
-{
+void DependenciesChecker::print() {
 	printExistenceOfEachObject();
 }
 
 //Private implementation of check
-bool DependenciesChecker::check(DBProviderListParameters &objectsNameAndType, DBProvider *dbProvider) {
-	for (auto i : objectsNameAndType) {
+bool DependenciesChecker::check(DBObjects &objectsParameters, DBProvider *dbProvider) {
+	for (auto i : objectsParameters) {
 		bool doesCurrentObjectExist = dbProvider->doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
 		if (!doesCurrentObjectExist) {
 			allObjectsExists = false;

@@ -15,81 +15,90 @@ using namespace PatcherLogger;
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
 
+/** Creates log for both parts of PatchInstaller. */
+void createLog(std::string path, Level level, std::string data) {
+	Log log;
+	log.setLogByPath(path);
+	log.addLog(level, data);
 
-/** The function checks the presence of objects in the database according to the list of objects specified in the file. */
-bool PatchInstaller::checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider *dbProvider) {
-	DBProviderListParameters objectsNameAndType = FileParser::getResultOfParsing(nameOfFile);
-	DependenciesChecker checker;
-	bool result = checker.getCheck(objectsNameAndType, dbProvider);
+}
 
+/** Checking dependencies part. */
+void passCheckLogsForGui(std::string data, bool resultCheck) {
 	std::cerr << "CHECKING DEPENDENCIES PROCESS:\n";
-	std::cerr << checker.getDataForLog();
-	if (!result) {
+	std::cerr << data;
+	if (!resultCheck) {
 		std::cerr << "Check failed. Some objects does not exist in current database.\n";
 	}
 	else {
 		std::cerr << "Check completed succesful.\n";
 	}
+}
+
+/** Main method of checking dependencies.
+	Checks the presence of objects in the database according to the list of objects specified in the file. */
+bool PatchInstaller::checkDependencyList(std::string nameOfFile, DBProvider *dbProvider) {
+	DBObjects objectsParameters = FileParser::getResultOfParsing(nameOfFile);
+	DependenciesChecker checker;
+
+	bool result = checker.getCheck(objectsParameters, dbProvider);
+	passCheckLogsForGui(checker.getDataForLog(), result);
 	checker.print();
+	createLog("Temp/CheckingDependenciesErrors.log", INFO, checker.getDataForLog());
 
-	auto *infoLog = new Log();
-	infoLog->setLogByPath("Temp/CheckingDependenciesErrors.log");
-	infoLog->addLog(INFO, checker.getDataForLog());
-
-	delete infoLog;
 	return result;
 }
 
-/** When the method starts, the dependency check is considered successful. */
-bool PatchInstaller::startInstallation() {
-	system("Install.bat");
-	std::ifstream errors("tempError.txt", std::ios::in);
-	std::ifstream info("tempInfo.txt", std::ios::in);
-	bool resultOfInstall = false;
+/** Installation part. */
 
-	std::string dataForErrorLog;
-	std::string dataForInfoLog;
+/** Inner methods. */
+std::string readLogFromTempFile(std::string fileName) {
+	std::string dataForLog;
 	std::string buffer;
-	
-	std::cerr << "INSTALLATION PROCESS:\n";
-	while (getline(info, buffer)) {
-		dataForInfoLog += buffer;
-		dataForInfoLog += "\n";
-		std::cerr << buffer << "\n";
-	}
-	buffer = "";
-	std::cerr << "INSTALLATION ERRORS:\n";
-	while (getline(errors, buffer)) {
-		dataForErrorLog += buffer;
-		dataForErrorLog += "\n";
-		std::cerr << buffer << "\n";
+	std::ifstream temp(fileName, std::ios::in);
+
+	while (getline(temp, buffer)) {
+		dataForLog += buffer;
+		dataForLog += "\n";
 	}
 
+	return dataForLog;
+}
+
+void passInstallLogsGui(std::string &dataForErrorLog, std::string &dataForInfoLog, bool installWithErrors) {
+	std::cerr << "INSTALLATION PROCESS:\n";
+	std::cerr << dataForInfoLog;
+	std::cerr << "INSTALLATION ERRORS:\n";
 	dataForErrorLog += "Installation completed";
-	std::cerr << "Installation completed";
-	if (dataForErrorLog == "") {
-		resultOfInstall = true;
+	if (dataForErrorLog.empty()) {	
 		dataForErrorLog += " without errors.\n";
-		std::cerr << " without errors.\n";
 	}
 	else {
 		dataForErrorLog += " with errors.\n";
-		std::cerr << " with errors.\n";
 	}
+	std::cerr << dataForErrorLog;
+}
 
-	auto *errorLog = new Log();
-	errorLog->setLogByPath("Temp/InstallationErrors.log");
-	errorLog->addLog(ERROR, dataForErrorLog);
-	delete errorLog;
+/** Main method of installing part.
+	When the method starts, the dependency check is considered successful. */
+bool PatchInstaller::startInstallation() {
+	system("Install.bat");
 
-	auto *infoLog = new Log();
-	errorLog->setLogByPath("Temp/InstallationInfo.log");
-	errorLog->addLog(INFO, dataForInfoLog);
-	delete infoLog;
+	std::ifstream errors("tempError.txt", std::ios::in);
+	std::ifstream info("tempInfo.txt", std::ios::in);
+
+	std::string dataForInfoLog = readLogFromTempFile("tempInfo.txt");
+	std::string dataForErrorLog = readLogFromTempFile("tempError.txt");
+	bool installWithErrors = dataForErrorLog.empty();
+	passInstallLogsGui(dataForErrorLog, dataForInfoLog, installWithErrors);
 
 	errors.close();
 	info.close();
 	remove("tempError.txt");
 	remove("tempInfo.txt");
-	return resultOfInstall;
+
+	createLog("Temp/InstallationErrors.log", ERROR, dataForErrorLog);
+	createLog("Temp/InstallationInfo.log", INFO, dataForInfoLog);
+
+	return installWithErrors;
 }

@@ -15,14 +15,14 @@ public:
 	bool getIfAllObjectsExists();
 	std::string getDataForLog();
 
-	bool getCheck(DBProviderListParameters &objectsNameAndType, DBProvider *dbProvider);
+	bool getCheck(DBObjects &objectParameters, DBProvider *dbProvider);
 	void print();
 
 private:
 	std::list<bool> existenceEachObject;
 	bool allObjectsExists;
 	std::string dataForLog;
-	bool DependenciesChecker::check(DBProviderListParameters &objectsNameAndType, DBProvider *dbProvider);
+	bool DependenciesChecker::check(DBObjects &objectsParameters, DBProvider *dbProvider);
 	void DependenciesChecker::printExistenceOfEachObject();
 };
 #endif

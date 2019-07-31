@@ -8,7 +8,7 @@
 FileParser::FileParser() {}
 FileParser::~FileParser() {}
 
-DBProviderListParameters FileParser::getResultOfParsing(std::string nameOfFile)
+DBObjects FileParser::getResultOfParsing(std::string nameOfFile) 
 {
 	FileParser parser;
 	return parser.parse(nameOfFile);
@@ -16,9 +16,9 @@ DBProviderListParameters FileParser::getResultOfParsing(std::string nameOfFile)
 
 
 
-DBProviderListParameters FileParser::parse(std::string nameOfFile)
+DBObjects FileParser::parse(std::string nameOfFile)
 {
-	DBProviderListParameters objectParametersFromFile;
+	DBObjects objectParametersFromFile;
 	std::ifstream dependencies(nameOfFile, std::ios::in);
 
 	std::string buffer("");

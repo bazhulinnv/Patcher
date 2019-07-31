@@ -7,21 +7,27 @@
 #include "PatchInstaller/FileParser.h"
 
 bool directoryExists(char* directory) {
-	const std::filesystem::path path(directory);
 	return std::filesystem::exists(directory);
 }
 
 inline bool fileExists(char* directory) {
-	chdir(directory);
-	std::ifstream f("Install.bat");
-	return f.good();
+	std::string fileName = directory;
+	fileName += "/Install.bat";
+	return std::filesystem::exists(fileName);
+}
+
+void printNecessaryParameters() {
+	std::cerr << "Connection parameters must be in this format: ";
+	std::cerr << "name-of-database:user-name:user-password:host:port\n";
+	std::cerr << "Example of right parameters: Database:User:password:127.0.0.1:5432\n";
 }
 
 int main(int argc, char* argv[]) { 
 	PatchInstaller patchInstaller;
 	bool returnCode = false;
 	if (argv[1] == nullptr) {
-		std::cerr << "Please, enter database connection parameters. \n";
+		std::cerr << "There are no connection parameters to the database. Please, enter database connection parameters. \n";
+		printNecessaryParameters();
 		returnCode = true;
 	}
 	else {
@@ -43,16 +49,17 @@ int main(int argc, char* argv[]) {
 				}
 				else {
 					if (fileExists(argv[3])) {
+						chdir(argv[3]);
 						mkdir("Temp");
 						if (strcmp(argv[2], "check") == 0) {
-							patchInstaller.checkObjectsForExistenceFromFile("DependencyList.dpn", dbProvider);
+							patchInstaller.checkDependencyList("DependencyList.dpn", dbProvider);
 						}
 						if (strcmp(argv[2], "install") == 0) {
 							patchInstaller.startInstallation();
 						}
 					}
 					else {
-						std::cerr << "Directory does not exists or wrong.\n";
+						std::cerr << "There are no installation script in this directory. \n";
 						returnCode = true;
 					}
 				}
@@ -62,6 +69,7 @@ int main(int argc, char* argv[]) {
 		}
 		catch (...) {
 			std::cerr << "Please, enter right database connection parameters. \n";
+			printNecessaryParameters();
 			returnCode = true;
 		}
 
