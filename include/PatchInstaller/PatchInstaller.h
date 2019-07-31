@@ -5,13 +5,14 @@
 #include <string>
 #include "DBProvider/DBProvider.h"
 
-using DBProviderListParameters = std::list<std::tuple<std::string, std::string, std::string>>;
+using DBObject = std::tuple<std::string, std::string, std::string>;
+using DBObjects = std::list<DBObject>;
 
 class PatchInstaller {
 public:
   PatchInstaller();
   ~PatchInstaller();
-  bool checkObjectsForExistenceFromFile(std::string nameOfFile, DBProvider *dbProvider);
+  bool checkDependencyList(std::string nameOfFile, DBProvider *dbProvider);
   bool startInstallation();
 };
 
