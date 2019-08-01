@@ -96,8 +96,6 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 {
 	// Not implemented
 	scriptDataVectorType scriptDataVector;
-	fillScriptDataVector(scriptDataVector); // Temp
-	// Add in vector outside scripts from patchListVector
 	for (ObjectData objectData : objectDataVector)
 	{
 		if (objectData.scheme == "script")
@@ -113,6 +111,10 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 			// Add script in vector
 			const ScriptData scriptData(objectData, text);
 			scriptDataVector.push_back(scriptData);
+		}
+		else
+		{
+			// Not implemented
 		}
 	}
 	const string message =  "Script vector created\n";
