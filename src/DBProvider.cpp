@@ -58,36 +58,42 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 
 	ObjectInformation info; // Here will be all information about databse object
 
-	string queryString = string("select * from information_schema.columns c where c.table_schema = '") // SQL query;
-	+ data.scheme + "' and c.table_name = '" + data.name +"'";
-
+	// Getting columns information not including type
+	string queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+		"FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.relfilenode "
+		"WHERE a.attnum > 0 "
+		"AND NOT a.attisdropped "
+		"AND b.oid = '" + data.scheme + "." + data.name + "'::regclass::oid) i "
+		"ON c.column_name = i.attname "
+		"WHERE c.table_schema = '" + data.scheme + "' AND table_name = '" + data.name + "';";
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
-
-	// Getting columns information 
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
 		Column column;
 		column.name = row["column_name"].c_str();
-		column.type = row["data_type"].c_str();
+		column.type = row["format_type"].c_str();
 		column.defaultValue = row["column_default"].c_str();
-		column.setNullabel(row["is_nullable"].c_str());
-		column.maxLength = atoi(row["character_maximum_length"].c_str());
+		column.setNullable(row["is_nullable"].c_str());
 
 		info.columns.push_back(column);
 	}
 
+	// Getting table owner
+	queryString = string("SELECT * FROM pg_tables t where schemaname = '") 
+	+ data.scheme + "' and tablename = '" + data.name + "'";
+	result = query(queryString);
+	const pqxx::result::const_iterator row = result.begin();
+	info.owner = row["tableowner"].c_str();
+
+
 	// Script text creating.
 	// Collect the text from parts of ObjectInformation
 
+	// "CREATE TABLE" block - initialization of all table's columns
 	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
-
 	for (const Column &column : info.columns)
 	{
 		scriptString += "\n" + column.name + " " + column.type;
-		if (column.maxLength != 0)
-		{
-			scriptString += "(" + to_string(column.maxLength) + ")";
-		}
 		if (!column.defaultValue.empty())
 		{
 			scriptString += " DEFAULT " + column.defaultValue;
@@ -102,8 +108,10 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 	{
 		scriptString.pop_back(); // Removing an extra comma at the end
 	}
+	scriptString += "\n);\n\n";
 
-	scriptString += "\n);";
+	// "OWNER TO" block to make the owner user
+	scriptString += "ALTER TABLE " + data.scheme + "." + data.name + " OWNER TO " + info.owner + ";\n\n";
 
 	return ScriptData(data, scriptString);
 }
@@ -250,7 +258,7 @@ bool Column::isNullable() const
 	return this->nullable_;
 }
 
-void Column::setNullabel(string value)
+void Column::setNullable(string value)
 {
 	transform(value.begin(), value.end(), value.begin(), tolower);
 	if (value == "yes")

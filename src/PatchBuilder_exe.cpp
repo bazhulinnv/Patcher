@@ -125,7 +125,7 @@ int main(const int argc, char *argv[])
 	try
 	{
 		DBProvider provider(getArgumentByKey(args, KEY_CONNECTION)->value);
-		//cout << (provider.getScriptData(ObjectData("placeholder", "table", "public"))).text;
+		//cout << (provider.getScriptData(ObjectData("errors", "table", "public"))).text;
 		const string templatePath = getArgumentByKey(args, KEY_TEMPLATE)->value;
 		PatchBuilder builder(getArgumentByKey(args, KEY_PATH)->value, provider, templatePath);
 		builder.buildPatch(getArgumentByKey(args, KEY_DIRECTORY)->value);

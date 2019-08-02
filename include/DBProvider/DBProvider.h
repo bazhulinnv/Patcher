@@ -53,8 +53,7 @@ public:
 	string type;
 	string defaultValue;
 	bool isNullable() const;
-	void setNullabel(string nullable);
-	unsigned int maxLength;
+	void setNullable(string nullable);
 private:
 	bool nullable_ = false;
 };
@@ -62,6 +61,7 @@ private:
 struct ObjectInformation // Sctructure for containing object structure information
 {
 	vector<Column> columns;
+	string owner;
 };
 
 // Vector for containing object data
