@@ -31,9 +31,11 @@ using namespace std;
 class PatchBuilder 
 {
 public:
+  PatchBuilder() = default;
   PatchBuilder(const string pPatchListFullName, DBProvider &pProvider, const string pTemplatesFullName = ""); // Constructor
   ~PatchBuilder(); // Distructor
   void buildPatch(const string directory); // Build patch in choosen directory
+  void addLog(const string message) const; // Add message in log file
 
 private:
 	string patchListFullName; // Directory and name of PatchList
@@ -47,11 +49,9 @@ private:
 	void createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file
 	bool isContains(const ObjectData data, const string &scriptText); // Returns true, if the object was found in the script
 	objectDataVectorType getPatchListVector() const; // Getting vector of objects that contains a patch
-	static void fillScriptDataVector(scriptDataVectorType &scriptDataVector); // temp
 	static void remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
 	static void removeComments(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
 	regex createExpression(const ObjectData &data); // Creating regular expression for data from params
 	static string getCurrentDateTime(); // Get current date
-	void addLog(const string message) const; // Add message in log file
 };
 #endif

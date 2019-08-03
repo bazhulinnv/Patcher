@@ -54,40 +54,7 @@ vector<ObjectData> DBProvider::getObjects() const
 
 ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary only for tables
 {
-	// Getting information from database
-
-	ObjectInformation info; // Here will be all information about databse object
-
-	// Getting columns information not including type
-	string queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
-		"FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.relfilenode "
-		"WHERE a.attnum > 0 "
-		"AND NOT a.attisdropped "
-		"AND b.oid = '" + data.scheme + "." + data.name + "'::regclass::oid) i "
-		"ON c.column_name = i.attname "
-		"WHERE c.table_schema = '" + data.scheme + "' AND table_name = '" + data.name + "';";
-	pqxx::result result = query(queryString); // SQL query result, contains information in table format
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
-	{
-		Column column;
-		column.name = row["column_name"].c_str();
-		column.type = row["format_type"].c_str();
-		column.defaultValue = row["column_default"].c_str();
-		column.setNullable(row["is_nullable"].c_str());
-
-		info.columns.push_back(column);
-	}
-
-	// Getting table owner
-	queryString = string("SELECT * FROM pg_tables t where schemaname = '") 
-	+ data.scheme + "' and tablename = '" + data.name + "'";
-	result = query(queryString);
-	const pqxx::result::const_iterator row = result.begin();
-	info.owner = row["tableowner"].c_str();
-
-
-	// Script text creating.
-	// Collect the text from parts of ObjectInformation
+	ObjectInformation info = getObjectInformation(data); // Getting information about object
 
 	// "CREATE TABLE" block - initialization of all table's columns
 	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
@@ -113,7 +80,24 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 	// "OWNER TO" block to make the owner user
 	scriptString += "ALTER TABLE " + data.scheme + "." + data.name + " OWNER TO " + info.owner + ";\n\n";
 
-	return ScriptData(data, scriptString);
+	// "COMMENT ON TABLE" block
+	if (!info.description.empty())
+	{
+		scriptString += "COMMENT ON TABLE " + data.scheme + "." + data.name + " IS '" + info.description + "';\n\n";
+	}
+
+	// "COMMENT ON COLUMN blocks
+	for (const Column &column : info.columns)
+	{
+		if (!column.description.empty())
+		{
+			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + " IS '" + column.description + "';\n\n";
+		}
+	}
+
+	ScriptData scriptData = ScriptData(data, scriptString);
+	scriptData.name += ".sql";
+	return scriptData;
 }
 
 // Checks if specified object exists in database
@@ -236,6 +220,55 @@ bool DBProvider::triggerExists(const std::string& triggerSchema, const std::stri
 	return false;
 }
 
+ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) const
+{
+	ObjectInformation info;
+
+	// Getting columns information
+	string queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+		"FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.relfilenode "
+		"WHERE a.attnum > 0 "
+		"AND NOT a.attisdropped "
+		"AND b.oid = '" + data.scheme + "." + data.name + "'::regclass::oid) i "
+		"ON c.column_name = i.attname "
+		"JOIN (SELECT t.table_schema, t.table_name, t.column_name, pgd.description "
+		"FROM pg_catalog.pg_statio_all_tables as st "
+		"INNER JOIN pg_catalog.pg_description pgd on(pgd.objoid = st.relid) "
+		"INNER JOIN information_schema.columns t on(pgd.objsubid = t.ordinal_position "
+		"AND  t.table_schema = st.schemaname and t.table_name = st.relname) "
+		"WHERE t.table_catalog = '" + _connection->info.databaseName + "') j "
+		"ON c.column_name = j.column_name "
+		"WHERE c.table_schema = '" + data.scheme + "' AND c.table_name = '" + data.name + "';";
+	pqxx::result result = query(queryString); // SQL query result, contains information in table format
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		Column column;
+		column.name = row["column_name"].c_str();
+		column.type = row["format_type"].c_str();
+		column.defaultValue = row["column_default"].c_str();
+		column.description = row["description"].c_str();
+		column.setNullable(row["is_nullable"].c_str());
+
+		info.columns.push_back(column);
+	}
+
+	// Getting table owner
+	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.scheme + "' and tablename = '" + data.name + "'";
+	info.owner = getSingleValue(queryString, "tableowner");
+
+	// Getting table description
+	queryString = "SELECT obj_description('" + data.scheme + "." + data.name + "'::regclass::oid)";
+	info.description = getSingleValue(queryString, "obj_description");
+
+	return info;
+}
+
+inline string DBProvider::getSingleValue(const string &queryString, const string &columnName) const
+{
+	pqxx::result result = query(queryString);
+	const pqxx::result::const_iterator row = result.begin();
+	return row[columnName].c_str();
+}
 
 void printObjectsData(pqxx::result queryResult)
 {

@@ -52,6 +52,7 @@ public:
 	string name;
 	string type;
 	string defaultValue;
+	string description;
 	bool isNullable() const;
 	void setNullable(string nullable);
 private:
@@ -62,6 +63,7 @@ struct ObjectInformation // Sctructure for containing object structure informati
 {
 	vector<Column> columns;
 	string owner;
+	string description;
 };
 
 // Vector for containing object data
@@ -80,7 +82,7 @@ public:
 	// Returns all objects of database
 	vector<ObjectData> getObjects() const;
 	
-	// Returns script text by object data
+	// Returns script data by object data
 	ScriptData getScriptData(const ObjectData &data) const;
 	
 	// Checks if specified object exists in database
@@ -136,6 +138,11 @@ public:
 private:
 	DBConnection *_connection = nullptr;
 
+	// Getting information about object from database
+	ObjectInformation getObjectInformation(const ObjectData &data) const;
+
+	// Get single value from query
+	inline string getSingleValue(const string &queryString, const string &columnName) const;
 };
 
 void printObjectsData(pqxx::result res);

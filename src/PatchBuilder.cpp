@@ -61,7 +61,7 @@ void PatchBuilder::buildPatch(const string directory)
 				output << objectData.scheme << " ";
 				output << objectData.name << " ";
 				output << objectData.type << endl;
-				message = " - " + objectData.name + " with " + objectData.type + " type included\n";
+				message = " - " + objectData.name + " with " + objectData.type + " type included - dependency in " + scriptData.name + "\n";
 				cout << message;
 				addLog(message);
 				break;
@@ -92,7 +92,6 @@ void PatchBuilder::buildPatch(const string directory)
 }
 
 scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorType &objectDataVector) const
-/*const*/
 {
 	// Not implemented
 	scriptDataVectorType scriptDataVector;
@@ -114,7 +113,9 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 		}
 		else
 		{
-			// Not implemented
+			// Getting script data from DBProvider
+			const ScriptData scriptData = provider->getScriptData(objectData);
+			scriptDataVector.push_back(scriptData);
 		}
 	}
 	const string message =  "Script vector created\n";
@@ -239,63 +240,6 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	}
 
 	return patchListVector;
-}
-
-void PatchBuilder::fillScriptDataVector(scriptDataVectorType &scriptDataVector)
-{
-	// Temp
-	ScriptData data;
-	{
-		data.name = "roles.sql";
-		data.type = "table";
-		data.scheme = "public";
-		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/roles.sql");
-		string str((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
-		str.erase(0, 3); //Utf8 mark delition
-		data.text = str;
-		scriptDataVector.push_back(data);
-	}
-	{
-		data.name = "users.sql";
-		data.type = "table";
-		data.scheme = "public";
-		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/roles.sql");
-		string str((std::istreambuf_iterator<char>(input)),
-			std::istreambuf_iterator<char>());
-		str.erase(0, 3); //Utf8 mark delition
-		data.text = str;
-		scriptDataVector.push_back(data);
-	}
-	{
-		data.name = "placeholder.sql";
-		data.type = "table";
-		data.scheme = "public";
-		ifstream input("G:/Timur/ProjectFiles/Doors/public/tables/placeholder.sql");
-		const string str((std::istreambuf_iterator<char>(input)),
-			std::istreambuf_iterator<char>());
-		data.text = str;
-		scriptDataVector.push_back(data);
-	}
-	{
-		data.name = "user_full_info.sql";
-		data.type = "view";
-		data.scheme = "public";
-		ifstream input("G:/Timur/ProjectFiles/Doors/public/views/user_full_info.sql");
-		const string str((std::istreambuf_iterator<char>(input)),
-			std::istreambuf_iterator<char>());
-		data.text = str;
-		scriptDataVector.push_back(data);
-	}
-	{
-		data.name = "init_test.sql";
-		data.type = "functions";
-		data.scheme = "common";
-		ifstream input("G:/Timur/ProjectFiles/Doors/common/functions/init_test.sql");
-		const string str((std::istreambuf_iterator<char>(input)),
-			std::istreambuf_iterator<char>());
-		data.text = str;
-		scriptDataVector.push_back(data);
-	}
 }
 
 void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second)
