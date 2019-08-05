@@ -21,7 +21,7 @@ DBObjects FileParser::parse(std::string nameOfFile)
 	DBObjects objectParametersFromFile;
 	std::ifstream dependencies(nameOfFile, std::ios::in);
 
-	std::string buffer("");
+	std::string buffer;
 	std::string scheme("");
 	std::string objectName("");
 	std::string objectType("");
@@ -34,7 +34,6 @@ DBObjects FileParser::parse(std::string nameOfFile)
 			dependencies >> scheme >> objectName >> objectType;
 		}
 	}
-	objectParametersFromFile.emplace_back(scheme, objectName, objectType);
 	dependencies.close();
 	return objectParametersFromFile;
 }
