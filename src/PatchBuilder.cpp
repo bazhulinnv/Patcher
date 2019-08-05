@@ -58,9 +58,7 @@ void PatchBuilder::buildPatch(const string directory)
 			if (isContains(objectData, scriptData.text))
 			{
 				// If object was found - writing it's name and type in DependencyList
-				output << objectData.scheme << " ";
-				output << objectData.name << " ";
-				output << objectData.type << endl;
+				output << objectData.scheme << " " << objectData.name << " " << objectData.type << endl;
 				message = " - " + objectData.name + " with " + objectData.type + " type included - dependency in " + scriptData.name + "\n";
 				cout << message;
 				addLog(message);
@@ -205,38 +203,43 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	// Getting all patch objects
 	objectDataVectorType patchListVector;
 	ifstream input(patchListFullName);
-	if (input.is_open())
+	while (!input.eof())
 	{
-		while (!input.eof())
+		// Reading from PatchList file in patchListVector
+		ObjectData data;
+		input >> data.scheme;
+
+		// If end of file
+		if (data.scheme.empty())
 		{
-			// Reading from PatchList file in patchListVector
-			ObjectData data;
-			input >> data.scheme;
-			// If this is script from outside - type field is empty
-			if (data.scheme == "script")
-			{
-				input >> data.name;
-				data.type = "";
-			}
-			else
-			{
-				input >> data.name;
-				input >> data.type;
-			}
-			// If type is "function" reading params of it
-			if (data.type == "function")
-			{
-				string currentWord;
-				input >> currentWord;
-				input >> currentWord;
-				while (currentWord != ")")
-				{
-					data.paramsVector.push_back(currentWord);
-					input >> currentWord;
-				}
-			}
-			patchListVector.push_back(data);
+			return patchListVector;
 		}
+
+		// If this is script from outside - type field is empty
+		if (data.scheme == "script")
+		{
+			input >> data.name;
+			data.type = "";
+		}
+		else
+		{
+			input >> data.name;
+			input >> data.type;
+		}
+
+		// If type is "function" reading params of it
+		if (data.type == "function")
+		{
+			string currentWord;
+			input >> currentWord;
+			input >> currentWord;
+			while (currentWord != ")")
+			{
+				data.paramsVector.push_back(currentWord);
+				input >> currentWord;
+			}
+		}
+		patchListVector.push_back(data);
 	}
 
 	return patchListVector;

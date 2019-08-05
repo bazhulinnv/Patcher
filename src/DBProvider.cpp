@@ -91,7 +91,7 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 	{
 		if (!column.description.empty())
 		{
-			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + " IS '" + column.description + "';\n\n";
+			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
 		}
 	}
 

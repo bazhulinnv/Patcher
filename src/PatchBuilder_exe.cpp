@@ -12,8 +12,8 @@ enum ArgumentKeys
 	KEY_DIRECTORY, KEY_CONNECTION, KEY_PATH, KEY_TEMPLATE
 };
 
-
-struct ArgumentData // Structure for input arguments information
+// Structure for input arguments information
+struct ArgumentData 
 {
 	ArgumentData(): key(), isRequired(false)
 	{
