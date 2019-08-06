@@ -95,6 +95,16 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 		}
 	}
 
+	// Triggers creation
+	for (const Trigger &trigger : info.triggers)
+	{
+		scriptString += "CREATE TRIGGER " + trigger.name + "\n";
+		scriptString += trigger.timing + " " + trigger.manipulation + "\n";
+		scriptString += "ON " + data.scheme + "." + data.name + "\n";
+		scriptString += "FOR EACH " + trigger.orientation + "\n";
+		scriptString += trigger.action + ";\n\n";
+	}
+
 	ScriptData scriptData = ScriptData(data, scriptString);
 	scriptData.name += ".sql";
 	return scriptData;
@@ -236,7 +246,9 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 		"INNER JOIN pg_catalog.pg_description pgd on(pgd.objoid = st.relid) "
 		"INNER JOIN information_schema.columns t on(pgd.objsubid = t.ordinal_position "
 		"AND  t.table_schema = st.schemaname and t.table_name = st.relname) "
-		"WHERE t.table_catalog = '" + _connection->info.databaseName + "') j "
+		"WHERE t.table_catalog = '" + _connection->info.databaseName + "' "
+		"AND t.table_schema = '" + data.scheme + "' "
+		"AND t.table_name = '" + data.name + "') j "
 		"ON c.column_name = j.column_name "
 		"WHERE c.table_schema = '" + data.scheme + "' AND c.table_name = '" + data.name + "';";
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
@@ -259,6 +271,29 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 	// Getting table description
 	queryString = "SELECT obj_description('" + data.scheme + "." + data.name + "'::regclass::oid)";
 	info.description = getSingleValue(queryString, "obj_description");
+
+	// Getting triggers
+	queryString = "SELECT * FROM information_schema.triggers t WHERE t.trigger_schema = '" 
+		+ data.scheme + "' and t.event_object_table = '" + data.name + "'";
+	result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		Trigger *trigger = info.getTrigger(row["trigger_name"].c_str());
+		if (trigger == nullptr)
+		{
+			trigger = new Trigger();
+			trigger->name = row["trigger_name"].c_str();
+			trigger->timing = row["action_timing"].c_str();
+			trigger->manipulation = row["event_manipulation"].c_str();
+			trigger->action = row["action_statement"].c_str();
+			info.triggers.push_back(*trigger);
+		}
+		else
+		{
+			trigger->manipulation += " OR ";
+			trigger->manipulation += row["event_manipulation"].c_str();
+		}
+	}
 
 	return info;
 }
