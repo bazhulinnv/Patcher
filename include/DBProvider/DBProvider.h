@@ -2,7 +2,6 @@
 #define DBPROVIDER_H
 
 #include "DBProvider/DBConnection.h"
-#include "Shared/ParsingTools.h"
 
 #include <pqxx/pqxx>
 #include <tuple>

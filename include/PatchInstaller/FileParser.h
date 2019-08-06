@@ -10,7 +10,8 @@ class FileParser {
 public:
 	FileParser();
 	~FileParser();
-	static DBObjects getResultOfParsing(std::string nameOfFile);
+	bool checkInputCorrect(std::string nameOfFile);
+	DBObjects getResultOfParsing(std::string nameOfFile);
 private:
 	DBObjects parse(std::string nameOfFile);
 };

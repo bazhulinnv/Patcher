@@ -84,11 +84,12 @@ set(patcher_SRCS_bld
 #---------------------------------
 set(patcher_INCS_inst
 	include/Shared/Logger.h
+	include/Shared/ParsingTools.h
 	include/DBProvider/DBProvider.h
 	include/PatchInstaller/DependenciesChecker.h
 	include/PatchInstaller/FileParser.h
 	include/PatchInstaller/PatchInstaller.h
-  )
+  ) #вообще стоит собирать все же проект PatchInstaller_exe (ну просто он ведь генерит мне нужный ехе для gui)
 
 set(patcher_SRCS_inst
 	src/Logger.cpp

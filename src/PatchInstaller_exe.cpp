@@ -52,7 +52,12 @@ int main(int argc, char* argv[]) {
 						chdir(argv[3]);
 						mkdir("Temp");
 						if (strcmp(argv[2], "check") == 0) {
-							patchInstaller.checkDependencyList("DependencyList.dpn", dbProvider);
+							try {
+								patchInstaller.checkDependencyList("DependencyList.dpn", dbProvider);
+							}
+							catch (std::invalid_argument exception) {
+								std::cerr << "Invalid format DependencyList.dpn\n";
+							}
 						}
 						if (strcmp(argv[2], "install") == 0) {
 							patchInstaller.startInstallation();

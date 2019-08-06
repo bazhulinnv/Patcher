@@ -5,13 +5,13 @@
 
 using namespace std;
 
-std::string ParsingTools::interpolate(std::string original, const std::string& replacement, const std::string toBeReplaced)
+std::string ParsingTools::interpolate(std::string original, const std::string & replacement, std::string toBeReplaced)
 {
 	string newString = original.replace(original.find(toBeReplaced), toBeReplaced.length(), replacement);
 	return newString;
 }
 
-std::string ParsingTools::interpolateAll(const std::string& str, std::queue<std::string> replacements, const std::string toBeReplaced)
+std::string ParsingTools::interpolateAll(const std::string & str, std::queue<std::string> replacements, std::string toBeReplaced)
 {
 	if (str.empty())
 	{
@@ -31,7 +31,7 @@ std::string ParsingTools::interpolateAll(const std::string& str, std::queue<std:
 	return res;
 }
 
-std::string ParsingTools::interpolateAll(const std::string& str, std::vector<std::string> replacements, const std::string toBeReplaced)
+std::string ParsingTools::interpolateAll(const std::string & str, std::vector<std::string> replacements, std::string toBeReplaced)
 {
 	if (toBeReplaced.empty() || str.empty())
 	{

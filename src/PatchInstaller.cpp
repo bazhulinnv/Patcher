@@ -38,15 +38,21 @@ void passCheckLogsForGui(std::string data, bool resultCheck) {
 /** Main method of checking dependencies.
 	Checks the presence of objects in the database according to the list of objects specified in the file. */
 bool PatchInstaller::checkDependencyList(std::string nameOfFile, DBProvider *dbProvider) {
-	DBObjects objectsParameters = FileParser::getResultOfParsing(nameOfFile);
-	DependenciesChecker checker;
+	FileParser parser;
+	if (parser.checkInputCorrect(nameOfFile)) {
+		DBObjects objectsParameters = parser.getResultOfParsing(nameOfFile);
+		DependenciesChecker checker;
 
-	bool result = checker.getCheck(objectsParameters, dbProvider);
-	passCheckLogsForGui(checker.getDataForLog(), result);
-	checker.print();
-	createLog("Temp/CheckingDependenciesErrors.log", INFO, checker.getDataForLog());
+		bool result = checker.getCheck(objectsParameters, dbProvider);
+		passCheckLogsForGui(checker.getDataForLog(), result);
+		checker.print();
+		createLog("Temp/CheckingDependenciesErrors.log", INFO, checker.getDataForLog());
 
-	return result;
+		return result;
+	}
+	else {
+		throw std::invalid_argument("Wrong DependencyList.dpn file");
+	}
 }
 
 /** Installation part. */

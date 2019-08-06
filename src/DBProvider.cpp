@@ -1,5 +1,6 @@
 #include "DBProvider/DBProvider.h"
 #include "Shared/TextTable.h"
+#include "Shared/ParsingTools.h"
 
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
