@@ -102,7 +102,7 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 			const string text((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
 
 			// Remove path to file leave only name
-			const size_t slashPos = objectData.name.find_last_of("\\");
+			const size_t slashPos = objectData.name.find_last_of("/");
 			objectData.name.erase(0, slashPos+1);
 
 			// Add script in vector
