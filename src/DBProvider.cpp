@@ -208,8 +208,12 @@ Table DBProvider::getTable(const ObjectData & data) const
 {
 	Table table;
 
+	// Get table type
+	string queryString = "SELECT * FROM information_schema.tables t WHERE t.table_schema = '" + data.scheme + "' AND t.table_name = '" + data.name + "'";
+	table.type = getSingleValue(queryString, "table_type");
+
 	// Getting columns information
-	string queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
+	queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
 		"FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.relfilenode "
 		"WHERE a.attnum > 0 "
 		"AND NOT a.attisdropped "
@@ -224,7 +228,7 @@ Table DBProvider::getTable(const ObjectData & data) const
 		"AND t.table_schema = '" + data.scheme + "' "
 		"AND t.table_name = '" + data.name + "') j "
 		"ON c.column_name = j.column_name "
-		"WHERE c.table_schema = '" + data.scheme + "' AND c.table_name = '" + data.name + "';";
+		"WHERE c.table_schema = '" + data.scheme + "' AND c.table_name = '" + data.name + "'";
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
@@ -258,10 +262,10 @@ Table DBProvider::getTable(const ObjectData & data) const
 	return table;
 }
 
-inline string DBProvider::getSingleValue(const string &queryString, const string &columnName) const
+string DBProvider::getSingleValue(const string &queryString, const string &columnName) const
 {
 	pqxx::result result = query(queryString);
-	const pqxx::result::const_iterator row = result.begin();
+	pqxx::result::const_iterator row = result.begin();
 	return row[columnName].c_str();
 }
 
@@ -270,7 +274,12 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	Table table = getTable(data); // Getting information about object
 
 	// "CREATE TABLE" block - initialization of all table's columns
-	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
+	string scriptString = "CREATE ";
+	if (table.type != "BASE TABLE")
+	{
+		scriptString += table.type = " ";
+	}
+	scriptString += "TABLE " + data.scheme + "." + data.name + " (";
 	for (const Column &column : table.columns)
 	{
 		scriptString += "\n" + column.name + " " + column.type;

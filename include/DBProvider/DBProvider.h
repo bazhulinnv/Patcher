@@ -62,6 +62,7 @@ private:
 struct Table // Sctructure for containing table structure information
 {
 	vector<Column> columns;
+	string type;
 	string owner;
 	string description;
 };
@@ -142,7 +143,7 @@ private:
 	Table getTable(const ObjectData &data) const;
 
 	// Get single value from query
-	inline string getSingleValue(const string &queryString, const string &columnName) const;
+	string getSingleValue(const string &queryString, const string &columnName) const;
 
 	// Get ScriptData for current type
 	ScriptData getTableData(const ObjectData &data) const;
