@@ -14,8 +14,8 @@ constexpr auto BEGIN_CODE = "$begin$"; // Begining of the block code
 constexpr auto END_CODE = "$end$"; // Ending of the block code
 constexpr auto NAME_CODE = "%name%"; // Object name code
 constexpr auto NAME_LENGTH = 6; // Object name code length
-constexpr auto SCHEME_CODE = "%scheme%"; // Object scheme code
-constexpr auto SCHEME_LENGTH = 8; // Object scheme code length
+constexpr auto SCHEMA_CODE = "%schema%"; // Object scheme code
+constexpr auto SCHEMA_LENGTH = 8; // Object scheme code length
 constexpr auto ANY_TYPE_CODE = "$any$"; // Type not present in the template code
 
 constexpr auto DEPENDENCY_LIST_NAME = "DependencyList.dpn"; // Name of file that will be created. Contains list of objects and their type that required to install the patch

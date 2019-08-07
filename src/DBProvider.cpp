@@ -209,7 +209,8 @@ Table DBProvider::getTable(const ObjectData & data) const
 	Table table;
 
 	// Get table type
-	string queryString = "SELECT * FROM information_schema.tables t WHERE t.table_schema = '" + data.scheme + "' AND t.table_name = '" + data.name + "'";
+	string queryString = "SELECT * FROM information_schema.tables t " 
+		"WHERE t.table_schema = '" + data.schema + "' AND t.table_name = '" + data.name + "'";
 	table.type = getSingleValue(queryString, "table_type");
 
 	// Getting columns information
@@ -217,7 +218,7 @@ Table DBProvider::getTable(const ObjectData & data) const
 		"FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.relfilenode "
 		"WHERE a.attnum > 0 "
 		"AND NOT a.attisdropped "
-		"AND b.oid = '" + data.scheme + "." + data.name + "'::regclass::oid) i "
+		"AND b.oid = '" + data.schema + "." + data.name + "'::regclass::oid) i "
 		"ON c.column_name = i.attname "
 		"JOIN (SELECT t.table_schema, t.table_name, t.column_name, pgd.description "
 		"FROM pg_catalog.pg_statio_all_tables as st "
@@ -225,10 +226,10 @@ Table DBProvider::getTable(const ObjectData & data) const
 		"INNER JOIN information_schema.columns t on(pgd.objsubid = t.ordinal_position "
 		"AND  t.table_schema = st.schemaname and t.table_name = st.relname) "
 		"WHERE t.table_catalog = '" + _connection->info.databaseName + "' "
-		"AND t.table_schema = '" + data.scheme + "' "
+		"AND t.table_schema = '" + data.schema + "' "
 		"AND t.table_name = '" + data.name + "') j "
 		"ON c.column_name = j.column_name "
-		"WHERE c.table_schema = '" + data.scheme + "' AND c.table_name = '" + data.name + "'";
+		"WHERE c.table_schema = '" + data.schema + "' AND c.table_name = '" + data.name + "'";
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
@@ -242,17 +243,59 @@ Table DBProvider::getTable(const ObjectData & data) const
 		table.columns.push_back(column);
 	}
 
+	//Getting constarints
+	queryString = "SELECT "
+		"tc.constraint_type, "
+		"tc.table_schema, "
+		"tc.constraint_name, "
+		"tc.table_name, "
+		"kcu.column_name, "
+		"ccu.table_schema AS foreign_table_schema, "
+		"ccu.table_name AS foreign_table_name, "
+		"ccu.column_name AS foreign_column_name, "
+		"cc.check_clause "
+		"FROM "
+		"information_schema.table_constraints AS tc "
+		"LEFT JOIN information_schema.key_column_usage AS kcu "
+		"ON tc.constraint_name = kcu.constraint_name "
+		"AND tc.table_schema = kcu.table_schema "
+		"left JOIN information_schema.constraint_column_usage AS ccu "
+		"ON ccu.constraint_name = tc.constraint_name "
+		"AND ccu.table_schema = tc.table_schema "
+		"AND tc.constraint_type = 'FOREIGN KEY' "
+		"LEFT JOIN information_schema.check_constraints cc "
+		"ON cc.constraint_name = tc.constraint_name "
+		"WHERE tc.table_name = '" + data.name + "' "
+		"AND tc.table_schema = '" + data.schema + "' "
+		"AND COALESCE(cc.check_clause, '') NOT ILIKE '%IS NOT NULL%' ";
+	result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		Constraint constraint;
+		constraint.type = row["constraint_type"].c_str();
+		constraint.name = row["constraint_name"].c_str();
+		constraint.columnName = row["column_name"].c_str();
+		constraint.checkClause = row["check_clause"].c_str();
+		constraint.foreignTableSchema = row["foreign_table_schema"].c_str();
+		constraint.foreignTableName = row["foreign_table_name"].c_str();
+		constraint.foreignColumnName = row["foreign_column_name"].c_str();
+
+		cout << constraint.type << " " << constraint.name << " " << constraint.checkClause << endl;
+
+		table.constraints.push_back(constraint);
+	}
+
 	// Getting table owner
-	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.scheme + "' and tablename = '" + data.name + "'";
+	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
 	table.owner = getSingleValue(queryString, "tableowner");
 
 	// Getting table description
-	queryString = "SELECT obj_description('" + data.scheme + "." + data.name + "'::regclass::oid)";
+	queryString = "SELECT obj_description('" + data.schema + "." + data.name + "'::regclass::oid)";
 	table.description = getSingleValue(queryString, "obj_description");
 
 	// Getting triggers
 	queryString = "SELECT * FROM information_schema.triggers t WHERE t.trigger_schema = '" 
-		+ data.scheme + "' and t.event_object_table = '" + data.name + "'";
+		+ data.schema + "' and t.event_object_table = '" + data.name + "'";
 	result = query(queryString);
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
@@ -279,7 +322,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	{
 		scriptString += table.type = " ";
 	}
-	scriptString += "TABLE " + data.scheme + "." + data.name + " (";
+	scriptString += "TABLE " + data.schema + "." + data.name + " (";
 	for (const Column &column : table.columns)
 	{
 		scriptString += "\n" + column.name + " " + column.type;
@@ -293,6 +336,29 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 		}
 		scriptString += ",";
 	}
+
+	// Creation of constraints
+	for (Constraint constraint : table.constraints)
+	{
+		scriptString += "\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
+		if (constraint.type == "PRIMARY KEY" || "UNIQUE")
+		{
+			scriptString += "(" + constraint.columnName + ")";
+		}
+		else if (constraint.type == "FOREIGN KEY")
+		{
+			scriptString += "(" + constraint.columnName + ")\n";
+			scriptString += "REFERENCES " + constraint.foreignTableSchema + "." + constraint.foreignTableName +
+				" (" + constraint.foreignColumnName + ")";
+		}
+		else if (constraint.type == "CHECK")
+		{
+			cout << "ASda " << constraint.checkClause << endl;
+			scriptString += constraint.checkClause;
+		}
+		scriptString += ",";
+	}
+
 	if (!table.columns.empty())
 	{
 		scriptString.pop_back(); // Removing an extra comma at the end
@@ -300,12 +366,12 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	scriptString += "\n);\n\n";
 
 	// "OWNER TO" block to make the owner user
-	scriptString += "ALTER TABLE " + data.scheme + "." + data.name + " OWNER TO " + table.owner + ";\n\n";
+	scriptString += "ALTER TABLE " + data.schema + "." + data.name + " OWNER TO " + table.owner + ";\n\n";
 
 	// "COMMENT ON TABLE" block
 	if (!table.description.empty())
 	{
-		scriptString += "COMMENT ON TABLE " + data.scheme + "." + data.name + " IS '" + table.description + "';\n\n";
+		scriptString += "COMMENT ON TABLE " + data.schema + "." + data.name + " IS '" + table.description + "';\n\n";
 	}
 
 	// "COMMENT ON COLUMN blocks
@@ -313,7 +379,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	{
 		if (!column.description.empty())
 		{
-			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
+			scriptString += "COMMENT ON COLUMN " + data.schema + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
 		}
 	}
 

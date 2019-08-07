@@ -14,7 +14,7 @@ struct ObjectData // Sctructure for containing objet data
 {
 	string name; // Name of object
 	string type; // Type of object
-	string scheme; // Scheme of object
+	string schema; // Scheme of object
 	vector<string> paramsVector; // Params of object
 
 	ObjectData() = default;
@@ -22,7 +22,7 @@ struct ObjectData // Sctructure for containing objet data
 	{
 		name = pName;
 		type = pType;
-		scheme = pScheme;
+		schema = pScheme;
 		paramsVector = pParamsVector;
 	}
 
@@ -43,7 +43,7 @@ struct ScriptData : ObjectData // Sctructure for containing script data
 		text = pText;
 	}
 	
-	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.schema, objectData.paramsVector, pText) {}
 };
 
 struct Column // Structure for containing information about column of table
@@ -59,9 +59,21 @@ private:
 	bool nullable_ = false;
 };
 
+struct Constraint
+{
+	string type;
+	string name;
+	string columnName;
+	string checkClause;
+	string foreignTableSchema;
+	string foreignTableName;
+	string foreignColumnName;
+};
+
 struct Table // Sctructure for containing table structure information
 {
 	vector<Column> columns;
+	vector<Constraint> constraints;
 	string type;
 	string owner;
 	string description;

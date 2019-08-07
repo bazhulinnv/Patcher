@@ -58,7 +58,7 @@ void PatchBuilder::buildPatch(const string directory)
 			if (isContains(objectData, scriptData.text))
 			{
 				// If object was found - writing it's name and type in DependencyList
-				output << objectData.scheme << " " << objectData.name << " " << objectData.type << endl;
+				output << objectData.schema << " " << objectData.name << " " << objectData.type << endl;
 				message = " - " + objectData.name + " with " + objectData.type + " type included - dependency in " + scriptData.name + "\n";
 				cout << message;
 				addLog(message);
@@ -95,7 +95,7 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 	scriptDataVectorType scriptDataVector;
 	for (ObjectData objectData : objectDataVector)
 	{
-		if (objectData.scheme == "script")
+		if (objectData.schema == "script")
 		{
 			// Reading all text from file
 			ifstream input(objectData.name);
@@ -142,15 +142,15 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 	for (const ScriptData data : scriptDataVector)
 	{
 		// Creating directory named as type of script
-		_mkdir(&(directory + "/" + data.scheme)[0]);
-		_mkdir(&(directory + "/" + data.scheme + "/" + data.type)[0]);
-		ofstream outputScript(directory + "/" + data.scheme + "/" + data.type + "/" + data.name);
+		_mkdir(&(directory + "/" + data.schema)[0]);
+		_mkdir(&(directory + "/" + data.schema + "/" + data.type)[0]);
+		ofstream outputScript(directory + "/" + data.schema + "/" + data.type + "/" + data.name);
 		// Writing script text in file
 		outputScript << data.text;
 
 		// Creating install command
-		string installBatStr = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.scheme + "/";
-		string installShStr = string("psql -a -U ") + "$1" + " -d " + "$2" + " -h " + "$3" + " -p " + "$4" " -f " + data.scheme + "/";
+		string installBatStr = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.schema + "/";
+		string installShStr = string("psql -a -U ") + "$1" + " -d " + "$2" + " -h " + "$3" + " -p " + "$4" " -f " + data.schema + "/";
 		if (data.type != "")
 		{
 			installBatStr += data.type + "/";
@@ -207,16 +207,16 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	{
 		// Reading from PatchList file in patchListVector
 		ObjectData data;
-		input >> data.scheme;
+		input >> data.schema;
 
 		// If end of file
-		if (data.scheme.empty())
+		if (data.schema.empty())
 		{
 			return patchListVector;
 		}
 
 		// If this is script from outside - type field is empty
-		if (data.scheme == "script")
+		if (data.schema == "script")
 		{
 			input >> data.name;
 			data.type = "";
@@ -324,10 +324,10 @@ regex PatchBuilder::createExpression(const ObjectData &data)
 					}
 
 					// Replace scheme code word on current object schema
-					const size_t schemaPos = currentWord.find(SCHEME_CODE);
+					const size_t schemaPos = currentWord.find(SCHEMA_CODE);
 					if (schemaPos != string::npos)
 					{
-						currentWord.replace(schemaPos, SCHEME_LENGTH, data.scheme);
+						currentWord.replace(schemaPos, SCHEMA_LENGTH, data.schema);
 					}
 
 					// Replace scheme code word on current object schema
