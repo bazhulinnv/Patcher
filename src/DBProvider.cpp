@@ -54,60 +54,34 @@ vector<ObjectData> DBProvider::getObjects() const
 
 ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary only for tables
 {
-	ObjectInformation info = getObjectInformation(data); // Getting information about object
-
-	// "CREATE TABLE" block - initialization of all table's columns
-	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
-	for (const Column &column : info.columns)
+	if (data.type == "table")
 	{
-		scriptString += "\n" + column.name + " " + column.type;
-		if (!column.defaultValue.empty())
-		{
-			scriptString += " DEFAULT " + column.defaultValue;
-		}
-		if (!column.isNullable())
-		{
-			scriptString += " NOT NULL";
-		}
-		scriptString += ",";
+		return getTableData(data);
 	}
-	if (!info.columns.empty())
+	else if (data.type == "function")
 	{
-		scriptString.pop_back(); // Removing an extra comma at the end
+		return getFunctionData(data);
 	}
-	scriptString += "\n);\n\n";
-
-	// "OWNER TO" block to make the owner user
-	scriptString += "ALTER TABLE " + data.scheme + "." + data.name + " OWNER TO " + info.owner + ";\n\n";
-
-	// "COMMENT ON TABLE" block
-	if (!info.description.empty())
+	else if (data.type == "trigger")
 	{
-		scriptString += "COMMENT ON TABLE " + data.scheme + "." + data.name + " IS '" + info.description + "';\n\n";
+		return getTriggerData(data);
 	}
-
-	// "COMMENT ON COLUMN blocks
-	for (const Column &column : info.columns)
+	else if (data.type == "index")
 	{
-		if (!column.description.empty())
-		{
-			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
-		}
+		return getIndexData(data);
 	}
-
-	// Triggers creation
-	for (const Trigger &trigger : info.triggers)
+	else if (data.type == "table")
 	{
-		scriptString += "CREATE TRIGGER " + trigger.name + "\n";
-		scriptString += trigger.timing + " " + trigger.manipulation + "\n";
-		scriptString += "ON " + data.scheme + "." + data.name + "\n";
-		scriptString += "FOR EACH " + trigger.orientation + "\n";
-		scriptString += trigger.action + ";\n\n";
+		return getViewData(data);
 	}
-
-	ScriptData scriptData = ScriptData(data, scriptString);
-	scriptData.name += ".sql";
-	return scriptData;
+	else if (data.type == "view")
+	{
+		return getViewData(data);
+	}
+	else if (data.type == "sequence")
+	{
+		return getSequenceData(data);
+	}
 }
 
 // Checks if specified object exists in database
@@ -230,9 +204,9 @@ bool DBProvider::triggerExists(const std::string& triggerSchema, const std::stri
 	return false;
 }
 
-ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) const
+Table DBProvider::getTable(const ObjectData & data) const
 {
-	ObjectInformation info;
+	Table table;
 
 	// Getting columns information
 	string queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
@@ -261,16 +235,16 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 		column.description = row["description"].c_str();
 		column.setNullable(row["is_nullable"].c_str());
 
-		info.columns.push_back(column);
+		table.columns.push_back(column);
 	}
 
 	// Getting table owner
 	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.scheme + "' and tablename = '" + data.name + "'";
-	info.owner = getSingleValue(queryString, "tableowner");
+	table.owner = getSingleValue(queryString, "tableowner");
 
 	// Getting table description
 	queryString = "SELECT obj_description('" + data.scheme + "." + data.name + "'::regclass::oid)";
-	info.description = getSingleValue(queryString, "obj_description");
+	table.description = getSingleValue(queryString, "obj_description");
 
 	// Getting triggers
 	queryString = "SELECT * FROM information_schema.triggers t WHERE t.trigger_schema = '" 
@@ -278,7 +252,7 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 	result = query(queryString);
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
-		Trigger *trigger = info.getTrigger(row["trigger_name"].c_str());
+		Trigger *trigger = table.getTrigger(row["trigger_name"].c_str());
 		if (trigger == nullptr)
 		{
 			trigger = new Trigger();
@@ -286,7 +260,7 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 			trigger->timing = row["action_timing"].c_str();
 			trigger->manipulation = row["event_manipulation"].c_str();
 			trigger->action = row["action_statement"].c_str();
-			info.triggers.push_back(*trigger);
+			table.triggers.push_back(*trigger);
 		}
 		else
 		{
@@ -295,7 +269,7 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 		}
 	}
 
-	return info;
+	return table;
 }
 
 inline string DBProvider::getSingleValue(const string &queryString, const string &columnName) const
@@ -303,6 +277,89 @@ inline string DBProvider::getSingleValue(const string &queryString, const string
 	pqxx::result result = query(queryString);
 	const pqxx::result::const_iterator row = result.begin();
 	return row[columnName].c_str();
+}
+
+ScriptData DBProvider::getTableData(const ObjectData & data) const
+{
+	Table table = getTable(data); // Getting information about object
+
+	// "CREATE TABLE" block - initialization of all table's columns
+	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
+	for (const Column &column : table.columns)
+	{
+		scriptString += "\n" + column.name + " " + column.type;
+		if (!column.defaultValue.empty())
+		{
+			scriptString += " DEFAULT " + column.defaultValue;
+		}
+		if (!column.isNullable())
+		{
+			scriptString += " NOT NULL";
+		}
+		scriptString += ",";
+	}
+	if (!table.columns.empty())
+	{
+		scriptString.pop_back(); // Removing an extra comma at the end
+	}
+	scriptString += "\n);\n\n";
+
+	// "OWNER TO" block to make the owner user
+	scriptString += "ALTER TABLE " + data.scheme + "." + data.name + " OWNER TO " + table.owner + ";\n\n";
+
+	// "COMMENT ON TABLE" block
+	if (!table.description.empty())
+	{
+		scriptString += "COMMENT ON TABLE " + data.scheme + "." + data.name + " IS '" + table.description + "';\n\n";
+	}
+
+	// "COMMENT ON COLUMN blocks
+	for (const Column &column : table.columns)
+	{
+		if (!column.description.empty())
+		{
+			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
+		}
+	}
+
+	// Triggers creation
+	for (const Trigger &trigger : table.triggers)
+	{
+		scriptString += "CREATE TRIGGER " + trigger.name + "\n";
+		scriptString += trigger.timing + " " + trigger.manipulation + "\n";
+		scriptString += "ON " + data.scheme + "." + data.name + "\n";
+		scriptString += "FOR EACH " + trigger.orientation + "\n";
+		scriptString += trigger.action + ";\n\n";
+	}
+
+	ScriptData scriptData = ScriptData(data, scriptString);
+	scriptData.name += ".sql";
+	return scriptData;
+}
+
+ScriptData DBProvider::getFunctionData(const ObjectData & data) const
+{
+	return ScriptData();
+}
+
+ScriptData DBProvider::getViewData(const ObjectData & data) const
+{
+	return ScriptData();
+}
+
+ScriptData DBProvider::getSequenceData(const ObjectData & data) const
+{
+	return ScriptData();
+}
+
+ScriptData DBProvider::getTriggerData(const ObjectData & data) const
+{
+	return ScriptData();
+}
+
+ScriptData DBProvider::getIndexData(const ObjectData & data) const
+{
+	return ScriptData();
 }
 
 void printObjectsData(pqxx::result queryResult)

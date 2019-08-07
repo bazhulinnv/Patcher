@@ -68,7 +68,7 @@ struct Trigger
 	string action;
 };
 
-struct ObjectInformation // Sctructure for containing object structure information
+struct Table // Sctructure for containing table structure information
 {
 	vector<Column> columns;
 	vector<Trigger> triggers;
@@ -161,10 +161,18 @@ private:
 	DBConnection *_connection = nullptr;
 
 	// Getting information about object from database
-	ObjectInformation getObjectInformation(const ObjectData &data) const;
+	Table getTable(const ObjectData &data) const;
 
 	// Get single value from query
 	inline string getSingleValue(const string &queryString, const string &columnName) const;
+
+	// Get ScriptData for current type
+	ScriptData getTableData(const ObjectData &data) const;
+	ScriptData getFunctionData(const ObjectData &data) const;
+	ScriptData getViewData(const ObjectData &data) const;
+	ScriptData getSequenceData(const ObjectData &data) const;
+	ScriptData getTriggerData(const ObjectData &data) const;
+	ScriptData getIndexData(const ObjectData &data) const;
 };
 
 void printObjectsData(pqxx::result res);
