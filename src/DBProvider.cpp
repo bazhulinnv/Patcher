@@ -252,21 +252,7 @@ Table DBProvider::getTable(const ObjectData & data) const
 	result = query(queryString);
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
-		Trigger *trigger = table.getTrigger(row["trigger_name"].c_str());
-		if (trigger == nullptr)
-		{
-			trigger = new Trigger();
-			trigger->name = row["trigger_name"].c_str();
-			trigger->timing = row["action_timing"].c_str();
-			trigger->manipulation = row["event_manipulation"].c_str();
-			trigger->action = row["action_statement"].c_str();
-			table.triggers.push_back(*trigger);
-		}
-		else
-		{
-			trigger->manipulation += " OR ";
-			trigger->manipulation += row["event_manipulation"].c_str();
-		}
+		// Getting triggers
 	}
 
 	return table;
@@ -320,16 +306,6 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 		{
 			scriptString += "COMMENT ON COLUMN " + data.scheme + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
 		}
-	}
-
-	// Triggers creation
-	for (const Trigger &trigger : table.triggers)
-	{
-		scriptString += "CREATE TRIGGER " + trigger.name + "\n";
-		scriptString += trigger.timing + " " + trigger.manipulation + "\n";
-		scriptString += "ON " + data.scheme + "." + data.name + "\n";
-		scriptString += "FOR EACH " + trigger.orientation + "\n";
-		scriptString += trigger.action + ";\n\n";
 	}
 
 	ScriptData scriptData = ScriptData(data, scriptString);

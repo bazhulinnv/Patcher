@@ -59,33 +59,11 @@ private:
 	bool nullable_ = false;
 };
 
-struct Trigger
-{
-	string name;
-	string timing;
-	string manipulation;
-	string orientation;
-	string action;
-};
-
 struct Table // Sctructure for containing table structure information
 {
 	vector<Column> columns;
-	vector<Trigger> triggers;
 	string owner;
 	string description;
-
-	Trigger *getTrigger(string triggerName)
-	{
-		for (Trigger &trigger : triggers)
-		{
-			if (trigger.name == triggerName)
-			{
-				return &trigger;
-			}
-		}
-		return nullptr;
-	}
 };
 
 // Vector for containing object data
