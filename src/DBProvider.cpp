@@ -260,6 +260,8 @@ Table DBProvider::getTable(const ObjectData & data) const
 		"AND tc.constraint_type = 'FOREIGN KEY' "
 		"LEFT JOIN information_schema.check_constraints cc "
 		"ON cc.constraint_name = tc.constraint_name "
+		"LEFT JOIN information_schema.referential_constraints rc "
+		"ON rc.constraint_name = tc.constraint_name "
 		"WHERE tc.table_name = '" + data.name + "' "
 		"AND tc.table_schema = '" + data.schema + "' "
 		"AND COALESCE(cc.check_clause, '') NOT ILIKE '%IS NOT NULL%' ";
@@ -274,8 +276,9 @@ Table DBProvider::getTable(const ObjectData & data) const
 		constraint.foreignTableSchema = row["foreign_table_schema"].c_str();
 		constraint.foreignTableName = row["foreign_table_name"].c_str();
 		constraint.foreignColumnName = row["foreign_column_name"].c_str();
-
-		//cout << constraint.type << " " << constraint.name << " " << constraint.checkClause << endl;
+		constraint.matchOption = row["match_option"].c_str();
+		constraint.onDelete = row["delete_rule"].c_str();
+		constraint.onUpdate = row["update_rule"].c_str();
 
 		table.constraints.push_back(constraint);
 	}
@@ -335,7 +338,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	// Creation of constraints
 	for (Constraint constraint : table.constraints)
 	{
-		scriptString += "\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
+		scriptString += "\n\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
 		if (constraint.type == "PRIMARY KEY" || constraint.type == "UNIQUE")
 		{
 			scriptString += "(" + constraint.columnName + ")";
@@ -344,7 +347,17 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 		{
 			scriptString += "(" + constraint.columnName + ")\n";
 			scriptString += "REFERENCES " + constraint.foreignTableSchema + "." + constraint.foreignTableName +
-				" (" + constraint.foreignColumnName + ")";
+				" (" + constraint.foreignColumnName + ") ";
+			if (constraint.matchOption == "NONE")
+			{
+				scriptString += "MATCH SIMPLIE";
+			}
+			else
+			{
+				scriptString += constraint.matchOption;
+			}
+			scriptString += "\nON UPDATE " + constraint.onUpdate;
+			scriptString += "\nON DELETE " + constraint.onDelete;
 		}
 		else if (constraint.type == "CHECK")
 		{

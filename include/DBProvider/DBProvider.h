@@ -68,6 +68,9 @@ struct Constraint
 	string foreignTableSchema;
 	string foreignTableName;
 	string foreignColumnName;
+	string matchOption;
+	string onDelete;
+	string onUpdate;
 };
 
 struct Table // Sctructure for containing table structure information
