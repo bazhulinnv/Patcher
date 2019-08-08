@@ -245,21 +245,16 @@ Table DBProvider::getTable(const ObjectData & data) const
 
 	//Getting constarints
 	queryString = "SELECT "
-		"tc.constraint_type, "
-		"tc.table_schema, "
-		"tc.constraint_name, "
-		"tc.table_name, "
-		"kcu.column_name, "
+		"*, "
 		"ccu.table_schema AS foreign_table_schema, "
 		"ccu.table_name AS foreign_table_name, "
-		"ccu.column_name AS foreign_column_name, "
-		"cc.check_clause "
+		"ccu.column_name AS foreign_column_name "
 		"FROM "
 		"information_schema.table_constraints AS tc "
 		"LEFT JOIN information_schema.key_column_usage AS kcu "
 		"ON tc.constraint_name = kcu.constraint_name "
 		"AND tc.table_schema = kcu.table_schema "
-		"left JOIN information_schema.constraint_column_usage AS ccu "
+		"LEFT JOIN information_schema.constraint_column_usage AS ccu "
 		"ON ccu.constraint_name = tc.constraint_name "
 		"AND ccu.table_schema = tc.table_schema "
 		"AND tc.constraint_type = 'FOREIGN KEY' "
@@ -280,7 +275,7 @@ Table DBProvider::getTable(const ObjectData & data) const
 		constraint.foreignTableName = row["foreign_table_name"].c_str();
 		constraint.foreignColumnName = row["foreign_column_name"].c_str();
 
-		cout << constraint.type << " " << constraint.name << " " << constraint.checkClause << endl;
+		//cout << constraint.type << " " << constraint.name << " " << constraint.checkClause << endl;
 
 		table.constraints.push_back(constraint);
 	}
@@ -341,7 +336,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	for (Constraint constraint : table.constraints)
 	{
 		scriptString += "\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
-		if (constraint.type == "PRIMARY KEY" || "UNIQUE")
+		if (constraint.type == "PRIMARY KEY" || constraint.type == "UNIQUE")
 		{
 			scriptString += "(" + constraint.columnName + ")";
 		}
@@ -353,7 +348,6 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 		}
 		else if (constraint.type == "CHECK")
 		{
-			cout << "ASda " << constraint.checkClause << endl;
 			scriptString += constraint.checkClause;
 		}
 		scriptString += ",";

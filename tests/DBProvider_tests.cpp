@@ -123,7 +123,7 @@ bool test_PrintObjectsAsTable(DBProvider *dbProv)
 	{
 		result.add(objs[i].name);
 		result.add(objs[i].type);
-		result.add(objs[i].scheme);
+		result.add(objs[i].schema);
 
 		std::string acc = "";
 		if (!objs[i].paramsVector.empty())
