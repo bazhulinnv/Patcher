@@ -283,6 +283,22 @@ Table DBProvider::getTable(const ObjectData & data) const
 		table.constraints.push_back(constraint);
 	}
 
+	// Getting table storage parameters
+	queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
+	string queryValue = getSingleValue(queryString, "reloptions");
+	// String feed in the required format
+	if (!queryValue.empty())
+	{
+		queryValue.erase(0, 1); // Remove { symbol from beginning
+		queryValue.pop_back(); // Remove } symbol from ending
+		vector<string> expressionString = ParsingTools::splitToVector(queryValue, ",");
+		table.options += expressionString[0];
+		for (int expressionIndex = 1; expressionIndex < expressionString.size(); expressionIndex++)
+		{
+			table.options += ",\n" + expressionString[expressionIndex];
+		}
+	}
+
 	// Getting table owner
 	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
 	table.owner = getSingleValue(queryString, "tableowner");
@@ -370,7 +386,15 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	{
 		scriptString.pop_back(); // Removing an extra comma at the end
 	}
-	scriptString += "\n);\n\n";
+	scriptString += "\n);\n";
+
+	// "WITH" block to create storage parameters
+	if (!table.options.empty())
+	{
+		scriptString += "WITH (\n" + table.options + "\n)";
+	}
+
+	scriptString += "\n";
 
 	// "OWNER TO" block to make the owner user
 	scriptString += "ALTER TABLE " + data.schema + "." + data.name + " OWNER TO " + table.owner + ";\n\n";

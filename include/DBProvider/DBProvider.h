@@ -80,6 +80,7 @@ struct Table // Sctructure for containing table structure information
 	string type;
 	string owner;
 	string description;
+	string options;
 };
 
 // Vector for containing object data
