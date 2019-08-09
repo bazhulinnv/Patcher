@@ -236,7 +236,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 			input >> currentWord;
 			while (currentWord != ")")
 			{
-				data.paramsVector.push_back(currentWord);
+				data.params.push_back(currentWord);
 				input >> currentWord;
 			}
 		}
@@ -255,7 +255,7 @@ void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVecto
 		if (data.type == "function")
 		{
 			output << " ( ";
-			for (string param : data.paramsVector)
+			for (string param : data.params)
 			{
 				output << param << " ";
 			}

@@ -75,13 +75,14 @@ struct Constraint
 
 struct Table // Sctructure for containing table structure information
 {
-	vector<Column> columns;
-	vector<Constraint> constraints;
 	string type;
 	string owner;
 	string description;
 	string options;
 	string space;
+	vector<Column> columns;
+	vector<Constraint> constraints;
+	vector<string> inheritTables;
 };
 
 // Vector for containing object data

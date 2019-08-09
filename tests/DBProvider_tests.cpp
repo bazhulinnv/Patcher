@@ -126,9 +126,9 @@ bool test_PrintObjectsAsTable(DBProvider *dbProv)
 		result.add(objs[i].schema);
 
 		std::string acc = "";
-		if (!objs[i].paramsVector.empty())
+		if (!objs[i].params.empty())
 		{
-			for (const auto& param : objs[i].paramsVector)
+			for (const auto& param : objs[i].params)
 			{
 				acc += param + " ";
 			}

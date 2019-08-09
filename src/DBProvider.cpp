@@ -283,6 +283,19 @@ Table DBProvider::getTable(const ObjectData & data) const
 		table.constraints.push_back(constraint);
 	}
 
+	// Geting inherits
+	queryString = "SELECT pg_inherits.*, c.relname AS child_name, c.relispartition AS child_partision, p.relname AS parent_name "
+		"FROM pg_inherits "
+		"JOIN pg_class AS c ON (inhrelid = c.oid) "
+		"JOIN pg_class as p ON (inhparent = p.oid) " 
+		"WHERE c.relispartition = 'false' "
+		"AND c.relname = '" + data.name + "'";
+	result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		table.inheritTables.push_back(row["parent_name"].c_str());
+	}
+
 	// Getting table storage parameters
 
 	queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
@@ -401,6 +414,18 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 		scriptString.pop_back(); // Removing an extra comma at the end
 	}
 	scriptString += "\n)\n";
+
+	// "INHERITS" block
+	if (!table.inheritTables.empty())
+	{
+		scriptString += "INHERITS (\n";
+		scriptString += table.inheritTables[0];
+		for (int inheritIndex = 1; inheritIndex < table.inheritTables.size(); inheritIndex++)
+		{
+			scriptString += ",\n" + table.inheritTables[inheritIndex];
+		}
+		scriptString += "\n)\n";
+	}
 
 	// "WITH" block to create storage parameters
 	scriptString += "WITH (\n" + table.options + "\n)\n";
