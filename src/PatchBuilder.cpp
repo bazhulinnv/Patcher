@@ -41,6 +41,7 @@ void PatchBuilder::buildPatch(const string directory)
 	ofstream output(directory + "/" + DEPENDENCY_LIST_NAME); // Dependency list directory
 	const objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
 	scriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
+	createObjectList(scriptDataVector, directory); // Creating of ObjectList
 	createInstallPocket(directory, scriptDataVector); // Creaing all instalation components
 	removeComments(scriptDataVector);
 	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
@@ -243,6 +244,25 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	}
 
 	return patchListVector;
+}
+
+void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVector, const string directory) const
+{
+	ofstream output(directory + "/" + OBJECT_LIST_NAME);
+	for (ObjectData data : objectDataVector)
+	{
+		output << data.schema << " " << data.name << " " << data.type;
+		if (data.type == "function")
+		{
+			output << " ( ";
+			for (string param : data.paramsVector)
+			{
+				output << param << " ";
+			}
+			output << ")";
+		}
+		output << endl;
+	}
 }
 
 void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second)

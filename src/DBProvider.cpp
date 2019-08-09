@@ -284,20 +284,34 @@ Table DBProvider::getTable(const ObjectData & data) const
 	}
 
 	// Getting table storage parameters
+
 	queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
 	string queryValue = getSingleValue(queryString, "reloptions");
+
+	// Getting OIDS value
+	string oidsExpression = "OIDS=false";
+	if (getSingleValue(queryString, "relhasoids") == "t")
+	{
+		oidsExpression = "OIDS=true";
+	}
+	table.options += oidsExpression;
+
 	// String feed in the required format
+	vector<string> expressionString;
 	if (!queryValue.empty())
 	{
 		queryValue.erase(0, 1); // Remove { symbol from beginning
 		queryValue.pop_back(); // Remove } symbol from ending
-		vector<string> expressionString = ParsingTools::splitToVector(queryValue, ",");
-		table.options += expressionString[0];
-		for (int expressionIndex = 1; expressionIndex < expressionString.size(); expressionIndex++)
+		expressionString = ParsingTools::splitToVector(queryValue, ",");
+		for (int expressionIndex = 0; expressionIndex < expressionString.size(); expressionIndex++)
 		{
 			table.options += ",\n" + expressionString[expressionIndex];
 		}
 	}
+
+	// Getting tablespace
+	queryString = "SELECT * FROM pg_tables WHERE tablename = '" + data.name + "' AND schemaname = '" + data.schema + "'";
+	table.space = getSingleValue(queryString, "tablespace");
 
 	// Getting table owner
 	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
@@ -354,7 +368,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	// Creation of constraints
 	for (Constraint constraint : table.constraints)
 	{
-		scriptString += "\n\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
+		scriptString += "\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
 		if (constraint.type == "PRIMARY KEY" || constraint.type == "UNIQUE")
 		{
 			scriptString += "(" + constraint.columnName + ")";
@@ -366,7 +380,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 				" (" + constraint.foreignColumnName + ") ";
 			if (constraint.matchOption == "NONE")
 			{
-				scriptString += "MATCH SIMPLIE";
+				scriptString += "MATCH SIMPLE";
 			}
 			else
 			{
@@ -386,15 +400,22 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	{
 		scriptString.pop_back(); // Removing an extra comma at the end
 	}
-	scriptString += "\n);\n";
+	scriptString += "\n)\n";
 
 	// "WITH" block to create storage parameters
-	if (!table.options.empty())
-	{
-		scriptString += "WITH (\n" + table.options + "\n)";
-	}
+	scriptString += "WITH (\n" + table.options + "\n)\n";
 
-	scriptString += "\n";
+	// "TABLESPACE" definition
+	scriptString += "TABLESPACE ";
+	if (table.space.empty())
+	{
+		scriptString += "pg_default";
+	}
+	else
+	{
+		scriptString += table.space;
+	}
+	scriptString += ";\n\n";
 
 	// "OWNER TO" block to make the owner user
 	scriptString += "ALTER TABLE " + data.schema + "." + data.name + " OWNER TO " + table.owner + ";\n\n";
@@ -402,7 +423,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	// "COMMENT ON TABLE" block
 	if (!table.description.empty())
 	{
-		scriptString += "COMMENT ON TABLE " + data.schema + "." + data.name + " IS '" + table.description + "';\n\n";
+		scriptString += "COMMENT ON TABLE " + data.schema + "." + data.name + "\nIS '" + table.description + "';\n\n";
 	}
 
 	// "COMMENT ON COLUMN blocks
@@ -410,7 +431,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data) const
 	{
 		if (!column.description.empty())
 		{
-			scriptString += "COMMENT ON COLUMN " + data.schema + "." + data.name + "." + column.name + " IS '" + column.description + "';\n\n";
+			scriptString += "COMMENT ON COLUMN " + data.schema + "." + data.name + "." + column.name + "\nIS '" + column.description + "';\n\n";
 		}
 	}
 
