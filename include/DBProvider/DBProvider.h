@@ -15,7 +15,7 @@ struct ObjectData // Sctructure for containing objet data
 	string name; // Name of object
 	string type; // Type of object
 	string schema; // Scheme of object
-	vector<string> paramsVector; // Params of object
+	vector<string> params; // Params of object
 
 	ObjectData() = default;
 	ObjectData(const string pName, const string pType, const string pScheme, const vector<string> pParamsVector = vector<string>())
@@ -23,7 +23,7 @@ struct ObjectData // Sctructure for containing objet data
 		name = pName;
 		type = pType;
 		schema = pScheme;
-		paramsVector = pParamsVector;
+		params = pParamsVector;
 	}
 
 	bool operator == (ObjectData &object) const
@@ -43,7 +43,7 @@ struct ScriptData : ObjectData // Sctructure for containing script data
 		text = pText;
 	}
 	
-	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.schema, objectData.paramsVector, pText) {}
+	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.schema, objectData.params, pText) {}
 };
 
 struct Column // Structure for containing information about column of table
