@@ -75,12 +75,11 @@ void passInstallLogsGui(std::string &dataForErrorLog, std::string &dataForInfoLo
 	std::cerr << "INSTALLATION PROCESS:\n";
 	std::cerr << dataForInfoLog;
 	std::cerr << "INSTALLATION ERRORS:\n";
-	dataForErrorLog += "Installation completed";
 	if (dataForErrorLog.empty()) {	
-		dataForErrorLog += " without errors.\n";
+		dataForErrorLog += "Installation completed without errors.\n";
 	}
 	else {
-		dataForErrorLog += " with errors.\n";
+		dataForErrorLog += "Installation completed with errors.\n";
 	}
 	std::cerr << dataForErrorLog;
 }
