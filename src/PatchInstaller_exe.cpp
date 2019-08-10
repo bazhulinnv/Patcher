@@ -5,6 +5,7 @@
 #include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
 #include "PatchInstaller/FileParser.h"
+#include "Shared/ParsingTools.h"
 
 bool directoryExists(char* directory) {
 	return std::filesystem::exists(directory);
@@ -34,6 +35,8 @@ int main(int argc, char* argv[]) {
 		std::string parameters(argv[1]);
 		try {
 			auto *dbProvider = new DBProvider(parameters);
+			std::pair<std::vector<std::string>, std::string> separateParameters = ParsingTools::parseCredentials(parameters);
+
 			if (argv[2] == nullptr || !(strcmp(argv[2], "check") == 0 || strcmp(argv[2], "install") == 0)) {
 				std::cerr << "Wrong command of installer. Choose install/check. \n";
 				returnCode = true;
@@ -60,7 +63,7 @@ int main(int argc, char* argv[]) {
 							}
 						}
 						if (strcmp(argv[2], "install") == 0) {
-							patchInstaller.startInstallation();
+							patchInstaller.startInstallation(separateParameters);
 						}
 					}
 					else {

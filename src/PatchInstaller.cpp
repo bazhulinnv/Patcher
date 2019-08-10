@@ -87,8 +87,14 @@ void passInstallLogsGui(std::string &dataForErrorLog, std::string &dataForInfoLo
 
 /** Main method of installing part.
 	When the method starts, the dependency check is considered successful. */
-bool PatchInstaller::startInstallation() {
-	system("Install.bat");
+bool PatchInstaller::startInstallation(std::pair<std::vector<std::string>, std::string> separateParameters) {
+	//build command with parameters: Install.bat username databaseName host port
+	std::string commandWithParametersConnection = "Install.bat " + separateParameters.first[1] +
+		+ " " + separateParameters.first[0] + " " + separateParameters.first[3] + " ";
+	commandWithParametersConnection += separateParameters.first[4];
+
+	const char *cstr = commandWithParametersConnection.c_str();
+	system(cstr);
 
 	std::ifstream errors("tempError.txt", std::ios::in);
 	std::ifstream info("tempInfo.txt", std::ios::in);

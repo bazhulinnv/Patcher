@@ -13,7 +13,7 @@ public:
   PatchInstaller();
   ~PatchInstaller();
   bool checkDependencyList(std::string nameOfFile, DBProvider *dbProvider);
-  bool startInstallation();
+  bool startInstallation(std::pair<std::vector<std::string>, std::string> separateParameters);
 };
 
 #endif
