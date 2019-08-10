@@ -284,12 +284,19 @@ Table DBProvider::getTable(const ObjectData & data) const
 	}
 
 	// Geting inherits
-	queryString = "SELECT pg_inherits.*, c.relname AS child_name, c.relispartition AS child_partision, p.relname AS parent_name "
+	queryString = "SELECT "
+		"nmsp_parent.nspname AS parent_schema, "
+		"parent.relname      AS parent_name, "
+		"nmsp_child.nspname  AS child_schema, "
+		"child.relname       AS child_name "
 		"FROM pg_inherits "
-		"JOIN pg_class AS c ON (inhrelid = c.oid) "
-		"JOIN pg_class as p ON (inhparent = p.oid) " 
-		"WHERE c.relispartition = 'false' "
-		"AND c.relname = '" + data.name + "'";
+		"JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid "
+		"JOIN pg_class child             ON pg_inherits.inhrelid = child.oid "
+		"JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = parent.relnamespace "
+		"JOIN pg_namespace nmsp_child    ON nmsp_child.oid = child.relnamespace "
+		"WHERE child.relispartition = 'false' "
+		"AND child.relname = '" + data.name + "' "
+		"AND nmsp_child.nspname = '" + data.schema + "'";
 	result = query(queryString);
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
