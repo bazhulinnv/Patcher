@@ -102,7 +102,7 @@ public:
 	vector<ObjectData> getObjects() const;
 	
 	// Returns script data by object data
-	ScriptData getScriptData(const ObjectData &data) const;
+	ScriptData getScriptData(const ObjectData &data);
 	
 	// Checks if specified object exists in database
 	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type) const;
@@ -158,18 +158,28 @@ private:
 	DBConnection *_connection = nullptr;
 
 	// Getting information about object from database
-	Table getTable(const ObjectData &data) const;
+	Table getTable(const ObjectData &data);
 
 	// Get single value from query
 	string getSingleValue(const string &queryString, const string &columnName) const;
 
 	// Get ScriptData for current type
-	ScriptData getTableData(const ObjectData &data) const;
+	ScriptData getTableData(const ObjectData &data);
 	ScriptData getFunctionData(const ObjectData &data) const;
 	ScriptData getViewData(const ObjectData &data) const;
 	ScriptData getSequenceData(const ObjectData &data) const;
 	ScriptData getTriggerData(const ObjectData &data) const;
 	ScriptData getIndexData(const ObjectData &data) const;
+
+	// Methods for initialization of Table structure
+	void initializeType(Table &table, const ObjectData &data);
+	void initializeOwner(Table &table, const ObjectData &data);
+	void initializeDescription(Table &table, const ObjectData &data);
+	void initializeOptions(Table &table, const ObjectData &data);
+	void initializeSpace(Table &table, const ObjectData &data);
+	void initializeColumns(Table &table, const ObjectData &data);
+	void initializeConstraints(Table &table, const ObjectData &data);
+	void initializeInheritTables(Table &table, const ObjectData &data);
 };
 
 void printObjectsData(pqxx::result res);

@@ -52,7 +52,7 @@ vector<ObjectData> DBProvider::getObjects() const
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary only for tables
+ScriptData DBProvider::getScriptData(const ObjectData &data) // Temporary only for tables
 {
 	if (data.type == "table")
 	{
@@ -204,154 +204,17 @@ bool DBProvider::triggerExists(const std::string& triggerSchema, const std::stri
 	return false;
 }
 
-Table DBProvider::getTable(const ObjectData & data) const
+Table DBProvider::getTable(const ObjectData & data)
 {
 	Table table;
-
-	// Get table type
-	string queryString = "SELECT * FROM information_schema.tables t " 
-		"WHERE t.table_schema = '" + data.schema + "' AND t.table_name = '" + data.name + "'";
-	table.type = getSingleValue(queryString, "table_type");
-
-	// Getting columns information
-	queryString = "SELECT DISTINCT c.column_name, c.*, format_type(pa.atttypid, pa.atttypmod), d.description "
-		"FROM  information_schema.columns c "
-		"JOIN pg_attribute pa ON(pa.attname = c.column_name) "
-		"JOIN pg_class pc ON(pc.relfilenode = pa.attrelid) "
-		"LEFT JOIN "
-		"(SELECT * "
-		"FROM pg_catalog.pg_statio_all_tables AS st "
-		"JOIN pg_catalog.pg_description pgd ON(pgd.objoid = st.relid) "
-		"JOIN information_schema.columns c ON(pgd.objsubid = c.ordinal_position "
-		"AND  c.table_schema = st.schemaname AND c.table_name = st.relname) "
-		"WHERE table_name = '" + data.name + "' "
-		"AND table_schema = '" + data.schema + "') d " 
-		"ON d.column_name = c.column_name "
-		"WHERE 1 = 1 "
-		"AND pc.oid = '" + data.schema + "." + data.name + "'::regclass::oid "
-		"AND c.table_schema = '" + data.schema + "' "
-		"AND c.table_name = '" + data.name + "' "
-		"AND c.table_catalog = '" + _connection->info.databaseName + "'";
-	pqxx::result result = query(queryString); // SQL query result, contains information in table format
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
-	{
-		Column column;
-		column.name = row["column_name"].c_str();
-		column.type = row["format_type"].c_str();
-		column.defaultValue = row["column_default"].c_str();
-		column.description = row["description"].c_str();
-		column.setNullable(row["is_nullable"].c_str());
-
-		table.columns.push_back(column);
-	}
-
-	//Getting constarints
-	queryString = "SELECT "
-		"*, "
-		"ccu.table_schema AS foreign_table_schema, "
-		"ccu.table_name AS foreign_table_name, "
-		"ccu.column_name AS foreign_column_name "
-		"FROM "
-		"information_schema.table_constraints AS tc "
-		"LEFT JOIN information_schema.key_column_usage AS kcu "
-		"ON tc.constraint_name = kcu.constraint_name "
-		"AND tc.table_schema = kcu.table_schema "
-		"LEFT JOIN information_schema.constraint_column_usage AS ccu "
-		"ON ccu.constraint_name = tc.constraint_name "
-		"AND ccu.table_schema = tc.table_schema "
-		"AND tc.constraint_type = 'FOREIGN KEY' "
-		"LEFT JOIN information_schema.check_constraints cc "
-		"ON cc.constraint_name = tc.constraint_name "
-		"LEFT JOIN information_schema.referential_constraints rc "
-		"ON rc.constraint_name = tc.constraint_name "
-		"WHERE tc.table_name = '" + data.name + "' "
-		"AND tc.table_schema = '" + data.schema + "' "
-		"AND COALESCE(cc.check_clause, '') NOT ILIKE '%IS NOT NULL%' ";
-	result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
-	{
-		Constraint constraint;
-		constraint.type = row["constraint_type"].c_str();
-		constraint.name = row["constraint_name"].c_str();
-		constraint.columnName = row["column_name"].c_str();
-		constraint.checkClause = row["check_clause"].c_str();
-		constraint.foreignTableSchema = row["foreign_table_schema"].c_str();
-		constraint.foreignTableName = row["foreign_table_name"].c_str();
-		constraint.foreignColumnName = row["foreign_column_name"].c_str();
-		constraint.matchOption = row["match_option"].c_str();
-		constraint.onDelete = row["delete_rule"].c_str();
-		constraint.onUpdate = row["update_rule"].c_str();
-
-		table.constraints.push_back(constraint);
-	}
-
-	// Geting inherits
-	queryString = "SELECT "
-		"nmsp_parent.nspname AS parent_schema, "
-		"parent.relname      AS parent_name, "
-		"nmsp_child.nspname  AS child_schema, "
-		"child.relname       AS child_name "
-		"FROM pg_inherits "
-		"JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid "
-		"JOIN pg_class child             ON pg_inherits.inhrelid = child.oid "
-		"JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = parent.relnamespace "
-		"JOIN pg_namespace nmsp_child    ON nmsp_child.oid = child.relnamespace "
-		"WHERE child.relispartition = 'false' "
-		"AND child.relname = '" + data.name + "' "
-		"AND nmsp_child.nspname = '" + data.schema + "'";
-	result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
-	{
-		table.inheritTables.push_back(row["parent_name"].c_str());
-	}
-
-	// Getting table storage parameters
-
-	queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
-	string queryValue = getSingleValue(queryString, "reloptions");
-
-	// Getting OIDS value
-	string oidsExpression = "OIDS=false";
-	if (getSingleValue(queryString, "relhasoids") == "t")
-	{
-		oidsExpression = "OIDS=true";
-	}
-	table.options += oidsExpression;
-
-	// String feed in the required format
-	vector<string> expressionString;
-	if (!queryValue.empty())
-	{
-		queryValue.erase(0, 1); // Remove { symbol from beginning
-		queryValue.pop_back(); // Remove } symbol from ending
-		expressionString = ParsingTools::splitToVector(queryValue, ",");
-		for (int expressionIndex = 0; expressionIndex < expressionString.size(); expressionIndex++)
-		{
-			table.options += ",\n" + expressionString[expressionIndex];
-		}
-	}
-
-	// Getting tablespace
-	queryString = "SELECT * FROM pg_tables WHERE tablename = '" + data.name + "' AND schemaname = '" + data.schema + "'";
-	table.space = getSingleValue(queryString, "tablespace");
-
-	// Getting table owner
-	queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
-	table.owner = getSingleValue(queryString, "tableowner");
-
-	// Getting table description
-	queryString = "SELECT obj_description('" + data.schema + "." + data.name + "'::regclass::oid)";
-	table.description = getSingleValue(queryString, "obj_description");
-
-	// Getting triggers
-	queryString = "SELECT * FROM information_schema.triggers t WHERE t.trigger_schema = '" 
-		+ data.schema + "' and t.event_object_table = '" + data.name + "'";
-	result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
-	{
-		// Getting triggers
-	}
-
+	initializeType(table, data);
+	initializeOwner(table, data);
+	initializeDescription(table, data);
+	initializeOptions(table, data);
+	initializeColumns(table, data);
+	initializeSpace(table, data);
+	initializeConstraints(table, data);
+	initializeInheritTables(table, data);
 	return table;
 }
 
@@ -362,7 +225,7 @@ string DBProvider::getSingleValue(const string &queryString, const string &colum
 	return row[columnName].c_str();
 }
 
-ScriptData DBProvider::getTableData(const ObjectData & data) const
+ScriptData DBProvider::getTableData(const ObjectData & data)
 {
 	Table table = getTable(data); // Getting information about object
 
@@ -497,6 +360,158 @@ ScriptData DBProvider::getTriggerData(const ObjectData & data) const
 ScriptData DBProvider::getIndexData(const ObjectData & data) const
 {
 	return ScriptData();
+}
+
+void DBProvider::initializeType(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT * FROM information_schema.tables t "
+		"WHERE t.table_schema = '" + data.schema + "' AND t.table_name = '" + data.name + "'";
+	table.type = getSingleValue(queryString, "table_type");
+}
+
+void DBProvider::initializeOwner(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
+	table.owner = getSingleValue(queryString, "tableowner");
+}
+
+void DBProvider::initializeDescription(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT obj_description('" + data.schema + "." + data.name + "'::regclass::oid)";
+	table.description = getSingleValue(queryString, "obj_description");
+}
+
+void DBProvider::initializeOptions(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
+	string queryValue = getSingleValue(queryString, "reloptions");
+
+	// Getting OIDS value
+	string oidsExpression = "OIDS=false";
+	if (getSingleValue(queryString, "relhasoids") == "t")
+	{
+		oidsExpression = "OIDS=true";
+	}
+	table.options += oidsExpression;
+
+	// String feed in the required format
+	vector<string> expressionString;
+	if (!queryValue.empty())
+	{
+		queryValue.erase(0, 1); // Remove { symbol from beginning
+		queryValue.pop_back(); // Remove } symbol from ending
+		expressionString = ParsingTools::splitToVector(queryValue, ",");
+		for (int expressionIndex = 0; expressionIndex < expressionString.size(); expressionIndex++)
+		{
+			table.options += ",\n" + expressionString[expressionIndex];
+		}
+	}
+
+}
+
+void DBProvider::initializeSpace(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT * FROM pg_tables WHERE tablename = '" + data.name + "' AND schemaname = '" + data.schema + "'";
+	table.space = getSingleValue(queryString, "tablespace");
+}
+
+void DBProvider::initializeColumns(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT DISTINCT c.column_name, c.*, format_type(pa.atttypid, pa.atttypmod), d.description "
+		"FROM  information_schema.columns c "
+		"JOIN pg_attribute pa ON(pa.attname = c.column_name) "
+		"JOIN pg_class pc ON(pc.relfilenode = pa.attrelid) "
+		"LEFT JOIN "
+		"(SELECT * "
+		"FROM pg_catalog.pg_statio_all_tables AS st "
+		"JOIN pg_catalog.pg_description pgd ON(pgd.objoid = st.relid) "
+		"JOIN information_schema.columns c ON(pgd.objsubid = c.ordinal_position "
+		"AND  c.table_schema = st.schemaname AND c.table_name = st.relname) "
+		"WHERE table_name = '" + data.name + "' "
+		"AND table_schema = '" + data.schema + "') d "
+		"ON d.column_name = c.column_name "
+		"WHERE 1 = 1 "
+		"AND pc.oid = '" + data.schema + "." + data.name + "'::regclass::oid "
+		"AND c.table_schema = '" + data.schema + "' "
+		"AND c.table_name = '" + data.name + "' "
+		"AND c.table_catalog = '" + _connection->info.databaseName + "'";
+	pqxx::result result = query(queryString); // SQL query result, contains information in table format
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		Column column;
+		column.name = row["column_name"].c_str();
+		column.type = row["format_type"].c_str();
+		column.defaultValue = row["column_default"].c_str();
+		column.description = row["description"].c_str();
+		column.setNullable(row["is_nullable"].c_str());
+
+		table.columns.push_back(column);
+	}
+}
+
+void DBProvider::initializeConstraints(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT "
+		"*, "
+		"ccu.table_schema AS foreign_table_schema, "
+		"ccu.table_name AS foreign_table_name, "
+		"ccu.column_name AS foreign_column_name "
+		"FROM "
+		"information_schema.table_constraints AS tc "
+		"LEFT JOIN information_schema.key_column_usage AS kcu "
+		"ON tc.constraint_name = kcu.constraint_name "
+		"AND tc.table_schema = kcu.table_schema "
+		"LEFT JOIN information_schema.constraint_column_usage AS ccu "
+		"ON ccu.constraint_name = tc.constraint_name "
+		"AND ccu.table_schema = tc.table_schema "
+		"AND tc.constraint_type = 'FOREIGN KEY' "
+		"LEFT JOIN information_schema.check_constraints cc "
+		"ON cc.constraint_name = tc.constraint_name "
+		"LEFT JOIN information_schema.referential_constraints rc "
+		"ON rc.constraint_name = tc.constraint_name "
+		"WHERE tc.table_name = '" + data.name + "' "
+		"AND tc.table_schema = '" + data.schema + "' "
+		"AND COALESCE(cc.check_clause, '') NOT ILIKE '%IS NOT NULL%' ";
+	pqxx::result result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		Constraint constraint;
+		constraint.type = row["constraint_type"].c_str();
+		constraint.name = row["constraint_name"].c_str();
+		constraint.columnName = row["column_name"].c_str();
+		constraint.checkClause = row["check_clause"].c_str();
+		constraint.foreignTableSchema = row["foreign_table_schema"].c_str();
+		constraint.foreignTableName = row["foreign_table_name"].c_str();
+		constraint.foreignColumnName = row["foreign_column_name"].c_str();
+		constraint.matchOption = row["match_option"].c_str();
+		constraint.onDelete = row["delete_rule"].c_str();
+		constraint.onUpdate = row["update_rule"].c_str();
+
+		table.constraints.push_back(constraint);
+	}
+
+}
+
+void DBProvider::initializeInheritTables(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT "
+		"nmsp_parent.nspname AS parent_schema, "
+		"parent.relname      AS parent_name, "
+		"nmsp_child.nspname  AS child_schema, "
+		"child.relname       AS child_name "
+		"FROM pg_inherits "
+		"JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid "
+		"JOIN pg_class child             ON pg_inherits.inhrelid = child.oid "
+		"JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = parent.relnamespace "
+		"JOIN pg_namespace nmsp_child    ON nmsp_child.oid = child.relnamespace "
+		"WHERE child.relispartition = 'false' "
+		"AND child.relname = '" + data.name + "' "
+		"AND nmsp_child.nspname = '" + data.schema + "'";
+	pqxx::result result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		table.inheritTables.push_back(row["parent_name"].c_str());
+	}
 }
 
 void printObjectsData(pqxx::result queryResult)
