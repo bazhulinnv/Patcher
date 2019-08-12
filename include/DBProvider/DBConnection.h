@@ -5,8 +5,8 @@
 
 #include <iostream>
 #include <string>
-#include <queue>
-#include <vector>
+#include <thread>
+#include <mutex>
 #include <stdexcept>
 #include <pqxx/pqxx>
 
@@ -21,7 +21,10 @@ public:
 		connParams = LoginData(pgLogin);
 	}
 
-	~DBConnection() = default;
+	~DBConnection()
+	{
+		freeConnection();
+	};
 
 	std::string getConnectionString()
 	{
@@ -39,7 +42,8 @@ public:
 
 		try
 		{
-			cout << "";
+			std::unique_lock<std::mutex> lock_(m_mutex);
+			conn = std::make_shared<pqxx::lazyconnection>(params);
 		}
 		catch (const std::exception& err)
 		{
@@ -50,12 +54,24 @@ public:
 		}
 	}
 
+	std::shared_ptr<pqxx::lazyconnection> getConnection()
+	{
+		return conn;
+	}
+
+	void freeConnection()
+	{
+	}
+
+	bool isActive()
+	{
+		return false;
+	}
+
 private:
 	// Shared libpqxx connection
-	std::shared_ptr<pqxx::connection> *conn;
-
-	// Stores current connection parameters
-	LoginData connParams;
+	std::shared_ptr<pqxx::lazyconnection> conn;
+	std::mutex m_mutex;
 };
 
 #endif

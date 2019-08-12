@@ -1,11 +1,10 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
 
-#include "DBProvider/DBConnection.h"
-#include "Shared/ParsingTools.h"
+#include "DBProvider/ConnectionPool.h"
+#include "DBProvider/LoginData.h"
 
 #include <pqxx/pqxx>
-#include <tuple>
 #include <string>
 
 using namespace std;
@@ -99,7 +98,7 @@ class DBProvider
 public:
 	explicit DBProvider(string args);
 	
-	~DBProvider();
+	~DBProvider() = default;
 
 	// Returns all objects of database
 	vector<ObjectData> getObjects() const;
@@ -157,8 +156,13 @@ public:
 
 	bool triggerExists(const std::string& triggerSchema, const std::string& triggerName) const;
 
+
 private:
-	DBConnection *_connection = nullptr;
+	// Structure keeps all connection parameters
+	LoginData connParams;
+
+	// DBConnectionPool Pool
+	std::shared_ptr<DBConnectionPool::ConnectionPool> connPool;
 
 	// Getting information about object from database
 	ObjectInformation getObjectInformation(const ObjectData &data) const;

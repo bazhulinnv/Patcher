@@ -40,7 +40,7 @@ bool test_PrintTableList(DBProvider* dbProv)
 	{
 		return false;
 	}
-	
+
 	// Print objs using TextTable
 	TextTable result('-', '|', '+');
 	result.add(" TABLE NAME ");
@@ -48,12 +48,12 @@ bool test_PrintTableList(DBProvider* dbProv)
 
 	cout << "\nList of all available tables:" << endl;
 	for (pqxx::result::const_iterator row = queryResult.begin();
-		row != queryResult.end(); ++row)
+		 row != queryResult.end(); ++row)
 	{
 		result.add(row["tablename"].as<string>(), green);
 		result.endOfRow();
 	}
-	
+
 	result.setAlignment(2, TextTable::Alignment::RIGHT);
 	std::cout << result;
 	return true;
@@ -89,7 +89,7 @@ bool test_PrintTriggers(DBProvider* dbProv)
 	return false;
 }
 
-bool test_PrintObjectsAsTable(DBProvider *dbProv)
+bool test_PrintObjectsAsTable(DBProvider* dbProv)
 {
 	vector<ObjectData> objs;
 
@@ -98,7 +98,7 @@ bool test_PrintObjectsAsTable(DBProvider *dbProv)
 		// Get all objects from database
 		objs = dbProv->getObjects();
 	}
-	catch (const std::exception &e)
+	catch (const std::exception& e)
 	{
 		cerr << e.what() << endl;
 		return false;
@@ -147,7 +147,7 @@ bool test_PqxxConnection()
 {
 	try
 	{
-		pqxx::connection conn("dbname = Doors user = doo password = rc hostaddr = 127.0.0.1 port = 5432");
+		pqxx::connection conn("dbname = Doors user = doo password = rs hostaddr = 127.0.0.1 port = 5432");
 		if (!conn.is_open())
 		{
 			cout << "Can't open database" << endl;
@@ -175,14 +175,14 @@ bool test_Logger()
 		using namespace PatcherLogger;
 
 		// create two different logs
-		auto *testLog = new Log();
+		auto* testLog = new Log();
 
 		// write some messages to both
 		testLog->setLogByPath("../build/DBProvider.dir/log_test.txt");
 		testLog->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
 		testLog->addLog(DEBUG, "TEST - 01");
 
-		auto *logInStdDir = new Log();
+		auto* logInStdDir = new Log();
 
 		logInStdDir->setLogByName("new_log.log");
 		logInStdDir->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
@@ -190,7 +190,7 @@ bool test_Logger()
 
 		// init global log 
 		startGlobalLog("../build/DBProvider.dir/global_log.txt");
-		
+
 		// write some messages to global log
 		logDebug("Test GLOBAL LOG");
 
@@ -208,29 +208,29 @@ bool test_Logger()
 	return true;
 }
 
-bool test_CustomConnection()
-{
-	try
-	{
-		auto *dbConn = new DBConnection("Doors:doo:rc:127.0.0.1:5432");
-		dbConn->setConnection();
-
-		cout << "dbname= " << dbConn->info.databaseName << endl;
-		cout << "user= " << dbConn->info.username << endl;
-		cout << "password= " << dbConn->info.password << endl;
-		cout << "hostaddr= " << dbConn->info.host << endl;
-		cout << "port= " << dbConn->info.portNumber << endl;
-
-		delete dbConn;
-	}
-	catch (const exception& e)
-	{
-		cerr << e.what() << endl;
-		return false;
-	}
-
-	return true;
-}
+//bool test_CustomConnection()
+//{
+//	try
+//	{
+//		auto *dbConn = new DBConnection("Doors:doo:rc:127.0.0.1:5432");
+//		dbConn->setConnection();
+//
+//		cout << "dbname= " << dbConn->info.databaseName << endl;
+//		cout << "user= " << dbConn->info.username << endl;
+//		cout << "password= " << dbConn->info.password << endl;
+//		cout << "hostaddr= " << dbConn->info.host << endl;
+//		cout << "port= " << dbConn->info.portNumber << endl;
+//
+//		delete dbConn;
+//	}
+//	catch (const exception& e)
+//	{
+//		cerr << e.what() << endl;
+//		return false;
+//	}
+//
+//	return true;
+//}
 
 bool test_PrintObjectsData(DBProvider* dbProv)
 {
@@ -248,13 +248,35 @@ bool test_PrintObjectsData(DBProvider* dbProv)
 		"FROM information_schema.tables f "
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";
-	
+
 	auto result = dbProv->query(getObjects);
 	printObjectsData(result);
 	return true;
 }
 
-void runTestFunction(const string& testInfo, function<bool(DBProvider*)> sut, DBProvider *dbProv)
+bool test_PrintObjectsDataShared(shared_ptr<DBProvider> dbProv)
+{
+	string getObjects =
+		"SELECT /*sequences */"
+		"f.sequence_schema AS obj_schema,"
+		"f.sequence_name AS obj_name,"
+		"'sequence' AS obj_type "
+		"FROM information_schema.sequences f "
+		"UNION ALL "
+		"SELECT /*tables */ "
+		"f.table_schema AS obj_schema,"
+		"f.table_name AS obj_name,"
+		"'tables' AS obj_type "
+		"FROM information_schema.tables f "
+		"WHERE f.table_schema in"
+		"('public', 'io', 'common', 'secure');";
+
+	auto result = dbProv->query(getObjects);
+	printObjectsData(result);
+	return true;
+}
+
+void runTestFunction(const string& testInfo, function<bool(DBProvider*)> sut, DBProvider* dbProv)
 {
 	cout << yellow;
 	cout << "\nRUNNING: " << reset << testInfo << endl;
@@ -274,7 +296,27 @@ void runTestFunction(const string& testInfo, function<bool(DBProvider*)> sut, DB
 	cout << endl;
 };
 
-void runAllTests(vector<pair<const string, function<bool(DBProvider *)>>> providerTests, DBProvider * dbProv)
+void runTestFunctionShared(const string& testInfo, function<bool(shared_ptr<DBProvider>)> sut, shared_ptr<DBProvider> dbProv)
+{
+	cout << yellow;
+	cout << "\nRUNNING: " << reset << testInfo << endl;
+
+	if (!sut(dbProv))
+	{
+		cout << red;
+		cout << "FAILED: ";
+		cout << yellow;
+		cout << testInfo << reset << endl;
+		return;
+	}
+
+	cout << green;
+	cout << "SUCCEEDED: " << reset;
+	cout << testInfo << endl;
+	cout << endl;
+};
+
+void runAllTests(vector<pair<const string, function<bool(DBProvider*)>>> providerTests, DBProvider* dbProv)
 {
 	cout << yellow;
 	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
@@ -283,7 +325,21 @@ void runAllTests(vector<pair<const string, function<bool(DBProvider *)>>> provid
 	{
 		runTestFunction(test.first, test.second, dbProv);
 	}
-	
+
+	cout << yellow;
+	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
+};
+
+void runAllTestsShared(vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTests, shared_ptr<DBProvider> dbProv)
+{
+	cout << yellow;
+	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
+
+	for (auto& test : providerTests)
+	{
+		runTestFunctionShared(test.first, test.second, dbProv);
+	}
+
 	cout << yellow;
 	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
 };
@@ -319,18 +375,20 @@ void runAllSimpleTests(vector<pair<const string, function<bool()>>> simpleTests)
 
 int main()
 {
-	string sql_publicRoleAction =	"SELECT * FROM public.role_action";
+	string sql_publicRoleAction = "SELECT * FROM public.role_action";
 
-	string loginData = "Doors:doo:rs:127.0.0.1:5432";
-	DBProvider *dbProvider = new DBProvider(loginData);
-	
+	string loginData = "127.0.0.1:5432:Doors:doo:rs";
+	// DBProvider* dbProvider = new DBProvider(loginData);
+	auto dbProviderShared = make_shared<DBProvider>(loginData);
+
 	// < test_info, pointer_to_test_function >
 	vector<pair<const string, function<bool()>>> simpleTests;
 	simpleTests.push_back(make_pair("Standart Test : make shure pqxx::connection works", test_PqxxConnection));
 	simpleTests.push_back(make_pair("Test PatchLogger::Log : write to different logs", test_Logger));
-	simpleTests.push_back(make_pair("Test DBConnection : connect to 'Doors'", test_CustomConnection));
+	/*simpleTests.push_back(make_pair("Test DBConnection : connect to 'Doors'", test_CustomConnection));*/
 
 	vector<pair<const string, function<bool(DBProvider*)>>> providerTest;
+	vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTestShared;
 	providerTest.push_back(make_pair("Test printing raw data : printing raw objects data", test_PrintObjectsData));
 	providerTest.push_back(make_pair("Test printing data in table : printing objects data wrapped in table", test_PrintObjectsAsTable));
 	providerTest.push_back(make_pair("Test printing all tables : printing tables in io, public, common, secure", test_PrintTableList));
@@ -344,12 +402,16 @@ int main()
 	providerTest.push_back(make_pair("Test printing function parameters", test_PrintFunctionParameters));
 	providerTest.push_back(make_pair("Test printing triggers", test_PrintTriggers));
 
+	// Shared tests
+	providerTestShared.push_back(make_pair("Test printing raw data : printing raw objects data", test_PrintObjectsDataShared));
+
 	// Run all simple test functions
 	runAllSimpleTests(simpleTests);
 
-	// Run all test functions for DBProvider
-	runAllTests(providerTest, dbProvider);
+	runAllTestsShared(providerTestShared, dbProviderShared);
 
-	delete dbProvider;
+	// Run all test functions for DBProvider
+	//runAllTests(providerTest, dbProvider);
+
 	return 0;
 }

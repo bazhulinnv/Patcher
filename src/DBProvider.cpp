@@ -1,4 +1,6 @@
 #include "DBProvider/DBProvider.h"
+#include "DBProvider/LoginData.h"
+#include "Shared/ParsingTools.h"
 #include "Shared/TextTable.h"
 
 #include <pqxx/pqxx>
@@ -7,16 +9,23 @@
 #include <iostream>
 
 using namespace std;
+using namespace DBConnectionPool;
 
-DBProvider::DBProvider(const std::string args)
+DBProvider::DBProvider(std::string args)
 {
-	_connection = new DBConnection(args);
-	_connection->setConnection();
-}
-
-DBProvider::~DBProvider()
-{
-	delete _connection;
+	connPool = make_shared<ConnectionPool>();
+	connParams = LoginData(args);
+	try
+	{
+		connPool->setConnections(connParams);
+	}
+	catch (const std::exception& err)
+	{
+		cerr << "ERROR: Could not establish connection." << endl;
+		cerr << "Parameters: " << connParams.getLoginStringPqxx() << endl;
+		cerr << "ERROR Details: " << err.what() << endl;
+		throw std::invalid_argument("Wrong connection parameters.\n");
+	}
 }
 
 vector<ObjectData> DBProvider::getObjects() const
@@ -44,21 +53,21 @@ vector<ObjectData> DBProvider::getObjects() const
 	for (pqxx::result::const_iterator row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
 	{
 		const std::vector<std::string> parameters;
-		objects.push_back(ObjectData(	row["obj_name"].as<std::string>(),
-										row["obj_type"].as<std::string>(),
-										row["obj_schema"].as<std::string>(), parameters));
+		objects.push_back(ObjectData(row["obj_name"].as<std::string>(),
+									 row["obj_type"].as<std::string>(),
+									 row["obj_schema"].as<std::string>(), parameters));
 	}
 
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary only for tables
+ScriptData DBProvider::getScriptData(const ObjectData& data) const // Temporary only for tables
 {
 	ObjectInformation info = getObjectInformation(data); // Getting information about object
 
 	// "CREATE TABLE" block - initialization of all table's columns
 	string scriptString = string("CREATE TABLE ") + data.scheme + "." + data.name + " (";
-	for (const Column &column : info.columns)
+	for (const Column& column : info.columns)
 	{
 		scriptString += "\n" + column.name + " " + column.type;
 		if (!column.defaultValue.empty())
@@ -87,7 +96,7 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 	}
 
 	// "COMMENT ON COLUMN blocks
-	for (const Column &column : info.columns)
+	for (const Column& column : info.columns)
 	{
 		if (!column.description.empty())
 		{
@@ -96,7 +105,7 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 	}
 
 	// Triggers creation
-	for (const Trigger &trigger : info.triggers)
+	for (const Trigger& trigger : info.triggers)
 	{
 		scriptString += "CREATE TRIGGER " + trigger.name + "\n";
 		scriptString += trigger.timing + " " + trigger.manipulation + "\n";
@@ -111,8 +120,8 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 }
 
 // Checks if specified object exists in database
- bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::string name, const std::string type) const
- {
+bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::string name, const std::string type) const
+{
 	bool res = false;
 	if (type == "table")
 	{
@@ -148,14 +157,9 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) const // Temporary 
 }
 
 pqxx::result DBProvider::query(const std::string stringSQL) const
-{	
-	// Connection must be already set
-	if (!_connection->getConnection())
-	{
-		throw new std::exception("ERROR: Connection was not set.\n");
-	}
-
-	pqxx::work trans(*_connection->getConnection(), "trans");
+{
+	connPool->connection();
+	pqxx::work trans(*connPool->connection(), "trans");
 
 	// Get result from database
 	pqxx::result res = trans.exec(stringSQL);
@@ -230,7 +234,7 @@ bool DBProvider::triggerExists(const std::string& triggerSchema, const std::stri
 	return false;
 }
 
-ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) const
+ObjectInformation DBProvider::getObjectInformation(const ObjectData& data) const
 {
 	ObjectInformation info;
 
@@ -246,7 +250,7 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 		"INNER JOIN pg_catalog.pg_description pgd on(pgd.objoid = st.relid) "
 		"INNER JOIN information_schema.columns t on(pgd.objsubid = t.ordinal_position "
 		"AND  t.table_schema = st.schemaname and t.table_name = st.relname) "
-		"WHERE t.table_catalog = '" + _connection->info.databaseName + "' "
+		"WHERE t.table_catalog = '" + connParams.database + "' "
 		"AND t.table_schema = '" + data.scheme + "' "
 		"AND t.table_name = '" + data.name + "') j "
 		"ON c.column_name = j.column_name "
@@ -273,12 +277,12 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 	info.description = getSingleValue(queryString, "obj_description");
 
 	// Getting triggers
-	queryString = "SELECT * FROM information_schema.triggers t WHERE t.trigger_schema = '" 
+	queryString = "SELECT * FROM information_schema.triggers t WHERE t.trigger_schema = '"
 		+ data.scheme + "' and t.event_object_table = '" + data.name + "'";
 	result = query(queryString);
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
-		Trigger *trigger = info.getTrigger(row["trigger_name"].c_str());
+		Trigger* trigger = info.getTrigger(row["trigger_name"].c_str());
 		if (trigger == nullptr)
 		{
 			trigger = new Trigger();
@@ -298,20 +302,20 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData & data) cons
 	return info;
 }
 
-inline string DBProvider::getSingleValue(const string &queryString, const string &columnName) const
+inline string DBProvider::getSingleValue(const string& queryString, const string& columnName) const
 {
 	pqxx::result result = query(queryString);
 	const pqxx::result::const_iterator row = result.begin();
 	return row[columnName].c_str();
 }
 
-void printObjectsData(pqxx::result queryResult)
+void printObjectsData(const pqxx::result queryResult)
 {
 	// Iterate over the rows in our result set.
 	// Result objects are containers similar to std::vector and such.
-	for (	pqxx::result::const_iterator row = queryResult.begin();
-			row != queryResult.end();
-			++row )
+	for (pqxx::result::const_iterator row = queryResult.begin();
+		 row != queryResult.end();
+		 ++row)
 	{
 		std::cout
 			<< row["obj_schema"].as<std::string>() << "\t"

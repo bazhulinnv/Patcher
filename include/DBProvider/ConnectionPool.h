@@ -1,59 +1,36 @@
-//#ifndef CONNECTIONPOOL_H
-//#define CONNECTIONPOOL_H
-//
-//#include <mutex>
-//#include <pqxx/pqxx>
-//#include <memory>
-//#include <queue>
-//#include <iostream>
-//#include "Shared/ParsingTools.h"
-//
-//#include <string>
-//
-//namespace DBConnect
-//{
-//	class DBConnectionPool
-//	{
-//	};
-//
-//
-//
-//	static DBConnectionPool& instance()
-//	{
-//		if (!isSetParams)
-//		{
-//			throw std::invalid_argument(
-//				"Connection parameters were not set. Call \"setParams\" "
-//				"before first call \"instance\".");
-//		}
-//		static DBConnectionPool instance;
-//		isConnected = true;
-//		return instance;
-//	}
-//
-//	class Inner
-//	{
-//	public:
-//		Inner()
-//		{
-//			connection = instance().connect();
-//		}
-//
-//		~Inner()
-//		{
-//			instance().freeConnect(connection);
-//		}
-//
-//		pqxx::connection& operator*()
-//		{
-//			return *connection;
-//		}
-//
-//	private:
-//		std::shared_ptr<pqxx::connection> connection;
-//	};
-//
-//
-//}
-//
-//#endif
+#ifndef CONNECTIONPOOL_H
+#define CONNECTIONPOOL_H
+
+#include "DBProvider/LoginData.h"
+
+#include <mutex>
+#include <pqxx/pqxx>
+#include <memory>
+#include <deque>
+#include <string>
+
+namespace DBConnectionPool
+{
+	class ConnectionPool
+	{
+	public:
+		ConnectionPool();
+		ConnectionPool(int size);
+
+		void setConnections(LoginData params);
+		void setConnections(const std::string& pgLogin);
+
+		std::shared_ptr<pqxx::connection> connection();
+		void freeConnection(std::shared_ptr<pqxx::connection>);
+
+	private:
+		void createPool();
+
+		std::mutex mtx;
+		std::condition_variable poolCondition;
+		std::deque<std::shared_ptr<pqxx::connection>> connPool;
+		int poolSize = 10;
+	};
+};
+
+#endif
