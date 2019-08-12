@@ -41,17 +41,17 @@ DBObjects FileParser::parse(std::string nameOfFile)
 	std::ifstream dependencies;
 	dependencies.open(nameOfFile);
 
-	std::string scheme("");
+	std::string schema("");
 	std::string objectName("");
 	std::string objectType("");
 
 	//Try to read first string from file
 	while (!dependencies.eof()) {
-		dependencies >> scheme >> objectName >> objectType;
-		if (!scheme.empty() && !objectName.empty() && !objectType.empty()) {
-			objectParametersFromFile.emplace_back(scheme, objectName, objectType);
+		dependencies >> schema >> objectName >> objectType;
+		if (!schema.empty() && !objectName.empty() && !objectType.empty()) {
+			objectParametersFromFile.emplace_back(schema, objectName, objectType);
 		}
-		scheme = ""; objectName = ""; objectType = "";
+		schema = ""; objectName = ""; objectType = "";
 	}
 
 	dependencies.close();

@@ -25,13 +25,13 @@ void createLog(std::string path, Level level, std::string data) {
 
 /** Checking dependencies part. */
 void passCheckLogsForGui(std::string data, bool resultCheck) {
-	std::cerr << "CHECKING DEPENDENCIES PROCESS:\n";
+	std::cerr << "DEPENDENCY CHECK PROCESS:\n";
 	std::cerr << data;
 	if (!resultCheck) {
-		std::cerr << "Check failed. Some objects does not exist in current database.\n";
+		std::cerr << "Check completed. Some objects do not exist in current database.\n";
 	}
 	else {
-		std::cerr << "Check completed succesful.\n";
+		std::cerr << "Check completed. All objects exist in current database.\n";
 	}
 }
 
@@ -51,7 +51,7 @@ bool PatchInstaller::checkDependencyList(std::string nameOfFile, DBProvider *dbP
 		return result;
 	}
 	else {
-		throw std::invalid_argument("Wrong DependencyList.dpn file");
+		throw std::invalid_argument("Incorrect DependencyList.dpn file");
 	}
 }
 
@@ -76,10 +76,10 @@ void passInstallLogsGui(std::string &dataForErrorLog, std::string &dataForInfoLo
 	std::cerr << dataForInfoLog;
 	std::cerr << "INSTALLATION ERRORS:\n";
 	if (dataForErrorLog.empty()) {	
-		dataForErrorLog += "Installation completed without errors.\n";
+		dataForErrorLog += "Installation completed.\n";
 	}
 	else {
-		dataForErrorLog += "Installation completed with errors.\n";
+		dataForErrorLog += "Installation completed WITH ERRORS.\n";
 	}
 	std::cerr << dataForErrorLog;
 }

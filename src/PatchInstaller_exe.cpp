@@ -18,16 +18,16 @@ inline bool fileExists(char* directory) {
 }
 
 void printNecessaryParameters() {
-	std::cerr << "Connection parameters must be in this format: ";
+	std::cerr << "Connection parameters must be in following format: ";
 	std::cerr << "name-of-database:user-name:user-password:host:port\n";
-	std::cerr << "Example of right parameters: Database:User:password:127.0.0.1:5432\n";
+	std::cerr << "Example of correct parameters: Database:User:password:127.0.0.1:5432\n";
 }
 
 int main(int argc, char* argv[]) { 
 	PatchInstaller patchInstaller;
 	bool returnCode = false;
 	if (argv[1] == nullptr) {
-		std::cerr << "There are no connection parameters to the database. Please, enter database connection parameters. \n";
+		std::cerr << "Please, enter database connection parameters. \n";
 		printNecessaryParameters();
 		returnCode = true;
 	}
@@ -38,16 +38,16 @@ int main(int argc, char* argv[]) {
 			std::pair<std::vector<std::string>, std::string> separateParameters = ParsingTools::parseCredentials(parameters);
 
 			if (argv[2] == nullptr || !(strcmp(argv[2], "check") == 0 || strcmp(argv[2], "install") == 0)) {
-				std::cerr << "Wrong command of installer. Choose install/check. \n";
+				std::cerr << "Incorrect installer command. Choose install/check. \n";
 				returnCode = true;
 			}
 			else {
 				if (argv[3] == nullptr) {
-					std::cerr << "Please, enter the directory of installation script.\n";
+					std::cerr << "Please, enter installation script directory.\n";
 					returnCode = true;
 				}
 				if (!directoryExists(argv[3])) {
-					std::cerr << "Directory does not exists or wrong.\n";
+					std::cerr << "Directory does not exist or path has incorrect format.\n";
 					returnCode = true;
 				}
 				else {
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 								patchInstaller.checkDependencyList("DependencyList.dpn", dbProvider);
 							}
 							catch (std::invalid_argument exception) {
-								std::cerr << "Invalid format DependencyList.dpn\n";
+								std::cerr << "Invalid format of DependencyList.dpn\n";
 							}
 						}
 						if (strcmp(argv[2], "install") == 0) {
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 						}
 					}
 					else {
-						std::cerr << "There are no installation script in this directory. \n";
+						std::cerr << "There is no installation script in this directory. \n";
 						returnCode = true;
 					}
 				}
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 			delete dbProvider;
 		}
 		catch (...) {
-			std::cerr << "Please, enter right database connection parameters. \n";
+			std::cerr << "Please, enter correct database connection parameters. \n";
 			printNecessaryParameters();
 			returnCode = true;
 		}

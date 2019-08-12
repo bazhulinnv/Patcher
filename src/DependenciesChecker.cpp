@@ -51,9 +51,11 @@ bool DependenciesChecker::check(DBObjects &objectsParameters, DBProvider *dbProv
 		
 		dataForLog += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
 		if (!doesCurrentObjectExist) {
-			dataForLog += "not ";
+			dataForLog += "does not exist\n";
 		}
-		dataForLog += "exists\n";
+		else {
+			dataForLog += "exists\n";
+		}
 	}
 	return allObjectsExists;
 
