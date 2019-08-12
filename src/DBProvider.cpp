@@ -214,22 +214,24 @@ Table DBProvider::getTable(const ObjectData & data) const
 	table.type = getSingleValue(queryString, "table_type");
 
 	// Getting columns information
-	queryString = "SELECT * FROM information_schema.columns c JOIN (SELECT a.attname, format_type(a.atttypid, a.atttypmod) "
-		"FROM pg_attribute a JOIN pg_class b ON a.attrelid = b.relfilenode "
-		"WHERE a.attnum > 0 "
-		"AND NOT a.attisdropped "
-		"AND b.oid = '" + data.schema + "." + data.name + "'::regclass::oid) i "
-		"ON c.column_name = i.attname "
-		"JOIN (SELECT t.table_schema, t.table_name, t.column_name, pgd.description "
-		"FROM pg_catalog.pg_statio_all_tables as st "
-		"INNER JOIN pg_catalog.pg_description pgd on(pgd.objoid = st.relid) "
-		"INNER JOIN information_schema.columns t on(pgd.objsubid = t.ordinal_position "
-		"AND  t.table_schema = st.schemaname and t.table_name = st.relname) "
-		"WHERE t.table_catalog = '" + _connection->info.databaseName + "' "
-		"AND t.table_schema = '" + data.schema + "' "
-		"AND t.table_name = '" + data.name + "') j "
-		"ON c.column_name = j.column_name "
-		"WHERE c.table_schema = '" + data.schema + "' AND c.table_name = '" + data.name + "'";
+	queryString = "SELECT DISTINCT c.column_name, c.*, format_type(pa.atttypid, pa.atttypmod), d.description "
+		"FROM  information_schema.columns c "
+		"JOIN pg_attribute pa ON(pa.attname = c.column_name) "
+		"JOIN pg_class pc ON(pc.relfilenode = pa.attrelid) "
+		"LEFT JOIN "
+		"(SELECT * "
+		"FROM pg_catalog.pg_statio_all_tables AS st "
+		"JOIN pg_catalog.pg_description pgd ON(pgd.objoid = st.relid) "
+		"JOIN information_schema.columns c ON(pgd.objsubid = c.ordinal_position "
+		"AND  c.table_schema = st.schemaname AND c.table_name = st.relname) "
+		"WHERE table_name = '" + data.name + "' "
+		"AND table_schema = '" + data.schema + "') d " 
+		"ON d.column_name = c.column_name "
+		"WHERE 1 = 1 "
+		"AND pc.oid = '" + data.schema + "." + data.name + "'::regclass::oid "
+		"AND c.table_schema = '" + data.schema + "' "
+		"AND c.table_name = '" + data.name + "' "
+		"AND c.table_catalog = '" + _connection->info.databaseName + "'";
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
