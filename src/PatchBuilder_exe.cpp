@@ -98,7 +98,7 @@ int main(const int argc, char *argv[])
 		if ((argc == 2) && string(argv[argIndex]) == "-help")
 		{
 			printHelp(args);
-			return 1;
+			return 0;
 		}
 		else
 		{
@@ -129,7 +129,7 @@ int main(const int argc, char *argv[])
 		const string templatePath = getArgumentByKey(args, KEY_TEMPLATE)->value;
 		builder = PatchBuilder(getArgumentByKey(args, KEY_PATH)->value, provider, templatePath);
 		builder.buildPatch(getArgumentByKey(args, KEY_DIRECTORY)->value);
-		return 1;
+		return 0;
 	}
 	catch (exception &err)
 	{
@@ -138,5 +138,5 @@ int main(const int argc, char *argv[])
 		return -1;
 	}
 
-	return 1;
+	return 0;
 }
