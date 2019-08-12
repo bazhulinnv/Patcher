@@ -73,16 +73,31 @@ struct Constraint
 	string onUpdate;
 };
 
+struct ParentTable
+{
+	string schema;
+	string name;
+	string partitionExpression;
+};
+
 struct Table // Sctructure for containing table structure information
 {
+public:
 	string type;
 	string owner;
 	string description;
 	string options;
 	string space;
+	void setParentTable(string shema, string name, string partitionExpression);
+	ParentTable getParentTable();
+	bool isPartission();
 	vector<Column> columns;
 	vector<Constraint> constraints;
 	vector<string> inheritTables;
+
+private:
+	ParentTable _parent;
+	bool _isPartission = false;
 };
 
 // Vector for containing object data
@@ -172,6 +187,7 @@ private:
 	ScriptData getIndexData(const ObjectData &data) const;
 
 	// Methods for initialization of Table structure
+	bool initializeParent(Table &table, const ObjectData &data);
 	void initializeType(Table &table, const ObjectData &data);
 	void initializeOwner(Table &table, const ObjectData &data);
 	void initializeDescription(Table &table, const ObjectData &data);
