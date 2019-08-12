@@ -59,6 +59,7 @@ set(patcher_INCS_prov
   include/Shared/Logger.h
   include/Shared/TextTable.h
   include/Shared/ParsingTools.h
+  include/DBProvider/LoginData.h
   include/DBProvider/DBConnection.h
   include/DBProvider/DBProvider.h
   )
@@ -67,6 +68,7 @@ set(patcher_SRCS_prov
   src/Logger.cpp
   src/TextTable.cpp
   src/ParsingTools.cpp
+  src/LoginData.cpp
   src/DBConnection.cpp
   src/DBProvider.cpp
   )

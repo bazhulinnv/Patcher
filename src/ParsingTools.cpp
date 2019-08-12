@@ -1,24 +1,24 @@
-#include "Shared/ParsingTools.h"
+﻿#include "Shared/ParsingTools.h"
 
 #include <iterator>
 #include <sstream>
 
 using namespace std;
 
-std::string ParsingTools::interpolate(std::string original, const std::string& replacement, const std::string toBeReplaced)
+string ParsingTools::interpolate(string input, const string& replacement, const string toBeReplaced)
 {
-	string newString = original.replace(original.find(toBeReplaced), toBeReplaced.length(), replacement);
+	string newString = input.replace(input.find(toBeReplaced), toBeReplaced.length(), replacement);
 	return newString;
 }
 
-std::string ParsingTools::interpolateAll(const std::string& str, std::queue<std::string> replacements, const std::string toBeReplaced)
+string ParsingTools::interpolateAll(const string& input, queue<string> replacements, const string toBeReplaced)
 {
-	if (str.empty())
+	if (input.empty())
 	{
 		return string();
 	}
 
-	string res = str;
+	string res = input;
 	size_t start_pos = 0;
 
 	while ((start_pos = res.find(toBeReplaced, start_pos)) != string::npos && !replacements.empty())
@@ -31,14 +31,14 @@ std::string ParsingTools::interpolateAll(const std::string& str, std::queue<std:
 	return res;
 }
 
-std::string ParsingTools::interpolateAll(const std::string& str, std::vector<std::string> replacements, const std::string toBeReplaced)
+string ParsingTools::interpolateAll(const string& input, vector<string> replacements, const string toBeReplaced)
 {
-	if (toBeReplaced.empty() || str.empty())
+	if (toBeReplaced.empty() || input.empty())
 	{
 		return string();
 	}
 
-	string res = str;
+	string res = input;
 	size_t start_pos = 0;
 
 	while ((start_pos = res.find(toBeReplaced, start_pos)) != string::npos && !replacements.empty())
@@ -51,91 +51,127 @@ std::string ParsingTools::interpolateAll(const std::string& str, std::vector<std
 	return res;
 }
 
-bool ParsingTools::replace(string& str, const string& from, const string& to)
+// string string("hello $name");
+// bool is_ok = replace(string, "Somename", "$name");
+bool ParsingTools::replace(string& input, const string& replacement, const string& toBeReplaced)
 {
-	size_t start_pos = str.find(from);
+	size_t start_pos = input.find(toBeReplaced);
 
 	if (start_pos == string::npos)
 	{
 		return false;
 	}
 
-	str.replace(start_pos, from.length(), to);
+	input.replace(start_pos, toBeReplaced.length(), replacement);
 	return true;
 }
 
-void ParsingTools::replaceAll(string& str, const string& from, const string& to)
+void ParsingTools::replaceAll(string& input, const string& replacement, const string& toBeReplaced)
 {
-	if (from.empty())
+	if (toBeReplaced.empty())
 	{
 		return;
 	}
 
 	size_t start_pos = 0;
-	while ((start_pos = str.find(from, start_pos)) != string::npos)
+	while ((start_pos = input.find(toBeReplaced, start_pos)) != string::npos)
 	{
-		str.replace(start_pos, from.length(), to);
-		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+		input.replace(start_pos, toBeReplaced.length(), replacement);
+		start_pos += replacement.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 	}
 }
 
-vector<string> ParsingTools::splitToVector(string str, const string& delimiter)
+vector<string> ParsingTools::splitToVector(string input, const string& delimiter)
 {
+	// In case empty string - result is empty vector<string>
 	vector<string> result;
 
-	while (str.size())
+	while (input.size())
 	{
-		size_t index = str.find(delimiter);
+		size_t index = input.find(delimiter);
 
 		if (index != string::npos)
 		{
-			result.push_back(str.substr(0, index));
-			str = str.substr(index + delimiter.size());
+			result.push_back(input.substr(0, index));
+			input = input.substr(index + delimiter.size());
 
-			if (str.size() == 0)
+			if (input.size() == 0)
 			{
-				result.push_back(str);
+				result.push_back(input);
 			}
 		}
 		else
 		{
-			result.push_back(str);
-			str = "";
+			result.push_back(input);
+			input = "";
 		}
 	}
 
 	return result;
 }
 
-string ParsingTools::joinAsStrings(const vector<string>& vec, const char* delimiter)
+string ParsingTools::joinAsString(const vector<string>& input, const char* delimiter)
 {
+	// If vector is empty, return empty string
+	if (input.empty()) return string("");
+
 	stringstream res;
-	copy(vec.begin(), vec.end(), ostream_iterator<string>(res, delimiter));
+	copy(input.begin(), input.end(), ostream_iterator<string>(res, delimiter));
 	return res.str();
 }
 
-pair<vector<string>, string> ParsingTools::parseCredentials(string& input)
+string ParsingTools::parseCredentials(const string& pgLogin)
 {
 	vector<string> params =
 	{
+		"hostaddr=${}",
+		"port=${}",
 		"dbname=${}",
 		"user=${}",
 		"password=${}",
-		"hostaddr=${}",
-		"port=${}",
 	};
 
-	vector<string> values = splitToVector(input, ":");
-	vector<string> items;
+	vector<string> values = splitToVector(pgLogin, ":");
+	if (values[0] == "localhost" || values[0] == "loopback") values[0] = "127.0.0.1";
 
+	vector<string> items;
 	for (int i = 0; i < params.size(); ++i)
 	{
 		items.push_back(interpolate(params[i], values[i]));
 	}
 
-	const char* delim = " ";
+	return joinAsString(items, " ");
+}
 
-	// Converts to a single string using stringstream
-	string result = joinAsStrings(items, delim);
-	return make_pair(values, result);
+pair<bool, string> ParsingTools::tryParseCredentials(const string& pgLogin)
+{
+	string result;
+	vector<string> parsed;
+	vector<string> params =
+	{
+		"hostaddr=${}",
+		"port=${}",
+		"dbname=${}",
+		"user=${}",
+		"password=${}",
+	};
+
+	try
+	{
+		vector<string> values = splitToVector(pgLogin, ":");
+		if (values[0] == "localhost" || values[0] == "loopback") values[0] = "127.0.0.1";
+
+		for (int i = 0; i < params.size(); ++i)
+		{
+			parsed.push_back(interpolate(params[i], values[i]));
+		}
+	}
+	catch (const exception&)
+	{
+		return make_pair(false, joinAsString(parsed, " "));
+	}
+
+	// If parsing succeeded
+	// convert to single string using stringstream
+	return make_pair(true, joinAsString(parsed, " "));
 }

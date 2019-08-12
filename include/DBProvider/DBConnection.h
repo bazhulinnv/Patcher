@@ -1,46 +1,61 @@
+#ifndef DBCONNECTION_H
+#define DBCONNECTION_H
+
+#include "DBProvider/LoginData.h"
+
+#include <iostream>
 #include <string>
+#include <queue>
 #include <vector>
-#include <utility>
+#include <stdexcept>
 #include <pqxx/pqxx>
 
+using namespace std;
 class DBConnection
 {
 public:
+	DBConnection() = default;
 
-	struct LoginData
+	explicit DBConnection(std::string& pgLogin)
 	{
-		std::string databaseName;
-		std::string username;
-		std::string password;
-		std::string host;
-		unsigned int portNumber;
-		std::string result;
-	};
+		connParams = LoginData(pgLogin);
+	}
 
-	LoginData info;
+	~DBConnection() = default;
 
-	/* 
-	*/
-	explicit DBConnection(std::string loginCredentials);
-	
-	// Safely deletes connection.
-	~DBConnection();
-	
-	/*	Sets connection using login credentials.
-		Login credentials is assumed to have been passed
-		to the constructor when the object was created.
-	*/
-	void setConnection();
-	
-	// Returns pointer to current connection object.
-	pqxx::connection* getConnection();
+	std::string getConnectionString()
+	{
+		return connParams.getLoginStringPqxx();
+	}
+
+	LoginData getConnectionParameters()
+	{
+		return connParams;
+	}
+
+	void setConnection()
+	{
+		auto params = connParams.getLoginStringPqxx();
+
+		try
+		{
+			cout << "";
+		}
+		catch (const std::exception& err)
+		{
+			cerr << "ERROR: Could not establish connection." << endl;
+			cerr << "Parameters: " << params << endl;
+			cerr << "ERROR Details: " << err.what() << endl;
+			throw std::invalid_argument("Wrong connection parameters.\n");
+		}
+	}
 
 private:
-	// Points to current active connection.
-	pqxx::connection *current = nullptr;
-	
-	/*	Drops current connection; disconects from database.
-		Can be called only by destructor, when the lifetime of an object ends.
-	*/
-	void disconnect();
+	// Shared libpqxx connection
+	std::shared_ptr<pqxx::connection> *conn;
+
+	// Stores current connection parameters
+	LoginData connParams;
 };
+
+#endif
