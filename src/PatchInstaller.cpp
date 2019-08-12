@@ -71,9 +71,7 @@ std::string readLogFromTempFile(std::string fileName) {
 	return dataForLog;
 }
 
-void passInstallLogsGui(std::string &dataForErrorLog, std::string &dataForInfoLog, bool installWithErrors) {
-	std::cerr << "INSTALLATION PROCESS:\n";
-	std::cerr << dataForInfoLog;
+void passInstallLogsGui(std::string &dataForErrorLog, bool installWithErrors) {
 	std::cerr << "INSTALLATION ERRORS:\n";
 	if (dataForErrorLog.empty()) {	
 		dataForErrorLog += "Installation completed.\n";
@@ -101,7 +99,7 @@ bool PatchInstaller::startInstallation(std::pair<std::vector<std::string>, std::
 	std::string dataForInfoLog = readLogFromTempFile("tempInfo.txt");
 	std::string dataForErrorLog = readLogFromTempFile("tempError.txt");
 	bool installWithErrors = dataForErrorLog.empty();
-	passInstallLogsGui(dataForErrorLog, dataForInfoLog, installWithErrors);
+	passInstallLogsGui(dataForErrorLog, installWithErrors);
 
 	errors.close();
 	info.close();
