@@ -73,7 +73,7 @@ struct Constraint
 	string onUpdate;
 };
 
-struct ParentTable
+struct PartittionTable
 {
 	string schema;
 	string name;
@@ -88,16 +88,19 @@ public:
 	string description;
 	string options;
 	string space;
-	void setParentTable(string shema, string name, string partitionExpression);
-	ParentTable getParentTable();
-	bool isPartission();
+	string partitionExpression;
+
+	void setPartitionTable(string shema, string name, string partitionExpression);
+	PartittionTable getPartitionTable();
+	bool isPartition();
+
 	vector<Column> columns;
 	vector<Constraint> constraints;
 	vector<string> inheritTables;
 
 private:
-	ParentTable _parent;
-	bool _isPartission = false;
+	PartittionTable _partitionTable;
+	bool _isPartition = false;
 };
 
 // Vector for containing object data
@@ -187,13 +190,14 @@ private:
 	ScriptData getIndexData(const ObjectData &data) const;
 
 	// Methods for initialization of Table structure
-	bool initializeParent(Table &table, const ObjectData &data);
+	bool initializePartitionTable(Table &table, const ObjectData &data);
 	void initializeType(Table &table, const ObjectData &data);
 	void initializeOwner(Table &table, const ObjectData &data);
 	void initializeDescription(Table &table, const ObjectData &data);
 	void initializeOptions(Table &table, const ObjectData &data);
 	void initializeSpace(Table &table, const ObjectData &data);
 	void initializeColumns(Table &table, const ObjectData &data);
+	void initializePartitionExpression(Table &table, const ObjectData &data);
 	void initializeConstraints(Table &table, const ObjectData &data);
 	void initializeInheritTables(Table &table, const ObjectData &data);
 };

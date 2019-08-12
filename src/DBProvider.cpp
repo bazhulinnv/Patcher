@@ -209,7 +209,7 @@ Table DBProvider::getTable(const ObjectData & data)
 	Table table;
 	// If table is partision of some other table
 	// need to know only parent
-	if (!initializeParent(table, data))
+	if (!initializePartitionTable(table, data))
 	{
 		initializeType(table, data);
 		initializeOwner(table, data);
@@ -218,6 +218,7 @@ Table DBProvider::getTable(const ObjectData & data)
 		initializeColumns(table, data);
 		initializeSpace(table, data);
 		initializeConstraints(table, data);
+		initializePartitionExpression(table, data);
 		initializeInheritTables(table, data);
 	}
 	return table;
@@ -236,7 +237,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data)
 	string scriptString;
 
 	// If table is not partission of some other table
-	if (!table.isPartission())
+	if (!table.isPartition())
 	{
 		// "CREATE TABLE" block - initialization of all table's columns
 		scriptString = "CREATE ";
@@ -308,6 +309,12 @@ ScriptData DBProvider::getTableData(const ObjectData & data)
 			scriptString += "\n)\n";
 		}
 
+		// "PARTITION BY" block
+		if (!table.partitionExpression.empty())
+		{
+			scriptString += "PARTITION BY " + table.partitionExpression + "\n";
+		}
+
 		// "WITH" block to create storage parameters
 		scriptString += "WITH (\n" + table.options + "\n)\n";
 
@@ -343,10 +350,10 @@ ScriptData DBProvider::getTableData(const ObjectData & data)
 	}
 	else
 	{
-		ParentTable parentTable = table.getParentTable();
+		PartittionTable parentTable = table.getPartitionTable();
 		scriptString = "CREATE TABLE " + data.schema + "." + data.name +
 			" PARTITION OF " + parentTable.schema + "." + parentTable.name + "\n" +
-			parentTable.partitionExpression + "\n";
+			parentTable.partitionExpression + ";\n";
 	}
 
 	ScriptData scriptData = ScriptData(data, scriptString);
@@ -379,7 +386,7 @@ ScriptData DBProvider::getIndexData(const ObjectData & data) const
 	return ScriptData();
 }
 
-bool DBProvider::initializeParent(Table & table, const ObjectData & data)
+bool DBProvider::initializePartitionTable(Table & table, const ObjectData & data)
 {
 	string queryString = ""
 		"WITH recursive inh AS "
@@ -423,7 +430,7 @@ bool DBProvider::initializeParent(Table & table, const ObjectData & data)
 	string parentSchema = row["parent_schema"].c_str();
 	string parentName = row["parent_name"].c_str();
 	string partitionExpression = row["partition_expression"].c_str();
-	table.setParentTable(parentSchema, parentName, partitionExpression);
+	table.setPartitionTable(parentSchema, parentName, partitionExpression);
 
 	return true;
 }
@@ -513,6 +520,23 @@ void DBProvider::initializeColumns(Table & table, const ObjectData & data)
 
 		table.columns.push_back(column);
 	}
+}
+
+void DBProvider::initializePartitionExpression(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT c.relnamespace::regnamespace::text, c.relname, pg_get_partkeydef(c.oid) AS partition_expression "
+		"FROM   pg_class c "
+		"WHERE  1 = 1 "
+		"AND c.relkind = 'p' "
+		"AND c.relname = '" + data.name + "' "
+		"AND  c.relnamespace::regnamespace::text = '" + data.schema + "'";
+	pqxx::result result = query(queryString);
+	if (result.size() != 0)
+	{
+		pqxx::result::const_iterator row = result.begin();
+		table.partitionExpression = row["partition_expression"].c_str();
+	}
+	
 }
 
 void DBProvider::initializeConstraints(Table & table, const ObjectData & data)
@@ -614,20 +638,20 @@ void Column::setNullable(string value)
 	}
 }
 
-void Table::setParentTable(string schema, string name, string partitionExpression)
+void Table::setPartitionTable(string schema, string name, string partitionExpression)
 {
-	this->_parent.name = name;
-	this->_parent.schema = schema;
-	this->_parent.partitionExpression = partitionExpression;
-	this->_isPartission = true;
+	this->_partitionTable.name = name;
+	this->_partitionTable.schema = schema;
+	this->_partitionTable.partitionExpression = partitionExpression;
+	this->_isPartition = true;
 }
 
-ParentTable Table::getParentTable()
+PartittionTable Table::getPartitionTable()
 {
-	return _parent;
+	return _partitionTable;
 }
 
-bool Table::isPartission()
+bool Table::isPartition()
 {
-	return _isPartission;
+	return _isPartition;
 }
