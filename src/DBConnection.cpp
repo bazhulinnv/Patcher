@@ -37,6 +37,7 @@ void DBConnection::setConnection()
 	{
 		std::cerr << "ERROR: Could not establish connection." << std::endl;
 		std::cerr << e.what() << std::endl;
+		throw e;
 	}
 }
 

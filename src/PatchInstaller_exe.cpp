@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 
 			delete dbProvider;
 		}
-		catch (...) {
+		catch (std::exception e) {
 			std::cerr << "Please, enter correct database connection parameters. \n";
 			printNecessaryParameters();
 			returnCode = true;
