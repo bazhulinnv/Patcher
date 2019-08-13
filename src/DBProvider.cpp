@@ -490,30 +490,28 @@ void DBProvider::initializeSpace(Table & table, const ObjectData & data)
 
 void DBProvider::initializeColumns(Table & table, const ObjectData & data)
 {
-	string queryString = "SELECT DISTINCT c.column_name, c.*, format_type(pa.atttypid, pa.atttypmod), d.description "
-		"FROM  information_schema.columns c "
-		"JOIN pg_attribute pa ON(pa.attname = c.column_name) "
-		"JOIN pg_class pc ON(pc.relfilenode = pa.attrelid) "
-		"LEFT JOIN "
-		"(SELECT * "
-		"FROM pg_catalog.pg_statio_all_tables AS st "
-		"JOIN pg_catalog.pg_description pgd ON(pgd.objoid = st.relid) "
-		"JOIN information_schema.columns c ON(pgd.objsubid = c.ordinal_position "
-		"AND  c.table_schema = st.schemaname AND c.table_name = st.relname) "
-		"WHERE table_name = '" + data.name + "' "
-		"AND table_schema = '" + data.schema + "') d "
-		"ON d.column_name = c.column_name "
-		"WHERE 1 = 1 "
-		"AND pc.oid = '" + data.schema + "." + data.name + "'::regclass::oid "
-		"AND c.table_schema = '" + data.schema + "' "
-		"AND c.table_name = '" + data.name + "' "
-		"AND c.table_catalog = '" + _connection->info.databaseName + "'";
+	string queryString = "select c.table_catalog, "
+		"c.table_schema, "
+		"c.table_name, "
+		"c.column_name, "
+		"c.is_nullable, "
+		"format_type(pa.atttypid, pa.atttypmod) as collumn_type, "
+		"c.column_default, "
+		"pd.description "
+		"from information_schema.columns c "
+		"join pg_class pc on(pc.oid = (c.table_schema || '.' || c.table_name) ::regclass::oid) "
+		"join pg_attribute pa on(pa.attrelid = pc.oid and pa.attname = c.column_name) "
+		"left join pg_catalog.pg_description pd on(pd.objoid = (c.table_schema || '.' || c.table_name)::regclass::oid and pd.objsubid = c.ordinal_position) "
+		"where 1 = 1 "
+		"and c.table_catalog = '" + _connection->info.databaseName + "' "
+		"and c.table_schema = '" + data.schema + "' "
+		"and c.table_name = '" + data.name + "'";
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
 		Column column;
 		column.name = row["column_name"].c_str();
-		column.type = row["format_type"].c_str();
+		column.type = row["collumn_type"].c_str();
 		column.defaultValue = row["column_default"].c_str();
 		column.description = row["description"].c_str();
 		column.setNullable(row["is_nullable"].c_str());
