@@ -12,7 +12,7 @@ namespace DBConnection
 	class Connection : ConnectionBase
 	{
 	public:
-		Connection() = default;
+		Connection();
 
 		explicit Connection(std::string& loginStringPG);
 

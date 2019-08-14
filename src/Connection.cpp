@@ -4,6 +4,11 @@
 
 using namespace std;
 
+DBConnection::Connection::Connection()
+{
+	dbConnection = std::make_shared<pqxx::connection>();
+}
+
 DBConnection::Connection::Connection(string& loginStringPG)
 {
 	connectionParams = LoginData(loginStringPG);
@@ -12,7 +17,10 @@ DBConnection::Connection::Connection(string& loginStringPG)
 
 DBConnection::Connection::~Connection()
 {
-	Connection::closeConnection();
+	if(connectionSet)
+	{
+		Connection::closeConnection();
+	}
 }
 
 void DBConnection::Connection::setConnection(string& loginStringPG)
