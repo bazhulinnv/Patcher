@@ -25,6 +25,10 @@ DBProvider::DBProvider(string loginStringPG)
 	}
 }
 
+DBProvider::~DBProvider()
+{
+}
+
 vector<ObjectData> DBProvider::getObjects() const
 {
 	// example:

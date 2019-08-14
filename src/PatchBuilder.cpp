@@ -22,10 +22,14 @@ PatchBuilder::PatchBuilder(const string pPatchListFullName, DBProvider &pProvide
 	}
 	else
 	{
-		const string message = "Cannot open or find template file\nDependencyList will be formed by presence of names\n";
-		isWithWarnings = true;
-		cerr << message;
-		addLog(message);
+		input.open(TEMPLATES_FILE_NAME);
+		if (!input.is_open())
+		{
+			const string message = "Cannot open or find template file\nDependencyList will be formed by presence of names\n";
+			isWithWarnings = true;
+			cerr << message;
+			addLog(message);
+		}
 	}
 }
 PatchBuilder::~PatchBuilder() {}
@@ -139,6 +143,14 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 {
 	ofstream outputInstallScriptBat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
 	ofstream outputInstallScriptSh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
+
+	// Files to logging of install script working
+	vector<string> tempFileNames;
+	tempFileNames.push_back(TEMP_ERROR_FILE_NAME);
+	tempFileNames.push_back(TEMP_INFO_FILE_NAME);
+
+	string outputOperator = ">";
+
 	// Creating sql files for all scrpits and writing install script
 	for (const ScriptData data : scriptDataVector)
 	{
@@ -150,19 +162,29 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 		outputScript << data.text;
 
 		// Creating install command
-		string installBatStr = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.schema + "/";
-		string installShStr = string("psql -a -U ") + "$1" + " -d " + "$2" + " -h " + "$3" + " -p " + "$4" " -f " + data.schema + "/";
+		string installString = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.schema + "/";
 		if (data.type != "")
 		{
-			installBatStr += data.type + "/";
-			installShStr += data.type + "/";
+			installString += data.type + "/";
 		}
-		installBatStr += data.name + "\n";
-		installShStr += data.name + "\n";
+		installString += data.name + " ";
 
+		installString += to_string(tempFileNames.size());
+		for (string fileName : tempFileNames)
+		{
+			installString += outputOperator + fileName;
+		}
+		installString += "\n";
 
-		outputInstallScriptBat << installBatStr; // Writing psql command in InstallScript with .bat format
-		outputInstallScriptSh << installShStr; // Writing psql command in InstallScript with .sh format	
+		outputInstallScriptBat << installString; // Writing psql command in InstallScript with .bat format
+		outputInstallScriptSh << installString; // Writing psql command in InstallScript with .sh format	
+
+		// Should use > operator to create file and write in it
+		// Should use >> operator to write in existing file
+		if (outputOperator.size() == 1)
+		{
+			outputOperator += ">";
+		}
 	}
 	const string message = "Install pocket created\n";
 	cout << message;
