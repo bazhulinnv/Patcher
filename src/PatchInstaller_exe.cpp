@@ -19,8 +19,8 @@ inline bool fileExists(char* directory) {
 
 void printNecessaryParameters() {
 	std::cerr << "Connection parameters must be in following format: ";
-	std::cerr << "name-of-database:user-name:user-password:host:port\n";
-	std::cerr << "Example of correct parameters: Database:User:password:127.0.0.1:5432\n";
+	std::cerr << "host:port:name-of-database:username:user-password\n";
+	std::cerr << "Example of correct parameters: localhost:5432:database:user:password\n";
 }
 
 /** Implementation of work with user. Handling different cases of incorrect input data. */
