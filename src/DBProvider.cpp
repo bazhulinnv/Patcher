@@ -1,22 +1,25 @@
 #include "DBProvider/DBProvider.h"
+#include "Shared/ParsingTools.h"
 #include "Shared/TextTable.h"
-
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
 #include <string>
 #include <iostream>
 
 using namespace std;
+using namespace DBConnection;
 
-DBProvider::DBProvider(const std::string args)
+DBProvider::DBProvider(std::string loginStringPG)
 {
-	_connection = new DBConnection(args);
-	_connection->setConnection();
-}
-
-DBProvider::~DBProvider()
-{
-	delete _connection;
+	try
+	{
+		currentConnection->setConnection(loginStringPG);
+	}
+	catch (const std::exception& err)
+	{
+		cerr << "Wrong Parameters: " << loginStringPG << endl;
+		throw err;
+	}
 }
 
 vector<ObjectData> DBProvider::getObjects() const
@@ -44,9 +47,9 @@ vector<ObjectData> DBProvider::getObjects() const
 	for (pqxx::result::const_iterator row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
 	{
 		const std::vector<std::string> parameters;
-		objects.push_back(ObjectData(	row["obj_name"].as<std::string>(),
-										row["obj_type"].as<std::string>(),
-										row["obj_schema"].as<std::string>(), parameters));
+		objects.push_back(ObjectData(row["obj_name"].as<std::string>(),
+									 row["obj_type"].as<std::string>(),
+									 row["obj_schema"].as<std::string>(), parameters));
 	}
 
 	return objects;
@@ -85,8 +88,8 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) // Temporary only f
 }
 
 // Checks if specified object exists in database
- bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::string name, const std::string type) const
- {
+bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::string name, const std::string type) const
+{
 	bool res = false;
 	if (type == "table")
 	{
@@ -122,14 +125,8 @@ ScriptData DBProvider::getScriptData(const ObjectData &data) // Temporary only f
 }
 
 pqxx::result DBProvider::query(const std::string stringSQL) const
-{	
-	// Connection must be already set
-	if (!_connection->getConnection())
-	{
-		throw new std::exception("ERROR: Connection was not set.\n");
-	}
-
-	pqxx::work trans(*_connection->getConnection(), "trans");
+{
+	pqxx::work trans(*currentConnection->getConnection(), "trans");
 
 	// Get result from database
 	pqxx::result res = trans.exec(stringSQL);
@@ -506,6 +503,7 @@ void DBProvider::initializeColumns(Table & table, const ObjectData & data)
 		"and c.table_catalog = '" + _connection->info.databaseName + "' "
 		"and c.table_schema = '" + data.schema + "' "
 		"and c.table_name = '" + data.name + "'";
+
 	pqxx::result result = query(queryString); // SQL query result, contains information in table format
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
@@ -602,13 +600,13 @@ void DBProvider::initializeInheritTables(Table & table, const ObjectData & data)
 	}
 }
 
-void printObjectsData(pqxx::result queryResult)
+void printObjectsData(const pqxx::result queryResult)
 {
 	// Iterate over the rows in our result set.
 	// Result objects are containers similar to std::vector and such.
-	for (	pqxx::result::const_iterator row = queryResult.begin();
-			row != queryResult.end();
-			++row )
+	for (pqxx::result::const_iterator row = queryResult.begin();
+		 row != queryResult.end();
+		 ++row)
 	{
 		std::cout
 			<< row["obj_schema"].as<std::string>() << "\t"

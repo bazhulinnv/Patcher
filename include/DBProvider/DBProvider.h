@@ -1,11 +1,8 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
 
-#include "DBProvider/DBConnection.h"
-#include "Shared/ParsingTools.h"
-
+#include "DBProvider/Connection.h"
 #include <pqxx/pqxx>
-#include <tuple>
 #include <string>
 
 using namespace std;
@@ -112,9 +109,9 @@ typedef vector<ScriptData> scriptDataVectorType;
 class DBProvider
 {
 public:
-	explicit DBProvider(string args);
+	explicit DBProvider(string loginStringPG);
 	
-	~DBProvider();
+	~DBProvider() = default;
 
 	// Returns all objects of database
 	vector<ObjectData> getObjects() const;
@@ -172,8 +169,10 @@ public:
 
 	bool triggerExists(const std::string& triggerSchema, const std::string& triggerName) const;
 
+
 private:
-	DBConnection *_connection = nullptr;
+	// DBConnectionPool Pool
+	shared_ptr<DBConnection::Connection> currentConnection;
 
 	// Getting information about object from database
 	Table getTable(const ObjectData &data);

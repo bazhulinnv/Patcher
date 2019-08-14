@@ -5,6 +5,8 @@
 #include <iostream>
 #include <ctime>
 
+using namespace std;
+
 namespace PatcherLogger
 {	
 	// Returns current date-time formatted like [YYYY-MM-DD] [HH:mm:ss]

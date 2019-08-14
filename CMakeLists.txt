@@ -59,7 +59,11 @@ set(patcher_INCS_prov
   include/Shared/Logger.h
   include/Shared/TextTable.h
   include/Shared/ParsingTools.h
-  include/DBProvider/DBConnection.h
+  include/DBProvider/LoginData.h
+  include/DBProvider/ConnectionBase.h
+  include/DBProvider/Connection.h
+  include/DBProvider/ConnectionThreadSafe.h
+  include/DBProvider/ConnectionPool.h
   include/DBProvider/DBProvider.h
   )
 
@@ -67,7 +71,11 @@ set(patcher_SRCS_prov
   src/Logger.cpp
   src/TextTable.cpp
   src/ParsingTools.cpp
-  src/DBConnection.cpp
+  src/LoginData.cpp
+  src/ConnectionBase.cpp
+  src/Connection.cpp
+  src/ConnectionThreadSafe.cpp
+  src/ConnectionPool.cpp
   src/DBProvider.cpp
   )
 
@@ -108,7 +116,10 @@ target_include_directories(${DB_PROVIDER}
   )
 target_link_libraries(${DB_PROVIDER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY})
 
-add_executable(${DB_PROVIDER}_test tests/DBProvider_tests.cpp)
+add_executable(${DB_PROVIDER}_test	tests/TestUtility.cpp
+									tests/DBProviderConnection_tests.cpp
+									tests/DBProvider_tests.cpp)
+
 target_link_libraries(${DB_PROVIDER}_test PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 
