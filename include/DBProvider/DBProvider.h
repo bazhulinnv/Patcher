@@ -23,7 +23,7 @@ struct ObjectData // Sctructure for containing objet data
 		paramsVector = pParamsVector;
 	}
 
-	bool operator == (ObjectData &object) const
+	bool operator == (ObjectData& object) const
 	{
 		return (this->name == object.name) && (this->type == object.type);
 	}
@@ -34,13 +34,15 @@ struct ScriptData : ObjectData // Sctructure for containing script data
 	std::string text; // Script text
 
 	ScriptData() = default;
-	
-	ScriptData(const std::string pName,string pType,string pScheme,vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
+
+	ScriptData(const std::string pName, string pType, string pScheme, vector<string> pParamsVector, string pText = "") : ObjectData(pName, pType, pScheme, pParamsVector)
 	{
 		text = pText;
 	}
-	
-	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText) {}
+
+	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText)
+	{
+	}
 };
 
 struct Column // Structure for containing information about column of table
@@ -72,9 +74,9 @@ struct ObjectInformation // Sctructure for containing object structure informati
 	string owner;
 	string description;
 
-	Trigger *getTrigger(string triggerName)
+	Trigger* getTrigger(string triggerName)
 	{
-		for (Trigger &trigger : triggers)
+		for (Trigger& trigger : triggers)
 		{
 			if (trigger.name == triggerName)
 			{
@@ -95,17 +97,17 @@ class DBProvider
 {
 public:
 	explicit DBProvider(string loginStringPG);
-	
-	~DBProvider() = default;
+
+	~DBProvider();;
 
 	// Returns all objects of database
 	vector<ObjectData> getObjects() const;
-	
+
 	// Returns script data by object data
-	ScriptData getScriptData(const ObjectData &data) const;
-	
+	ScriptData getScriptData(const ObjectData& data) const;
+
 	// Checks if specified object exists in database
-	bool doesCurrentObjectExists(std::string scheme, std::string name, std::string type) const;
+	bool doesCurrentObjectExists(const std::string& scheme, const std::string& signature, const std::string& type) const;
 
 	pqxx::result query(std::string strSQL) const;
 
@@ -142,13 +144,13 @@ public:
 		return {};
 	}
 
-	bool tableExists(const std::string& tableSchema, const std::string& tableName) const;
+	bool tableExists(const std::string& schema, const std::string& tableName) const;
 
-	bool sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName) const;
+	bool sequenceExists(const std::string& schema, const std::string& sequenceName) const;
 
-	static bool functionExists(const std::string& name);
+	bool functionExists(const std::string& schema, const std::string& funcSignatur) const;
 
-	static bool indexExists(const std::string& name);
+	bool indexExists(const std::string& schema, const std::string& indexName) const;
 
 	bool viewExists(const std::string& tableSchema, const std::string& tableName) const;
 
@@ -160,10 +162,10 @@ private:
 	shared_ptr<DBConnection::Connection> currentConnection;
 
 	// Getting information about object from database
-	ObjectInformation getObjectInformation(const ObjectData &data) const;
+	ObjectInformation getObjectInformation(const ObjectData& data) const;
 
 	// Get single value from query
-	inline string getSingleValue(const string &queryString, const string &columnName) const;
+	inline string getSingleValue(const string& queryString, const string& columnName) const;
 };
 
 void printObjectsData(pqxx::result res);

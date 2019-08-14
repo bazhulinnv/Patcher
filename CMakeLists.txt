@@ -65,12 +65,14 @@ set(patcher_INCS_prov
   include/DBProvider/ConnectionThreadSafe.h
   include/DBProvider/ConnectionPool.h
   include/DBProvider/DBProvider.h
+  include/Shared/TestUtility.h
   )
 
 set(patcher_SRCS_prov
   src/Logger.cpp
   src/TextTable.cpp
   src/ParsingTools.cpp
+  src/TestUtility.cpp
   src/LoginData.cpp
   src/ConnectionBase.cpp
   src/Connection.cpp
@@ -116,9 +118,7 @@ target_include_directories(${DB_PROVIDER}
   )
 target_link_libraries(${DB_PROVIDER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY})
 
-add_executable(${DB_PROVIDER}_test	tests/TestUtility.cpp
-									tests/DBProviderConnection_tests.cpp
-									tests/DBProvider_tests.cpp)
+add_executable(${DB_PROVIDER}_test tests/DBProvider_tests.cpp)
 
 target_link_libraries(${DB_PROVIDER}_test PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 

@@ -1,5 +1,6 @@
 #include "DBProvider/DBProvider.h"
 #include "Shared/ParsingTools.h"
+#include "Shared/Logger.h"
 #include "Shared/TextTable.h"
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
@@ -9,13 +10,14 @@
 using namespace std;
 using namespace DBConnection;
 
-DBProvider::DBProvider(std::string loginStringPG)
+DBProvider::DBProvider(string loginStringPG)
 {
 	try
 	{
+		currentConnection = make_shared<Connection>(loginStringPG);
 		currentConnection->setConnection(loginStringPG);
 	}
-	catch (const std::exception& err)
+	catch (const exception& err)
 	{
 		cerr << "Wrong Parameters: " << loginStringPG << endl;
 		throw err;
@@ -27,7 +29,7 @@ vector<ObjectData> DBProvider::getObjects() const
 	// example:
 	// output - public, myFunction, function, <param1, param2, param3>
 	//          common, myTable,    table,    <>
-	std::string sql_getObjects = "SELECT /*sequences */"
+	string sql_getObjects = "SELECT /*sequences */"
 		"f.sequence_schema AS obj_schema,"
 		"f.sequence_name AS obj_name,"
 		"'sequence' AS obj_type "
@@ -41,15 +43,15 @@ vector<ObjectData> DBProvider::getObjects() const
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";;
 
-	auto resOfQuery = query(sql_getObjects);
-	std::vector<ObjectData> objects;
+	const auto queryResult = query(sql_getObjects);
+	vector<ObjectData> objects;
 
-	for (pqxx::result::const_iterator row = resOfQuery.begin(); row != resOfQuery.end(); ++row)
+	for (pqxx::result::const_iterator row = queryResult.begin(); row != queryResult.end(); ++row)
 	{
-		const std::vector<std::string> parameters;
-		objects.push_back(ObjectData(row["obj_name"].as<std::string>(),
-									 row["obj_type"].as<std::string>(),
-									 row["obj_schema"].as<std::string>(), parameters));
+		const vector<string> parameters;
+		objects.push_back(ObjectData(row["obj_name"].as<string>(),
+									 row["obj_type"].as<string>(),
+									 row["obj_schema"].as<string>(), parameters));
 	}
 
 	return objects;
@@ -114,44 +116,46 @@ ScriptData DBProvider::getScriptData(const ObjectData& data) const // Temporary 
 }
 
 // Checks if specified object exists in database
-bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::string name, const std::string type) const
+bool DBProvider::doesCurrentObjectExists(const string& scheme, const string& signature, const string& type) const
 {
 	bool res = false;
 	if (type == "table")
 	{
-		res = tableExists(scheme, name);
+		res = tableExists(scheme, signature);
 	}
 
 	if (type == "sequence")
 	{
-		res = sequenceExists(scheme, name);
+		res = sequenceExists(scheme, signature);
 	}
 
 	if (type == "view")
 	{
-		res = viewExists(scheme, name);
+		res = viewExists(scheme, signature);
 	}
 
 	if (type == "trigger")
 	{
-		res = triggerExists(scheme, name);
+		res = triggerExists(scheme, signature);
 	}
 
 	if (type == "function")
 	{
-		res = functionExists(name);
+		res = functionExists(signature, signature);
 	}
 
 	if (type == "index")
 	{
-		res = indexExists(name);
+		res = indexExists(signature, signature);
 	}
 
 	return res;
 }
 
-pqxx::result DBProvider::query(const std::string stringSQL) const
+pqxx::result DBProvider::query(const string stringSQL) const
 {
+	auto temp = currentConnection->getParameters().loginStringPqxx();
+
 	pqxx::work trans(*currentConnection->getConnection(), "trans");
 
 	// Get result from database
@@ -160,7 +164,7 @@ pqxx::result DBProvider::query(const std::string stringSQL) const
 	return res;
 }
 
-bool DBProvider::tableExists(const std::string& tableSchema, const std::string& tableName) const
+bool DBProvider::tableExists(const string& schema, const string& tableName) const
 {
 	// Define SQL request
 	string q =
@@ -169,13 +173,13 @@ bool DBProvider::tableExists(const std::string& tableSchema, const std::string& 
 			"FROM information_schema.tables "
 			"WHERE table_schema = '${}' "
 			"AND table_name = '${}');",
-			vector<string> { tableSchema, tableName });
+			vector<string> { schema, tableName });
 
-	auto queryResult = query(q);
+	const auto queryResult = query(q);
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::sequenceExists(const std::string& sequenceSchema, const std::string& sequenceName) const
+bool DBProvider::sequenceExists(const string& schema, const string& sequenceName) const
 {
 	string q =
 		ParsingTools::interpolateAll(
@@ -183,23 +187,36 @@ bool DBProvider::sequenceExists(const std::string& sequenceSchema, const std::st
 			"FROM information_schema.sequences "
 			"WHERE sequence_schema = '${}' "
 			"AND sequence_name = '${}');",
-			vector<string> { sequenceSchema, sequenceName });
+			vector<string> { schema, sequenceName });
 
-	auto queryResult = query(q);
+	const auto queryResult = query(q);
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::functionExists(const std::string& name)
+bool DBProvider::indexExists(const string& schema, const string& indexName) const
 {
-	return true;
+	string q =
+		ParsingTools::interpolateAll("SELECT EXISTS (SELECT * FROM pg_indexes WHERE schemaname = '${}' and indexname = '${}');",
+									 vector<string> { schema, indexName });
+
+	const auto queryResult = query(q);
+	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::indexExists(const std::string& name)
+bool DBProvider::functionExists(const string& schema, const string& funcSignature) const
 {
-	return true;
+	string q =
+		ParsingTools::interpolateAll("SELECT EXISTS (SELECT * FROM information_schema.routines r, pg_catalog.pg_proc p WHERE"
+									 " r.specific_schema = '${}' and r.routine_name||'('||COALESCE(array_to_string(p.proargnames, ',', '*'),'')||')' = '${}'"
+									 " and r.external_language = 'PLPGSQL' and r.routine_name = p.proname and"
+									 " r.specific_name = p.proname || '_' || p.oid);",
+									 vector<string> { schema, funcSignature });
+
+	const auto queryResult = query(q);
+	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::viewExists(const std::string& tableSchema, const std::string& tableName) const
+bool DBProvider::viewExists(const string& tableSchema, const string& tableName) const
 {
 	string q =
 		ParsingTools::interpolateAll(
@@ -209,11 +226,11 @@ bool DBProvider::viewExists(const std::string& tableSchema, const std::string& t
 			"AND table_name = '${}');",
 			vector<string> { tableSchema, tableName });
 
-	auto queryResult = query(q);
+	const auto queryResult = query(q);
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::triggerExists(const std::string& triggerSchema, const std::string& triggerName) const
+bool DBProvider::triggerExists(const string& triggerSchema, const string& triggerName) const
 {
 	const string q =
 		ParsingTools::interpolateAll(
@@ -223,8 +240,8 @@ bool DBProvider::triggerExists(const std::string& triggerSchema, const std::stri
 			"AND trigger_name = '${}');",
 			vector<string> { triggerSchema, triggerName });
 
-	auto resOfQuery = query(q);
-	return false;
+	const auto queryResult = query(q);
+	return queryResult.begin()["exists"].as<bool>();
 }
 
 ObjectInformation DBProvider::getObjectInformation(const ObjectData& data) const
@@ -297,7 +314,7 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData& data) const
 
 inline string DBProvider::getSingleValue(const string& queryString, const string& columnName) const
 {
-	pqxx::result result = query(queryString);
+	const pqxx::result result = query(queryString);
 	const pqxx::result::const_iterator row = result.begin();
 	return row[columnName].c_str();
 }
@@ -305,16 +322,16 @@ inline string DBProvider::getSingleValue(const string& queryString, const string
 void printObjectsData(const pqxx::result queryResult)
 {
 	// Iterate over the rows in our result set.
-	// Result objects are containers similar to std::vector and such.
+	// Result objects are containers similar to vector and such.
 	for (pqxx::result::const_iterator row = queryResult.begin();
 		 row != queryResult.end();
 		 ++row)
 	{
-		std::cout
-			<< row["obj_schema"].as<std::string>() << "\t"
-			<< row["obj_name"].as<std::string>() << "\t"
-			<< row["obj_type"].as<std::string>()
-			<< std::endl;
+		cout
+			<< row["obj_schema"].as<string>() << "\t"
+			<< row["obj_name"].as<string>() << "\t"
+			<< row["obj_type"].as<string>()
+			<< endl;
 	}
 }
 

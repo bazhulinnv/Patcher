@@ -2,7 +2,9 @@
 #include <stdexcept>
 #include <iostream>
 
-DBConnection::Connection::Connection(std::string& loginStringPG)
+using namespace std;
+
+DBConnection::Connection::Connection(string& loginStringPG)
 {
 	connectionParams = LoginData(loginStringPG);
 	parametersSet = true;
@@ -13,11 +15,11 @@ DBConnection::Connection::~Connection()
 	Connection::closeConnection();
 }
 
-void DBConnection::Connection::setConnection(std::string& loginStringPG)
+void DBConnection::Connection::setConnection(string& loginStringPG)
 {
 	if (connectionSet)
 	{
-		closeConnection();
+		Connection::closeConnection();
 	}
 
 	connectionParams = LoginData(loginStringPG);
@@ -25,21 +27,32 @@ void DBConnection::Connection::setConnection(std::string& loginStringPG)
 
 	try
 	{
-		dbConnection = std::make_shared<pqxx::connection>(connectionParams.loginStringPqxx());
+		dbConnection = make_shared<pqxx::connection>(connectionParams.loginStringPqxx());
 		connectionSet = true;
 	}
-	catch (std::exception& err)
+	catch (exception& err)
 	{
-		std::cerr << err.what() << std::endl;
-		throw std::runtime_error("ERROR: Couldn't establish connection.");
+		cerr << err.what() << endl;
+		throw runtime_error("ERROR: Couldn't establish connection.");
 	}
+}
+
+void DBConnection::Connection::setConnection()
+{
+	if (!parametersSet)
+	{
+		throw runtime_error("ERROR: Tried to access parameters, but parameters"
+								 "weren't set properly in constructor or by \"setConnection(loginStringPG)\".");
+	}
+
+	setConnection(connectionParams.loginStringPG());
 }
 
 LoginData DBConnection::Connection::getParameters()
 {
-	if (parametersSet)
+	if (!parametersSet)
 	{
-		throw std::runtime_error(
+		throw runtime_error(
 			R"(ERROR: Tried to get parameters, but parameters weren't"
 										 R"set properly in constructor or by "setConnection".)");
 	}
@@ -47,11 +60,11 @@ LoginData DBConnection::Connection::getParameters()
 	return connectionParams;
 }
 
-std::shared_ptr<pqxx::connection_base> DBConnection::Connection::getConnection()
+shared_ptr<pqxx::connection_base> DBConnection::Connection::getConnection()
 {
-	if (connectionSet)
+	if (!connectionSet)
 	{
-		throw std::runtime_error(
+		throw runtime_error(
 			R"(ERROR: Tried to get pqxx::connection_base, but parameters weren't"
 										 R"set properly in constructor or by "setConnection".)");
 	}

@@ -13,13 +13,13 @@ enum ArgumentKeys
 };
 
 // Structure for input arguments information
-struct ArgumentData 
+struct ArgumentData
 {
-	ArgumentData(): key(), isRequired(false)
+	ArgumentData() : key(), isRequired(false)
 	{
 	}
 
-	ArgumentData(const string pDesciprion, const vector<string> pFlags, const ArgumentKeys pKey, const bool pIsRequired = true) 
+	ArgumentData(const string pDesciprion, const vector<string> pFlags, const ArgumentKeys pKey, const bool pIsRequired = true)
 	{
 		description = pDesciprion;
 		flags = pFlags;
@@ -33,13 +33,13 @@ struct ArgumentData
 	bool isRequired; // is required to build patch
 };
 
-ArgumentData * getArgByFlag(vector<ArgumentData> &args, string flag) // Get argument from vector by flag
+ArgumentData* getArgByFlag(vector<ArgumentData>& args, string flag) // Get argument from vector by flag
 {
 	transform(flag.begin(), flag.end(), flag.begin(), tolower); // Transform to lower register
 	// Looking for a match with the flag
-	for (ArgumentData &arg : args)
+	for (ArgumentData& arg : args)
 	{
-		for (string &currentFlag : arg.flags)
+		for (string& currentFlag : arg.flags)
 		{
 			if (currentFlag == flag)
 			{
@@ -50,10 +50,10 @@ ArgumentData * getArgByFlag(vector<ArgumentData> &args, string flag) // Get argu
 	return nullptr;
 }
 
-ArgumentData * getArgumentByKey(vector<ArgumentData> &args, ArgumentKeys key) // Get argument from vector by key
+ArgumentData* getArgumentByKey(vector<ArgumentData>& args, ArgumentKeys key) // Get argument from vector by key
 {
 	// Looking for a match with the лун
-	for (ArgumentData &arg : args)
+	for (ArgumentData& arg : args)
 	{
 		if (arg.key == key)
 		{
@@ -68,12 +68,12 @@ vector<ArgumentData> getArguments() // Init all args data and return list of the
 	vector<ArgumentData> args;
 	args.push_back(ArgumentData("PatchList full path", { "-p", "-patch" }, KEY_PATH));
 	args.push_back(ArgumentData("Patch building directory", { "-d", "-directory" }, KEY_DIRECTORY));
-	args.push_back(ArgumentData("Connection arguments", { "-c", "-connection"}, KEY_CONNECTION));
+	args.push_back(ArgumentData("Connection arguments", { "-c", "-connection" }, KEY_CONNECTION));
 	args.push_back(ArgumentData("Templates file full path", { "-t", "-template" }, KEY_TEMPLATE, false));
 	return args;
 }
 
-void printHelp(const vector<ArgumentData> &params) // Print help information
+void printHelp(const vector<ArgumentData>& params) // Print help information
 {
 	cout << "PatchBuilder - program for patch building by list of objects\n" << endl;
 	cout << "To run the program with the necessary parameters, use the following flags:\n\n";
@@ -88,7 +88,7 @@ void printHelp(const vector<ArgumentData> &params) // Print help information
 	}
 }
 
-int main(const int argc, char *argv[])
+int main(const int argc, char* argv[])
 {
 	vector<ArgumentData> args = getArguments(); // Get list of arguments
 
@@ -102,7 +102,7 @@ int main(const int argc, char *argv[])
 		}
 		else
 		{
-			ArgumentData *const param = getArgByFlag(args, argv[argIndex]); // Get argument by current flag
+			ArgumentData* const param = getArgByFlag(args, argv[argIndex]); // Get argument by current flag
 			if (param != nullptr && argIndex < argc - 1) // if exist argument with current flag and it is not las argument
 			{
 				argIndex++;
@@ -112,9 +112,9 @@ int main(const int argc, char *argv[])
 	}
 
 	// Checking on emptiness of required arguments values
-	for (ArgumentData &param : args)
+	for (ArgumentData& param : args)
 	{
-		if (param.value.empty() && param.isRequired )
+		if (param.value.empty() && param.isRequired)
 		{
 			cout << "You must specify the following argument:\n" << param.description;
 			return -1;
@@ -131,7 +131,7 @@ int main(const int argc, char *argv[])
 		builder.buildPatch(getArgumentByKey(args, KEY_DIRECTORY)->value);
 		return 1;
 	}
-	catch (exception &err)
+	catch (exception& err)
 	{
 		cerr << err.what() << endl;
 		builder.addLog(err.what());
