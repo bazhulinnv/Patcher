@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 					if (fileExists(argv[3])) {
 						chdir(argv[3]);
 						//Create folder for logs
-						mkdir("Temp");
+						mkdir("logs");
 						if (strcmp(argv[2], "check") == 0) {
 							try {
 								//

@@ -50,7 +50,7 @@ bool PatchInstaller::checkDependencyList(std::string nameOfFile, DBProvider *dbP
 		passCheckLogsForGui(checker.getDataForLog(), result);
 		// print in stdout the same list of existence objects: 0 if object does not exist, 1 if object exists
 		checker.print();
-		createLog("Temp/CheckingDependenciesErrors.log", INFO, checker.getDataForLog());
+		createLog("logs/CheckingDependenciesErrors.log", INFO, checker.getDataForLog());
 
 		return result;
 	}
@@ -128,8 +128,8 @@ bool PatchInstaller::startInstallation(LoginData p) {
 	remove("tempError.txt");
 	remove("tempInfo.txt");
 
-	createLog("Temp/InstallationErrors.log", ERROR, dataForErrorLog);
-	createLog("Temp/InstallationInfo.log", INFO, dataForInfoLog);
+	createLog("logs/InstallationErrors.log", ERROR, dataForErrorLog);
+	createLog("logs/InstallationInfo.log", INFO, dataForInfoLog);
 
 	return installWithErrors;
 }
