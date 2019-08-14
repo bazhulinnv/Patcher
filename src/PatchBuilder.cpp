@@ -4,6 +4,7 @@
 #include <direct.h>
 #include <ctime>
 #include <cstdio>
+#include <filesystem>
 #include <exception>
 #include "PatchBuilder/PatchBuilder.h"
 
@@ -36,6 +37,11 @@ PatchBuilder::~PatchBuilder() {}
 
 void PatchBuilder::buildPatch(const string directory)
 {
+	if (!filesystem::exists(directory))
+	{
+		throw exception("Incorrect patch directory");
+	}
+
 	// Creating log file
 	string logDirectory = (directory + "/" + LOG_FOLDER);
 	_mkdir(&logDirectory[0]);
@@ -64,7 +70,7 @@ void PatchBuilder::buildPatch(const string directory)
 			{
 				// If object was found - writing it's name and type in DependencyList
 				output << objectData.schema << " " << objectData.name << " " << objectData.type << endl;
-				message = " - " + objectData.name + " with " + objectData.type + " type included - dependency in " + scriptData.name + "\n";
+				message = " - " + objectData.type + " " + objectData.name + " included - dependency in " + scriptData.name + "\n";
 				cout << message;
 				addLog(message);
 				break;
@@ -226,46 +232,53 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	// Getting all patch objects
 	objectDataVectorType patchListVector;
 	ifstream input(patchListFullName);
-	while (!input.eof())
+	if (input.is_open())
 	{
-		// Reading from PatchList file in patchListVector
-		ObjectData data;
-		input >> data.schema;
+		while (!input.eof())
+		{
+			// Reading from PatchList file in patchListVector
+			ObjectData data;
+			input >> data.schema;
 
-		// If end of file
-		if (data.schema.empty())
-		{
-			return patchListVector;
-		}
-
-		// If this is script from outside - type field is empty
-		if (data.schema == "script")
-		{
-			input >> data.name;
-			data.type = "";
-		}
-		else
-		{
-			input >> data.name;
-			input >> data.type;
-		}
-
-		// If type is "function" reading params of it
-		if (data.type == "function")
-		{
-			string currentWord;
-			input >> currentWord;
-			input >> currentWord;
-			while (currentWord != ")")
+			// If end of file
+			if (data.schema.empty())
 			{
-				data.params.push_back(currentWord);
-				input >> currentWord;
+				return patchListVector;
 			}
-		}
-		patchListVector.push_back(data);
-	}
 
-	return patchListVector;
+			// If this is script from outside - type field is empty
+			if (data.schema == "script")
+			{
+				input >> data.name;
+				data.type = "";
+			}
+			else
+			{
+				input >> data.name;
+				input >> data.type;
+			}
+
+			// If type is "function" reading params of it
+			if (data.type == "function")
+			{
+				string currentWord;
+				input >> currentWord;
+				input >> currentWord;
+				while (currentWord != ")")
+				{
+					data.params.push_back(currentWord);
+					input >> currentWord;
+				}
+			}
+			patchListVector.push_back(data);
+		}
+
+		return patchListVector;
+	}
+	else
+	{
+		throw exception("Cannot open patch list");
+	}
 }
 
 void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVector, const string directory) const
