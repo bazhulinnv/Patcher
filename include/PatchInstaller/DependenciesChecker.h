@@ -10,11 +10,12 @@ class DependenciesChecker {
 public:
 	DependenciesChecker();
 	~DependenciesChecker();
-
+	//getters
 	std::list<bool> getListWithExistenceEachObject();
 	bool getIfAllObjectsExists();
 	std::string getDataForLog();
 
+	//wrappers for private methods: check dependencies list of objects; print existence of each object for gui
 	bool getCheck(DBObjects &objectParameters, DBProvider *dbProvider);
 	void print();
 

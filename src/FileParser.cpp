@@ -10,6 +10,7 @@
 FileParser::FileParser() {}
 FileParser::~FileParser() {}
 
+/** Check if file DependencyList is incorrect: if any string has more or less than 3 parameters, file considered incorrect. */
 bool FileParser::checkInputCorrect(std::string nameOfFile) {
 	std::ifstream dependencies;
 	dependencies.open(nameOfFile);
@@ -28,13 +29,14 @@ bool FileParser::checkInputCorrect(std::string nameOfFile) {
 	return true;
 }
 
+//public wrapper for private implementation
 DBObjects FileParser::getResultOfParsing(std::string nameOfFile) 
 {
 	FileParser parser;
 	return parser.parse(nameOfFile);
 }
 
-
+/** Parsing of file with list of objects. */
 DBObjects FileParser::parse(std::string nameOfFile)
 {
 	DBObjects objectParametersFromFile;
