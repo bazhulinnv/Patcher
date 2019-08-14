@@ -97,17 +97,17 @@ void passInstallLogsGui(std::string &dataForErrorLog, bool installWithErrors) {
 
 /** Main method of installing part.
 	When the method starts, the dependency check is considered successful. */
-bool PatchInstaller::startInstallation(std::pair<std::vector<std::string>, std::string> separateParameters) {
+bool PatchInstaller::startInstallation(LoginData p) {
 	//build command with parameters: Install.bat username databaseName host port
 #if defined(__WIN32__)
-	std::string commandWithParametersConnection = "Install.bat " + separateParameters.first[1] +
-		+ " " + separateParameters.first[0] + " " + separateParameters.first[3] + " ";
-	commandWithParametersConnection += separateParameters.first[4];
+	std::string commandWithParametersConnection = "Install.bat " + p.username +
+		+ " " + p.database + " " + p.hostname + " ";
+	commandWithParametersConnection += std::to_string(p.port);
 #endif
 #if (defined(__unix__)) 
-	std::string commandWithParametersConnection = "Install.sh " + separateParameters.first[1] +
-		+" " + separateParameters.first[0] + " " + separateParameters.first[3] + " ";
-	commandWithParametersConnection += separateParameters.first[4];
+	std::string commandWithParametersConnection = "Install.sh " + p.username +
+		+" " + p.database + " " + p.hostname + " ";
+	commandWithParametersConnection += std::to_string(p.port);
 #endif
 	const char *cstr = commandWithParametersConnection.c_str();
 	//start installation script with parameters

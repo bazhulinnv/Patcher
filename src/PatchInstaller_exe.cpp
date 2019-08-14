@@ -37,7 +37,8 @@ int main(int argc, char* argv[]) {
 		std::string parameters(argv[1]);
 		try {
 			auto *dbProvider = new DBProvider(parameters);
-			std::pair<std::vector<std::string>, std::string> separateParameters = ParsingTools::parseCredentials(parameters);
+			LoginData p(parameters);
+			//std::pair<std::vector<std::string>, std::string> separateParameters = LoginData(parameters);
 
 			// If user entered wrong command, like "checl" or "instal" instead "check" or "install"
 			if (argv[2] == nullptr || !(strcmp(argv[2], "check") == 0 || strcmp(argv[2], "install") == 0)) {
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
 							}
 						}
 						if (strcmp(argv[2], "install") == 0) {
-							patchInstaller.startInstallation(separateParameters);
+							patchInstaller.startInstallation(p);
 						}
 					}
 					else {

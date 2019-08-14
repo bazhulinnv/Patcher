@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <string>
 #include "DBProvider/DBProvider.h"
+#include "DBProvider/LoginData.h"
 
 //type for object identification: schema-name-type
 using DBObject = std::tuple<std::string, std::string, std::string>;
@@ -17,7 +18,7 @@ public:
   //reading list of objects from DependencyList.dpn and check it for existence
   bool checkDependencyList(std::string nameOfFile, DBProvider *dbProvider);
   //start installation script
-  bool startInstallation(std::pair<std::vector<std::string>, std::string> separateParameters);
+  bool startInstallation(LoginData p);
 };
 
 #endif
