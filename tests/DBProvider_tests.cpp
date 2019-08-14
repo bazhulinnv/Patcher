@@ -212,7 +212,7 @@ bool test_Logger()
 //{
 //	try
 //	{
-//		auto *dbConn = new DBConnection("Doors:doo:rc:127.0.0.1:5432");
+//		auto *dbConn = new Connection("Doors:doo:rc:127.0.0.1:5432");
 //		dbConn->setConnection();
 //
 //		cout << "dbname= " << dbConn->info.databaseName << endl;
@@ -385,7 +385,7 @@ int main()
 	vector<pair<const string, function<bool()>>> simpleTests;
 	simpleTests.push_back(make_pair("Standart Test : make shure pqxx::connection works", test_PqxxConnection));
 	simpleTests.push_back(make_pair("Test PatchLogger::Log : write to different logs", test_Logger));
-	/*simpleTests.push_back(make_pair("Test DBConnection : connect to 'Doors'", test_CustomConnection));*/
+	/*simpleTests.push_back(make_pair("Test Connection : connect to 'Doors'", test_CustomConnection));*/
 
 	vector<pair<const string, function<bool(DBProvider*)>>> providerTest;
 	vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTestShared;

@@ -16,15 +16,15 @@ struct LoginData
 
 	explicit LoginData(std::string _hostname, unsigned int _port, std::string _database, std::string _username, std::string _password);
 
-	explicit LoginData(const std::string& pgLogin);
+	explicit LoginData(const std::string& login_string_pg);
 
 	// Returns login data as single string in libpqxx format
 	// e.g. "hostname=127.0.0.1 port=5432 dbname=example username=user password=qwerty123"
-	std::string getLoginStringPqxx() const;
+	std::string loginStringPqxx() const;
 
 	// Returns login data as single string (PGPASSFILE format)
 	// e.g. "hostname:port:database:username:password"
-	std::string getLoginStringPg() const;
+	std::string loginStringPG() const;
 };
 
 #endif

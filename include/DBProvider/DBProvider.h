@@ -1,9 +1,7 @@
 #ifndef DBPROVIDER_H
 #define DBPROVIDER_H
 
-#include "DBProvider/ConnectionPool.h"
-#include "DBProvider/LoginData.h"
-
+#include "DBProvider/Connection.h"
 #include <pqxx/pqxx>
 #include <string>
 
@@ -96,7 +94,7 @@ typedef vector<ScriptData> scriptDataVectorType;
 class DBProvider
 {
 public:
-	explicit DBProvider(string args);
+	explicit DBProvider(string loginStringPG);
 	
 	~DBProvider() = default;
 
@@ -158,11 +156,8 @@ public:
 
 
 private:
-	// Structure keeps all connection parameters
-	LoginData connParams;
-
 	// DBConnectionPool Pool
-	std::shared_ptr<DBConnectionPool::ConnectionPool> connPool;
+	shared_ptr<DBConnection::Connection> currentConnection;
 
 	// Getting information about object from database
 	ObjectInformation getObjectInformation(const ObjectData &data) const;

@@ -1,30 +1,24 @@
 #include "DBProvider/DBProvider.h"
-#include "DBProvider/LoginData.h"
 #include "Shared/ParsingTools.h"
 #include "Shared/TextTable.h"
-
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
 #include <string>
 #include <iostream>
 
 using namespace std;
-using namespace DBConnectionPool;
+using namespace DBConnection;
 
-DBProvider::DBProvider(std::string args)
+DBProvider::DBProvider(std::string loginStringPG)
 {
-	connPool = make_shared<ConnectionPool>();
-	connParams = LoginData(args);
 	try
 	{
-		connPool->setConnections(connParams);
+		currentConnection->setConnection(loginStringPG);
 	}
 	catch (const std::exception& err)
 	{
-		cerr << "ERROR: Could not establish connection." << endl;
-		cerr << "Parameters: " << connParams.getLoginStringPqxx() << endl;
-		cerr << "ERROR Details: " << err.what() << endl;
-		throw std::invalid_argument("Wrong connection parameters.\n");
+		cerr << "Wrong Parameters: " << loginStringPG << endl;
+		throw err;
 	}
 }
 
@@ -158,8 +152,7 @@ bool DBProvider::doesCurrentObjectExists(const std::string scheme, const std::st
 
 pqxx::result DBProvider::query(const std::string stringSQL) const
 {
-	connPool->connection();
-	pqxx::work trans(*connPool->connection(), "trans");
+	pqxx::work trans(*currentConnection->getConnection(), "trans");
 
 	// Get result from database
 	pqxx::result res = trans.exec(stringSQL);
@@ -250,7 +243,7 @@ ObjectInformation DBProvider::getObjectInformation(const ObjectData& data) const
 		"INNER JOIN pg_catalog.pg_description pgd on(pgd.objoid = st.relid) "
 		"INNER JOIN information_schema.columns t on(pgd.objsubid = t.ordinal_position "
 		"AND  t.table_schema = st.schemaname and t.table_name = st.relname) "
-		"WHERE t.table_catalog = '" + connParams.database + "' "
+		"WHERE t.table_catalog = '" + currentConnection->getParameters().database + "' "
 		"AND t.table_schema = '" + data.scheme + "' "
 		"AND t.table_name = '" + data.name + "') j "
 		"ON c.column_name = j.column_name "
