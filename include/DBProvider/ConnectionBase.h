@@ -10,7 +10,7 @@ namespace DBConnection
 	class ConnectionBase
 	{
 	public:
-		ConnectionBase() = default;
+		ConnectionBase();
 
 		virtual ~ConnectionBase();
 

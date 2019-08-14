@@ -18,23 +18,20 @@ LoginData::LoginData(string _hostname, unsigned int _port, string _database, str
 
 LoginData::LoginData(const string& login_string_pg)
 {
-	vector<string> values;
-
 	try
 	{
-		values = ParsingTools::splitToVector(login_string_pg, ":");
+		vector<string> values = ParsingTools::splitToVector(login_string_pg, ":");
+		hostname = values[0];
+		port = stoi(values[1]);
+		database = values[2];
+		username = values[3];
+		password = values[4];
 	}
 	catch (exception& err)
 	{
 		cerr << err.what() << endl;
 		throw invalid_argument("PARSING ERROR: Couldn't parse database connection parameters.");
 	}
-
-	hostname = values[0];
-	port = stoi(values[1]);
-	database = values[2];
-	username = values[3];
-	password = values[4];
 }
 
 // Returns login data as single string in libpqxx format
