@@ -21,7 +21,7 @@ namespace DBConnection
 		void setConnection(std::string& loginStringPG) override;
 
 		void setConnection();
-
+    
 		LoginData getParameters() override;
 
 		std::shared_ptr<pqxx::connection_base> getConnection() override;;

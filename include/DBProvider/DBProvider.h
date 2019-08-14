@@ -39,15 +39,10 @@ struct ScriptData : ObjectData // Sctructure for containing script data
 	{
 		text = pText;
 	}
-<<<<<<< HEAD
 
 	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.scheme, objectData.paramsVector, pText)
 	{
 	}
-=======
-	
-	ScriptData(const ObjectData objectData, string pText) : ScriptData(objectData.name, objectData.type, objectData.schema, objectData.params, pText) {}
->>>>>>> 37b3b2fcdb3fa83a69161a5c1195fbd5caacdf7a
 };
 
 struct Column // Structure for containing information about column of table
@@ -94,7 +89,6 @@ public:
 	string space;
 	string partitionExpression;
 
-<<<<<<< HEAD
 	Trigger* getTrigger(string triggerName)
 	{
 		for (Trigger& trigger : triggers)
@@ -106,19 +100,6 @@ public:
 		}
 		return nullptr;
 	}
-=======
-	void setPartitionTable(string shema, string name, string partitionExpression);
-	PartittionTable getPartitionTable();
-	bool isPartition();
-
-	vector<Column> columns;
-	vector<Constraint> constraints;
-	vector<string> inheritTables;
-
-private:
-	PartittionTable _partitionTable;
-	bool _isPartition = false;
->>>>>>> 37b3b2fcdb3fa83a69161a5c1195fbd5caacdf7a
 };
 
 // Vector for containing object data
@@ -132,19 +113,14 @@ class DBProvider
 public:
 	explicit DBProvider(string loginStringPG);
 
-	~DBProvider();;
+	~DBProvider();
 
 	// Returns all objects of database
 	vector<ObjectData> getObjects() const;
 
 	// Returns script data by object data
-<<<<<<< HEAD
 	ScriptData getScriptData(const ObjectData& data) const;
-
-=======
-	ScriptData getScriptData(const ObjectData &data);
-	
->>>>>>> 37b3b2fcdb3fa83a69161a5c1195fbd5caacdf7a
+  
 	// Checks if specified object exists in database
 	bool doesCurrentObjectExists(const std::string& scheme, const std::string& signature, const std::string& type) const;
 
@@ -201,37 +177,35 @@ private:
 	shared_ptr<DBConnection::Connection> currentConnection;
 
 	// Getting information about object from database
-<<<<<<< HEAD
 	ObjectInformation getObjectInformation(const ObjectData& data) const;
 
 	// Get single value from query
 	inline string getSingleValue(const string& queryString, const string& columnName) const;
-=======
-	Table getTable(const ObjectData &data);
+  
+// 	Table getTable(const ObjectData &data);
 
-	// Get single value from query
-	string getSingleValue(const string &queryString, const string &columnName) const;
+// 	// Get single value from query
+// 	string getSingleValue(const string &queryString, const string &columnName) const;
 
-	// Get ScriptData for current type
-	ScriptData getTableData(const ObjectData &data);
-	ScriptData getFunctionData(const ObjectData &data) const;
-	ScriptData getViewData(const ObjectData &data) const;
-	ScriptData getSequenceData(const ObjectData &data) const;
-	ScriptData getTriggerData(const ObjectData &data) const;
-	ScriptData getIndexData(const ObjectData &data) const;
+// 	// Get ScriptData for current type
+// 	ScriptData getTableData(const ObjectData &data);
+// 	ScriptData getFunctionData(const ObjectData &data) const;
+// 	ScriptData getViewData(const ObjectData &data) const;
+// 	ScriptData getSequenceData(const ObjectData &data) const;
+// 	ScriptData getTriggerData(const ObjectData &data) const;
+// 	ScriptData getIndexData(const ObjectData &data) const;
 
-	// Methods for initialization of Table structure
-	bool initializePartitionTable(Table &table, const ObjectData &data);
-	void initializeType(Table &table, const ObjectData &data);
-	void initializeOwner(Table &table, const ObjectData &data);
-	void initializeDescription(Table &table, const ObjectData &data);
-	void initializeOptions(Table &table, const ObjectData &data);
-	void initializeSpace(Table &table, const ObjectData &data);
-	void initializeColumns(Table &table, const ObjectData &data);
-	void initializePartitionExpression(Table &table, const ObjectData &data);
-	void initializeConstraints(Table &table, const ObjectData &data);
-	void initializeInheritTables(Table &table, const ObjectData &data);
->>>>>>> 37b3b2fcdb3fa83a69161a5c1195fbd5caacdf7a
+// 	// Methods for initialization of Table structure
+// 	bool initializePartitionTable(Table &table, const ObjectData &data);
+// 	void initializeType(Table &table, const ObjectData &data);
+// 	void initializeOwner(Table &table, const ObjectData &data);
+// 	void initializeDescription(Table &table, const ObjectData &data);
+// 	void initializeOptions(Table &table, const ObjectData &data);
+// 	void initializeSpace(Table &table, const ObjectData &data);
+// 	void initializeColumns(Table &table, const ObjectData &data);
+// 	void initializePartitionExpression(Table &table, const ObjectData &data);
+// 	void initializeConstraints(Table &table, const ObjectData &data);
+// 	void initializeInheritTables(Table &table, const ObjectData &data);
 };
 
 void printObjectsData(pqxx::result res);

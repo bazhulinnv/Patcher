@@ -12,7 +12,9 @@ namespace DBConnection
 	public:
 		ConnectionBase() = default;
 
-		virtual ~ConnectionBase();;
+		virtual ~ConnectionBase();
+    
+		virtual ~ConnectionBase() = 0;
 
 		virtual void setConnection(std::string& parameters) = 0;
 

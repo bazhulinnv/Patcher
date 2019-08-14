@@ -128,8 +128,6 @@ bool DBProvider::doesCurrentObjectExists(const string& scheme, const string& sig
 
 pqxx::result DBProvider::query(const string stringSQL) const
 {
-	auto temp = currentConnection->getParameters().loginStringPqxx();
-
 	pqxx::work trans(*currentConnection->getConnection(), "trans");
 
 	// Get result from database
@@ -597,30 +595,9 @@ void DBProvider::initializeConstraints(Table & table, const ObjectData & data)
 
 void DBProvider::initializeInheritTables(Table & table, const ObjectData & data)
 {
-<<<<<<< HEAD
 	const pqxx::result result = query(queryString);
 	const pqxx::result::const_iterator row = result.begin();
 	return row[columnName].c_str();
-=======
-	string queryString = "SELECT "
-		"nmsp_parent.nspname AS parent_schema, "
-		"parent.relname      AS parent_name, "
-		"nmsp_child.nspname  AS child_schema, "
-		"child.relname       AS child_name "
-		"FROM pg_inherits "
-		"JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid "
-		"JOIN pg_class child             ON pg_inherits.inhrelid = child.oid "
-		"JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = parent.relnamespace "
-		"JOIN pg_namespace nmsp_child    ON nmsp_child.oid = child.relnamespace "
-		"WHERE child.relispartition = 'false' "
-		"AND child.relname = '" + data.name + "' "
-		"AND nmsp_child.nspname = '" + data.schema + "'";
-	pqxx::result result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
-	{
-		table.inheritTables.push_back(row["parent_name"].c_str());
-	}
->>>>>>> 37b3b2fcdb3fa83a69161a5c1195fbd5caacdf7a
 }
 
 void printObjectsData(const pqxx::result queryResult)
