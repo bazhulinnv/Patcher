@@ -6,6 +6,7 @@
 #include <pqxx/transaction>
 #include <string>
 #include <iostream>
+#include <utility>
 
 using namespace std;
 using namespace DBConnection;
@@ -57,33 +58,39 @@ vector<ObjectData> DBProvider::getObjects() const
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData &data) // Temporary only for tables
+ScriptData DBProvider::getScriptData(const ObjectData& data)// Temporary only for tables
 {
 	if (data.type == "table")
 	{
 		return getTableData(data);
 	}
-	else if (data.type == "function")
+
+	if (data.type == "function")
 	{
 		return getFunctionData(data);
 	}
-	else if (data.type == "trigger")
+
+	if (data.type == "trigger")
 	{
 		return getTriggerData(data);
 	}
-	else if (data.type == "index")
+
+	if (data.type == "index")
 	{
 		return getIndexData(data);
 	}
-	else if (data.type == "table")
+
+	if (data.type == "table")
 	{
 		return getViewData(data);
 	}
-	else if (data.type == "view")
+
+	if (data.type == "view")
 	{
 		return getViewData(data);
 	}
-	else if (data.type == "sequence")
+
+	if (data.type == "sequence")
 	{
 		return getSequenceData(data);
 	}
@@ -216,7 +223,7 @@ bool DBProvider::triggerExists(const string& triggerSchema, const string& trigge
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-Table DBProvider::getTable(const ObjectData & data)
+Table DBProvider::getTable(const ObjectData& data)
 {
 	Table table;
 	// If table is partision of some other table
@@ -236,14 +243,14 @@ Table DBProvider::getTable(const ObjectData & data)
 	return table;
 }
 
-string DBProvider::getSingleValue(const string &queryString, const string &columnName) const
+string DBProvider::getSingleValue(const string& queryString, const string& columnName) const
 {
 	pqxx::result result = query(queryString);
 	pqxx::result::const_iterator row = result.begin();
 	return row[columnName].c_str();
 }
 
-ScriptData DBProvider::getTableData(const ObjectData & data)
+ScriptData DBProvider::getTableData(const ObjectData& data)
 {
 	Table table = getTable(data); // Getting information about object
 	string scriptString;
@@ -258,7 +265,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data)
 			scriptString += table.type = " ";
 		}
 		scriptString += "TABLE " + data.schema + "." + data.name + " (";
-		for (const Column &column : table.columns)
+		for (const Column& column : table.columns)
 		{
 			scriptString += "\n" + column.name + " " + column.type;
 			if (!column.defaultValue.empty())
@@ -352,7 +359,7 @@ ScriptData DBProvider::getTableData(const ObjectData & data)
 		}
 
 		// "COMMENT ON COLUMN blocks
-		for (const Column &column : table.columns)
+		for (const Column& column : table.columns)
 		{
 			if (!column.description.empty())
 			{
@@ -373,32 +380,32 @@ ScriptData DBProvider::getTableData(const ObjectData & data)
 	return scriptData;
 }
 
-ScriptData DBProvider::getFunctionData(const ObjectData & data) const
+ScriptData DBProvider::getFunctionData(const ObjectData& data) const
 {
 	return ScriptData();
 }
 
-ScriptData DBProvider::getViewData(const ObjectData & data) const
+ScriptData DBProvider::getViewData(const ObjectData& data) const
 {
 	return ScriptData();
 }
 
-ScriptData DBProvider::getSequenceData(const ObjectData & data) const
+ScriptData DBProvider::getSequenceData(const ObjectData& data) const
 {
 	return ScriptData();
 }
 
-ScriptData DBProvider::getTriggerData(const ObjectData & data) const
+ScriptData DBProvider::getTriggerData(const ObjectData& data) const
 {
 	return ScriptData();
 }
 
-ScriptData DBProvider::getIndexData(const ObjectData & data) const
+ScriptData DBProvider::getIndexData(const ObjectData& data) const
 {
 	return ScriptData();
 }
 
-bool DBProvider::initializePartitionTable(Table & table, const ObjectData & data)
+bool DBProvider::initializePartitionTable(Table& table, const ObjectData& data)
 {
 	string queryString = ""
 		"WITH recursive inh AS "
@@ -447,26 +454,26 @@ bool DBProvider::initializePartitionTable(Table & table, const ObjectData & data
 	return true;
 }
 
-void DBProvider::initializeType(Table & table, const ObjectData & data)
+void DBProvider::initializeType(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT * FROM information_schema.tables t "
 		"WHERE t.table_schema = '" + data.schema + "' AND t.table_name = '" + data.name + "'";
 	table.type = getSingleValue(queryString, "table_type");
 }
 
-void DBProvider::initializeOwner(Table & table, const ObjectData & data)
+void DBProvider::initializeOwner(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
 	table.owner = getSingleValue(queryString, "tableowner");
 }
 
-void DBProvider::initializeDescription(Table & table, const ObjectData & data)
+void DBProvider::initializeDescription(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT obj_description('" + data.schema + "." + data.name + "'::regclass::oid)";
 	table.description = getSingleValue(queryString, "obj_description");
 }
 
-void DBProvider::initializeOptions(Table & table, const ObjectData & data)
+void DBProvider::initializeOptions(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
 	string queryValue = getSingleValue(queryString, "reloptions");
@@ -494,13 +501,13 @@ void DBProvider::initializeOptions(Table & table, const ObjectData & data)
 
 }
 
-void DBProvider::initializeSpace(Table & table, const ObjectData & data)
+void DBProvider::initializeSpace(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT * FROM pg_tables WHERE tablename = '" + data.name + "' AND schemaname = '" + data.schema + "'";
 	table.space = getSingleValue(queryString, "tablespace");
 }
 
-void DBProvider::initializeColumns(Table & table, const ObjectData & data)
+void DBProvider::initializeColumns(Table& table, const ObjectData& data)
 {
 	string queryString = "select c.table_catalog, "
 		"c.table_schema, "
@@ -515,7 +522,7 @@ void DBProvider::initializeColumns(Table & table, const ObjectData & data)
 		"join pg_attribute pa on(pa.attrelid = pc.oid and pa.attname = c.column_name) "
 		"left join pg_catalog.pg_description pd on(pd.objoid = (c.table_schema || '.' || c.table_name)::regclass::oid and pd.objsubid = c.ordinal_position) "
 		"where 1 = 1 "
-		"and c.table_catalog = '" + _connection->info.databaseName + "' "
+		"and c.table_catalog = '" + currentConnection->getParameters().database + "' "
 		"and c.table_schema = '" + data.schema + "' "
 		"and c.table_name = '" + data.name + "'";
 
@@ -533,7 +540,7 @@ void DBProvider::initializeColumns(Table & table, const ObjectData & data)
 	}
 }
 
-void DBProvider::initializePartitionExpression(Table & table, const ObjectData & data)
+void DBProvider::initializePartitionExpression(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT c.relnamespace::regnamespace::text, c.relname, pg_get_partkeydef(c.oid) AS partition_expression "
 		"FROM   pg_class c "
@@ -547,10 +554,10 @@ void DBProvider::initializePartitionExpression(Table & table, const ObjectData &
 		pqxx::result::const_iterator row = result.begin();
 		table.partitionExpression = row["partition_expression"].c_str();
 	}
-	
+
 }
 
-void DBProvider::initializeConstraints(Table & table, const ObjectData & data)
+void DBProvider::initializeConstraints(Table& table, const ObjectData& data)
 {
 	string queryString = "SELECT "
 		"*, "
@@ -593,14 +600,29 @@ void DBProvider::initializeConstraints(Table & table, const ObjectData & data)
 
 }
 
-void DBProvider::initializeInheritTables(Table & table, const ObjectData & data)
+void DBProvider::initializeInheritTables(Table& table, const ObjectData& data)
 {
-	const pqxx::result result = query(queryString);
-	const pqxx::result::const_iterator row = result.begin();
-	return row[columnName].c_str();
+	string queryString = "SELECT "
+		"nmsp_parent.nspname AS parent_schema, "
+		"parent.relname      AS parent_name, "
+		"nmsp_child.nspname  AS child_schema, "
+		"child.relname       AS child_name "
+		"FROM pg_inherits "
+		"JOIN pg_class parent            ON pg_inherits.inhparent = parent.oid "
+		"JOIN pg_class child             ON pg_inherits.inhrelid = child.oid "
+		"JOIN pg_namespace nmsp_parent   ON nmsp_parent.oid = parent.relnamespace "
+		"JOIN pg_namespace nmsp_child    ON nmsp_child.oid = child.relnamespace "
+		"WHERE child.relispartition = 'false' "
+		"AND child.relname = '" + data.name + "' "
+		"AND nmsp_child.nspname = '" + data.schema + "'";
+	pqxx::result result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		table.inheritTables.push_back(row["parent_name"].c_str());
+	}
 }
 
-void printObjectsData(const pqxx::result queryResult)
+void printObjectsData(const pqxx::result& queryResult)
 {
 	// Iterate over the rows in our result set.
 	// Result objects are containers similar to vector and such.
@@ -636,13 +658,13 @@ void Column::setNullable(string value)
 
 void Table::setPartitionTable(string schema, string name, string partitionExpression)
 {
-	this->_partitionTable.name = name;
-	this->_partitionTable.schema = schema;
-	this->_partitionTable.partitionExpression = partitionExpression;
+	this->_partitionTable.name = std::move(name);
+	this->_partitionTable.schema = std::move(schema);
+	this->_partitionTable.partitionExpression = std::move(partitionExpression);
 	this->_isPartition = true;
 }
 
-PartittionTable Table::getPartitionTable()
+auto Table::getPartitionTable() const -> PartittionTable
 {
 	return _partitionTable;
 }
