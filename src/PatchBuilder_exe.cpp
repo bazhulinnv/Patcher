@@ -69,7 +69,7 @@ vector<ArgumentData> getArguments() // Init all args data and return list of the
 	args.push_back(ArgumentData("PatchList full path", { "-p", "-patch" }, KEY_PATH));
 	args.push_back(ArgumentData("Patch building directory", { "-d", "-directory" }, KEY_DIRECTORY));
 	args.push_back(ArgumentData("Connection arguments", { "-c", "-connection" }, KEY_CONNECTION));
-	args.push_back(ArgumentData("Templates file full path", { "-t", "-template" }, KEY_TEMPLATE, false));
+	args.push_back(ArgumentData("Templates file full path [optional]", { "-t", "-template" }, KEY_TEMPLATE, false));
 	return args;
 }
 
@@ -86,6 +86,9 @@ void printHelp(const vector<ArgumentData>& params) // Print help information
 		}
 		cout << endl << endl;
 	}
+	cout << "Examples:" << endl;
+	cout << "1) -d C:\\PatchDirectory -p C:\\PatchList.txt   -c 127.0.0.1:5432:database:user:password   -t C:\\Templates.ini" << endl;
+	cout << "2) -connect 127.0.0.1:5432:database:user:password   -patch C:\\PatchList.txt   -directory C:\\PatchDirectory" << endl;
 }
 
 int main(const int argc, char* argv[])
