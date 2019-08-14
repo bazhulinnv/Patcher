@@ -1,9 +1,12 @@
 #include "DBProvider/DBProvider.h"
 #include "Shared/Logger.h"
+#include "Shared/TestUtility.h"
 #include "Shared/TextTable.h"
-
+#include "DBProvider/ConnectionBase.h"
+#include "DBProvider/Connection.h"
 #include <pqxx/pqxx>
 #include <iostream>
+#include <memory>
 #include <functional>
 
 using namespace std;
@@ -208,29 +211,29 @@ bool test_Logger()
 	return true;
 }
 
-//bool test_CustomConnection()
-//{
-//	try
-//	{
-//		auto *dbConn = new Connection("Doors:doo:rc:127.0.0.1:5432");
-//		dbConn->setConnection();
-//
-//		cout << "dbname= " << dbConn->info.databaseName << endl;
-//		cout << "user= " << dbConn->info.username << endl;
-//		cout << "password= " << dbConn->info.password << endl;
-//		cout << "hostaddr= " << dbConn->info.host << endl;
-//		cout << "port= " << dbConn->info.portNumber << endl;
-//
-//		delete dbConn;
-//	}
-//	catch (const exception& e)
-//	{
-//		cerr << e.what() << endl;
-//		return false;
-//	}
-//
-//	return true;
-//}
+bool test_CustomConnection()
+{
+	try
+	{
+		std::string str = "Doors:doo:rc:127.0.0.1:5432";
+		auto dbConn = make_shared<DBConnection::Connection>(str);
+
+		cout << "hostaddr= " << dbConn->getConnection()->hostname() << endl;
+		cout << "port= " << dbConn->getConnection()->port() << endl;
+		cout << "dbname= " << dbConn->getConnection()->dbname() << endl;
+		cout << "user= " << dbConn->getConnection()->username() << endl;
+		cout << "password= " << dbConn->getConnection()->username() << endl;
+
+		dbConn.reset();
+	}
+	catch (const exception& e)
+	{
+		cerr << e.what() << endl;
+		return false;
+	}
+
+	return true;
+}
 
 bool test_PrintObjectsData(DBProvider* dbProv)
 {
@@ -276,142 +279,40 @@ bool test_PrintObjectsDataShared(shared_ptr<DBProvider> dbProv)
 	return true;
 }
 
-void runTestFunction(const string& testInfo, function<bool(DBProvider*)> sut, DBProvider* dbProv)
-{
-	cout << yellow;
-	cout << "\nRUNNING: " << reset << testInfo << endl;
-
-	if (!sut(dbProv))
-	{
-		cout << red;
-		cout << "FAILED: ";
-		cout << yellow;
-		cout << testInfo << reset << endl;
-		return;
-	}
-
-	cout << green;
-	cout << "SUCCEEDED: " << reset;
-	cout << testInfo << endl;
-	cout << endl;
-};
-
-void runTestFunctionShared(const string& testInfo, function<bool(shared_ptr<DBProvider>)> sut, shared_ptr<DBProvider> dbProv)
-{
-	cout << yellow;
-	cout << "\nRUNNING: " << reset << testInfo << endl;
-
-	if (!sut(dbProv))
-	{
-		cout << red;
-		cout << "FAILED: ";
-		cout << yellow;
-		cout << testInfo << reset << endl;
-		return;
-	}
-
-	cout << green;
-	cout << "SUCCEEDED: " << reset;
-	cout << testInfo << endl;
-	cout << endl;
-};
-
-void runAllTests(vector<pair<const string, function<bool(DBProvider*)>>> providerTests, DBProvider* dbProv)
-{
-	cout << yellow;
-	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
-
-	for (auto& test : providerTests)
-	{
-		runTestFunction(test.first, test.second, dbProv);
-	}
-
-	cout << yellow;
-	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
-};
-
-void runAllTestsShared(vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTests, shared_ptr<DBProvider> dbProv)
-{
-	cout << yellow;
-	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
-
-	for (auto& test : providerTests)
-	{
-		runTestFunctionShared(test.first, test.second, dbProv);
-	}
-
-	cout << yellow;
-	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
-};
-
-void runAllSimpleTests(vector<pair<const string, function<bool()>>> simpleTests)
-{
-	cout << yellow;
-	cout << "\t##########\t" << "RUNNING SIMPLE TESTS" << "\t##########" << reset << endl;
-
-	for (auto& test : simpleTests)
-	{
-		cout << yellow;
-		cout << "\nRUNNING: " << reset << test.first << endl;
-
-		if (!test.second())
-		{
-			cout << red;
-			cout << "FAILED: ";
-			cout << yellow;
-			cout << test.first << reset << endl;
-			return;
-		}
-
-		cout << green;
-		cout << "SUCCEEDED: " << reset;
-		cout << test.first << endl;
-		cout << endl;
-	}
-
-	cout << yellow;
-	cout << "\t##########\t" << "FINISHED SIMPLE TESTS." << "\t##########" << reset << endl;
-};
-
 int main()
 {
+	using namespace TestUtility;
 	string sql_publicRoleAction = "SELECT * FROM public.role_action";
 
 	string loginData = "127.0.0.1:5432:Doors:doo:rs";
-	// DBProvider* dbProvider = new DBProvider(loginData);
-	auto dbProviderShared = make_shared<DBProvider>(loginData);
+	DBProvider* dbProvider = new DBProvider(loginData);
 
 	// < test_info, pointer_to_test_function >
 	vector<pair<const string, function<bool()>>> simpleTests;
-	simpleTests.push_back(make_pair("Standart Test : make shure pqxx::connection works", test_PqxxConnection));
-	simpleTests.push_back(make_pair("Test PatchLogger::Log : write to different logs", test_Logger));
+	simpleTests.emplace_back("Standart Test : make shure pqxx::connection works", test_PqxxConnection);
+	simpleTests.emplace_back("Test PatchLogger::Log : write to different logs", test_Logger);
 	/*simpleTests.push_back(make_pair("Test Connection : connect to 'Doors'", test_CustomConnection));*/
 
 	vector<pair<const string, function<bool(DBProvider*)>>> providerTest;
-	vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTestShared;
-	providerTest.push_back(make_pair("Test printing raw data : printing raw objects data", test_PrintObjectsData));
-	providerTest.push_back(make_pair("Test printing data in table : printing objects data wrapped in table", test_PrintObjectsAsTable));
-	providerTest.push_back(make_pair("Test printing all tables : printing tables in io, public, common, secure", test_PrintTableList));
-	providerTest.push_back(make_pair("Test : check table existance", test_tableExists));
-	providerTest.push_back(make_pair("Test : check sequence existance", test_sequenceExists));
+	vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTestsShared;
+	providerTest.emplace_back("Test printing raw data : printing raw objects data", test_PrintObjectsData);
+	providerTest.emplace_back("Test printing data in table : printing objects data wrapped in table", test_PrintObjectsAsTable);
+	providerTest.emplace_back("Test printing all tables : printing tables in io, public, common, secure", test_PrintTableList);
+	providerTest.emplace_back("Test : check table existence", test_tableExists);
+	providerTest.emplace_back("Test : check sequence existence", test_sequenceExists);
 
-	providerTest.push_back(make_pair("Test functions", test_GetFunctions));
-	providerTest.push_back(make_pair("Test function parameters", test_GetFunctionParameters));
-	providerTest.push_back(make_pair("Test triggers", test_GetTriggers));
-	providerTest.push_back(make_pair("Test printing functions", test_PrintFunctions));
-	providerTest.push_back(make_pair("Test printing function parameters", test_PrintFunctionParameters));
-	providerTest.push_back(make_pair("Test printing triggers", test_PrintTriggers));
-
-	// Shared tests
-	providerTestShared.push_back(make_pair("Test printing raw data : printing raw objects data", test_PrintObjectsDataShared));
+	providerTest.emplace_back("Test functions", test_GetFunctions);
+	providerTest.emplace_back("Test function parameters", test_GetFunctionParameters);
+	providerTest.emplace_back("Test triggers", test_GetTriggers);
+	providerTest.emplace_back("Test printing functions", test_PrintFunctions);
+	providerTest.emplace_back("Test printing function parameters", test_PrintFunctionParameters);
+	providerTest.emplace_back("Test printing triggers", test_PrintTriggers);
 
 	// Run all simple test functions
-	runAllSimpleTests(simpleTests);
-
-	runAllTestsShared(providerTestShared, dbProviderShared);
+	runSimpleTests(simpleTests);
 
 	// Run all test functions for DBProvider
-	//runAllTests(providerTest, dbProvider);
+	runAll(providerTest, dbProvider);
 
 	return 0;
 }
