@@ -6,21 +6,21 @@
 
 using namespace std;
 
-LoginData::LoginData(string _hostname, unsigned int _port, string _database, string _username, string _password)
+LoginData::LoginData(string hostname_, unsigned int port_, string database_, string username_, string password_)
 {
 	// hostname:port:database:username:password -- PostgresSQL pgpass format
-	hostname = move(_hostname);
-	port = _port;
-	database = move(_database);
-	username = move(_username);
-	password = move(_password);
+	hostname = move(hostname_);
+	port = port_;
+	database = move(database_);
+	username = move(username_);
+	password = move(password_);
 }
 
-LoginData::LoginData(const string& login_string_pg)
+LoginData::LoginData(const string& pgpass_str)
 {
 	try
 	{
-		vector<string> values = ParsingTools::splitToVector(login_string_pg, ":");
+		vector<string> values = ParsingTools::splitToVector(pgpass_str, ":");
 		hostname = values[0];
 		port = stoi(values[1]);
 		database = values[2];

@@ -12,19 +12,19 @@ namespace DBConnection
 	class Connection : ConnectionBase
 	{
 	public:
-		Connection() = default;
+		Connection();
 
-		explicit Connection(std::string& loginStringPG);
+		explicit Connection(std::string& pgpass_str);
 
 		~Connection();
 
-		void setConnection(std::string& loginStringPG) override;
+		void setConnection(std::string& pgpass_str) override;
 
 		void setConnection();
-    
+
 		LoginData getParameters() override;
 
-		std::shared_ptr<pqxx::connection_base> getConnection() override;;
+		std::shared_ptr<pqxx::connection_base> getConnection() override;
 
 	private:
 		void closeConnection() override;
