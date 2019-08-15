@@ -2,7 +2,7 @@
 
 DBConnection::ConnectionBase::ConnectionBase()
 {
-	dbConnection = std::make_shared<pqxx::connection>();
+	dbConnection = std::make_shared<pqxx::lazyconnection>();
 }
 
 DBConnection::ConnectionBase::~ConnectionBase()

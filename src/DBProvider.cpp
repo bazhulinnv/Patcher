@@ -11,11 +11,11 @@
 using namespace std;
 using namespace DBConnection;
 
-DBProvider::DBProvider(string loginStringPG)
+DBProvider::DBProvider(string &loginStringPG)
 {
 	try
 	{
-		currentConnection = make_shared<Connection>(loginStringPG);
+		currentConnection = make_shared<Connection>();
 		currentConnection->setConnection(loginStringPG);
 	}
 	catch (const exception& err)

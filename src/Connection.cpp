@@ -6,7 +6,7 @@ using namespace std;
 
 DBConnection::Connection::Connection()
 {
-	dbConnection = make_shared<pqxx::connection>();
+	dbConnection = make_shared<pqxx::lazyconnection>();
 }
 
 DBConnection::Connection::Connection(string& pgpass_str)
@@ -35,7 +35,7 @@ void DBConnection::Connection::setConnection(string& pgpass_str)
 
 	try
 	{
-		dbConnection = make_shared<pqxx::connection>(connectionParams.loginStringPqxx());
+		dbConnection = make_shared<pqxx::lazyconnection>(connectionParams.loginStringPqxx());
 		connectionSet = true;
 	}
 	catch (exception& err)

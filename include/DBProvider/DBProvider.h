@@ -111,7 +111,7 @@ typedef vector<ScriptData> scriptDataVectorType;
 class DBProvider
 {
 public:
-	explicit DBProvider(string loginStringPG);
+	explicit DBProvider(string &loginStringPG);
 
 	~DBProvider();
 
