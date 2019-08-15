@@ -387,27 +387,37 @@ ScriptData DBProvider::getTableData(const ObjectData& data)
 
 ScriptData DBProvider::getFunctionData(const ObjectData& data) const
 {
-	return ScriptData();
+	ScriptData scriptData = ScriptData(data, "FUNCTION SCRIPT");
+	scriptData.name += ".sql";
+	return scriptData;
 }
 
 ScriptData DBProvider::getViewData(const ObjectData& data) const
 {
-	return ScriptData();
+	ScriptData scriptData = ScriptData(data, "VIEW SCRIPT");
+	scriptData.name += ".sql";
+	return scriptData;
 }
 
 ScriptData DBProvider::getSequenceData(const ObjectData& data) const
 {
-	return ScriptData();
+	ScriptData scriptData = ScriptData(data, "SEQUENCE SCRIPT");
+	scriptData.name += ".sql";
+	return scriptData;
 }
 
 ScriptData DBProvider::getTriggerData(const ObjectData& data) const
 {
-	return ScriptData();
+	ScriptData scriptData = ScriptData(data, "TRIGGER SCRIPT");
+	scriptData.name += ".sql";
+	return scriptData;
 }
 
 ScriptData DBProvider::getIndexData(const ObjectData& data) const
 {
-	return ScriptData();
+	ScriptData scriptData = ScriptData(data, "INDEX SCRIPT");
+	scriptData.name += ".sql";
+	return scriptData;
 }
 
 bool DBProvider::initializePartitionTable(Table& table, const ObjectData& data)
