@@ -91,7 +91,7 @@ public:
 
 	void setPartitionTable(string shema, string name, string partitionExpression);
 	PartittionTable getPartitionTable() const;
-	bool isPartition();
+	bool isPartition() const;
 
 	vector<Column> columns;
 	vector<Constraint> constraints;

@@ -6,31 +6,31 @@ using namespace std;
 
 DBConnection::Connection::Connection()
 {
-	dbConnection = std::make_shared<pqxx::connection>();
+	dbConnection = make_shared<pqxx::connection>();
 }
 
-DBConnection::Connection::Connection(string& loginStringPG)
+DBConnection::Connection::Connection(string& pgpass_str)
 {
-	connectionParams = LoginData(loginStringPG);
+	connectionParams = LoginData(pgpass_str);
 	parametersSet = true;
 }
 
 DBConnection::Connection::~Connection()
 {
-	if(connectionSet)
+	if (connectionSet)
 	{
 		Connection::closeConnection();
 	}
 }
 
-void DBConnection::Connection::setConnection(string& loginStringPG)
+void DBConnection::Connection::setConnection(string& pgpass_str)
 {
 	if (connectionSet)
 	{
 		Connection::closeConnection();
 	}
 
-	connectionParams = LoginData(loginStringPG);
+	connectionParams = LoginData(pgpass_str);
 	parametersSet = true;
 
 	try
@@ -50,7 +50,7 @@ void DBConnection::Connection::setConnection()
 	if (!parametersSet)
 	{
 		throw runtime_error("ERROR: Tried to access parameters, but parameters"
-								 "weren't set properly in constructor or by \"setConnection(loginStringPG)\".");
+							"weren't set properly in constructor or by \"setConnection(loginStringPG)\".");
 	}
 
 	setConnection(connectionParams.loginStringPG());
@@ -62,7 +62,7 @@ LoginData DBConnection::Connection::getParameters()
 	{
 		throw runtime_error(
 			R"(ERROR: Tried to get parameters, but parameters weren't"
-										 R"set properly in constructor or by "setConnection".)");
+					"set properly in constructor or by "setConnection".)");
 	}
 
 	return connectionParams;
@@ -74,7 +74,7 @@ shared_ptr<pqxx::connection_base> DBConnection::Connection::getConnection()
 	{
 		throw runtime_error(
 			R"(ERROR: Tried to get pqxx::connection_base, but parameters weren't"
-										 R"set properly in constructor or by "setConnection".)");
+					"set properly in constructor or by "setConnection".)");
 	}
 
 	return dbConnection;

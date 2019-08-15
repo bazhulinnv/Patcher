@@ -27,6 +27,7 @@ DBProvider::DBProvider(string loginStringPG)
 
 DBProvider::~DBProvider()
 {
+	currentConnection.reset();
 }
 
 vector<ObjectData> DBProvider::getObjects() const
@@ -444,7 +445,7 @@ bool DBProvider::initializePartitionTable(Table& table, const ObjectData& data)
 		"AND c.relispartition = 'true'";
 	pqxx::result result = query(queryString);
 
-	if (result.size() == 0)
+	if (result.empty())
 	{
 		return false;
 	}
@@ -673,7 +674,7 @@ auto Table::getPartitionTable() const -> PartittionTable
 	return _partitionTable;
 }
 
-bool Table::isPartition()
+bool Table::isPartition() const
 {
 	return _isPartition;
 }

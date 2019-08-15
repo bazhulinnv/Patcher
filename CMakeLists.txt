@@ -62,7 +62,6 @@ set(patcher_INCS_prov
   include/DBProvider/LoginData.h
   include/DBProvider/ConnectionBase.h
   include/DBProvider/Connection.h
-  include/DBProvider/ConnectionThreadSafe.h
   include/DBProvider/ConnectionPool.h
   include/DBProvider/DBProvider.h
   include/Shared/TestUtility.h
@@ -76,7 +75,6 @@ set(patcher_SRCS_prov
   src/LoginData.cpp
   src/ConnectionBase.cpp
   src/Connection.cpp
-  src/ConnectionThreadSafe.cpp
   src/ConnectionPool.cpp
   src/DBProvider.cpp
   )
