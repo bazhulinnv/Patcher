@@ -63,11 +63,11 @@ vector<ObjectData> DBProvider::getObjects() const
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData& data)// Temporary only for tables
+ScriptData DBProvider::getScriptData(const ObjectData& data, vector<ScriptData> &extraScriptDatas)// Temporary only for tables
 {
 	if (data.type == "table")
 	{
-		return getTableData(data);
+		return getTableData(data, extraScriptDatas);
 	}
 
 	if (data.type == "function")
@@ -244,6 +244,7 @@ Table DBProvider::getTable(const ObjectData& data)
 		initializeConstraints(table, data);
 		initializePartitionExpression(table, data);
 		initializeInheritTables(table, data);
+		initializeIndexExpressions(table, data);
 	}
 	return table;
 }
@@ -255,7 +256,7 @@ string DBProvider::getSingleValue(const string& queryString, const string& colum
 	return row[columnName].c_str();
 }
 
-ScriptData DBProvider::getTableData(const ObjectData& data)
+ScriptData DBProvider::getTableData(const ObjectData& data, vector<ScriptData> &extraScriptDatas)
 {
 	Table table = getTable(data); // Getting information about object
 	string scriptString;
@@ -370,6 +371,27 @@ ScriptData DBProvider::getTableData(const ObjectData& data)
 			{
 				scriptString += "COMMENT ON COLUMN " + data.schema + "." + data.name + "." + column.name + "\nIS '" + column.description + "';\n\n";
 			}
+		}
+
+		// Indexes creation
+		for (const string &expression : table.indexCreateExpressions)
+		{
+			scriptString += expression + ";\n\n";
+		}
+
+		// Getting all triggers in table
+		string queryString = string("SELECT t.trigger_catalog, t.trigger_schema, t.trigger_name, string_agg(t.event_manipulation, ' or ') ") +
+			"FROM information_schema.triggers t "
+			"WHERE t.event_object_catalog = 'Doors' "
+			"AND t.event_object_schema = '" + data.schema + "' "
+			"AND t.event_object_table = '" + data.name + "' "
+			"GROUP BY t.trigger_catalog, t.trigger_schema, t.trigger_name";
+		pqxx::result result = query(queryString);
+		for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+		{
+			ObjectData triggerObjectData(row["trigger_name"].c_str(), "trigger", row["trigger_schema"].c_str());
+			ScriptData triggerScriptData = getTriggerData(triggerObjectData);
+			extraScriptDatas.push_back(triggerScriptData);
 		}
 	}
 	else
@@ -634,6 +656,19 @@ void DBProvider::initializeInheritTables(Table& table, const ObjectData& data)
 	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
 	{
 		table.inheritTables.push_back(row["parent_name"].c_str());
+	}
+}
+
+void DBProvider::initializeIndexExpressions(Table & table, const ObjectData & data)
+{
+	string queryString = "SELECT * FROM pg_indexes "
+		"WHERE 1 = 1 "
+		"AND schemaname = '" + data.schema + "' "
+		"AND tablename = '" + data.name + "'";
+	pqxx::result result = query(queryString);
+	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	{
+		table.indexCreateExpressions.push_back(row["indexdef"].c_str());
 	}
 }
 

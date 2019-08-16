@@ -96,6 +96,7 @@ public:
 	vector<Column> columns;
 	vector<Constraint> constraints;
 	vector<string> inheritTables;
+	vector<string> indexCreateExpressions;
 
 private:
 	PartittionTable _partitionTable;
@@ -119,7 +120,7 @@ public:
 	vector<ObjectData> getObjects() const;
 
 	// Returns script data by object data
-	ScriptData getScriptData(const ObjectData& data);
+	ScriptData getScriptData(const ObjectData& data, vector<ScriptData> &extraScriptDatas);
 
 	// Checks if specified object exists in database
 	bool doesCurrentObjectExists(const std::string& scheme, const std::string& signature, const std::string& type) const;
@@ -183,7 +184,7 @@ private:
 	string getSingleValue(const string& queryString, const string& columnName) const;
 
 	// Get ScriptData for current type
-	ScriptData getTableData(const ObjectData& data);
+	ScriptData getTableData(const ObjectData& data, vector<ScriptData> &extraScriptDatas);
 	ScriptData getFunctionData(const ObjectData& data) const;
 	ScriptData getViewData(const ObjectData& data) const;
 	ScriptData getSequenceData(const ObjectData& data) const;
@@ -201,6 +202,7 @@ private:
 	void initializePartitionExpression(Table& table, const ObjectData& data);
 	void initializeConstraints(Table& table, const ObjectData& data);
 	void initializeInheritTables(Table& table, const ObjectData& data);
+	void initializeIndexExpressions(Table& table, const ObjectData& data);
 };
 
 void printObjectsData(const pqxx::result& res);

@@ -123,8 +123,17 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 		else
 		{
 			// Getting script data from DBProvider
-			const ScriptData scriptData = provider->getScriptData(objectData);
+			vector<ScriptData> extraScriptDatas; // Vector for 
+			const ScriptData scriptData = provider->getScriptData(objectData, extraScriptDatas);
 			scriptDataVector.push_back(scriptData);
+
+			if (!extraScriptDatas.empty())
+			{
+				for (const ScriptData &scriptData : extraScriptDatas)
+				{
+					scriptDataVector.push_back(scriptData);
+				}
+			}
 		}
 	}
 	const string message =  "Script vector created\n";
