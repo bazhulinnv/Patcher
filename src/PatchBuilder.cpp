@@ -187,7 +187,7 @@ void PatchBuilder::createInstallPocket(const string &directory, const scriptData
 
 		// Creating install command
 		string install_command = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.schema + "/";
-		if (data.type != "")
+		if (!data.type.empty())
 		{
 			install_command += data.type + "/";
 		}
