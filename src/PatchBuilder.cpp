@@ -10,16 +10,17 @@
 
 using namespace std;
 
-PatchBuilder::PatchBuilder(const string pPatchListFullName, DBProvider &pProvider, const string pTemplatesFullName)
+PatchBuilder::PatchBuilder(const string &value_patch_list_name, DBProvider &p_provider, const string &p_templates_name)
 {
-	patchListFullName = pPatchListFullName;
-	provider = &pProvider;
+	patch_list_full_name = value_patch_list_name;
+	provider = &p_provider;
 	// Check tamplate file
 	ifstream input;
-	input.open(pTemplatesFullName);
+	input.open(p_templates_name);
 	if (input.is_open())
 	{
-		templateString = string((istreambuf_iterator<char>(input)), istreambuf_iterator<char>()); // Reading all text file in string
+		template_text = string((istreambuf_iterator<char>(input)), istreambuf_iterator<char>()); // Reading all text file in string
+		input.close();
 	}
 	else
 	{
@@ -27,9 +28,14 @@ PatchBuilder::PatchBuilder(const string pPatchListFullName, DBProvider &pProvide
 		if (!input.is_open())
 		{
 			const string message = "Cannot open or find template file\nDependencyList will be formed by presence of names\n";
-			isWithWarnings = true;
+			is_with_warnings = true;
 			cerr << message;
 			addLog(message);
+		}
+		else
+		{
+			template_text = string((istreambuf_iterator<char>(input)), istreambuf_iterator<char>()); // Reading all text file in string
+			input.close();
 		}
 	}
 }
@@ -43,34 +49,34 @@ void PatchBuilder::buildPatch(const string directory)
 	}
 
 	// Creating log file
-	string logDirectory = (directory + "/" + LOG_FOLDER);
-	_mkdir(&logDirectory[0]);
-	logFileFullName = logDirectory + "/" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
+	string log_directory = (directory + "/" + LOG_FOLDER);
+	_mkdir(&log_directory[0]);
+	log_file_name = log_directory + "/" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
 
 	// Executing all methods for patch building
 	ofstream output(directory + "/" + DEPENDENCY_LIST_NAME); // Dependency list directory
-	const objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
-	scriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
-	createObjectList(scriptDataVector, directory); // Creating of ObjectList
-	createInstallPocket(directory, scriptDataVector); // Creaing all instalation components
-	removeComments(scriptDataVector);
-	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
-	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
+	const objectDataVector patch_objects = getPatchListVector(); // Getting vector that contains all patch objects
+	scriptDataVector scripts = getScriptDataVector(patch_objects); // Getting all scripts created by DBProvider
+	createObjectList(scripts, directory); // Creating of ObjectList
+	createInstallPocket(directory, scripts); // Creaing all instalation components
+	removeComments(scripts);
+	objectDataVector objects = getObjectDataVector(); // Getting vector that contains all objects of source databse
+	remove(objects, patch_objects); // Removing path objects from objectDataVector
 
 	// Writing of DependencyList
 	string message = string("Parsing started...\n")  +  BLOCK_LINE + "\n";
 	cout << message;
 	addLog(message);
-	for (const ObjectData objectData : objectDataVector)
+	for (const ObjectData object : objects)
 	{
 		// Checking all objects for the presence in scripts
-		for (const ScriptData scriptData : scriptDataVector)
+		for (const ScriptData script : scripts)
 		{
-			if (isContains(objectData, scriptData.text))
+			if (isContains(object, script.text))
 			{
 				// If object was found - writing it's name and type in DependencyList
-				output << objectData.schema << " " << objectData.name << " " << objectData.type << endl;
-				message = " - " + objectData.type + " " + objectData.name + " included - dependency in " + scriptData.name + "\n";
+				output << object.schema << " " << object.name << " " << object.type << endl;
+				message = " - " + object.type + " " + object.name + " included - dependency in " + script.name + "\n";
 				cout << message;
 				addLog(message);
 				break;
@@ -81,13 +87,13 @@ void PatchBuilder::buildPatch(const string directory)
 	cout << BLOCK_LINE << endl;
 	addLog(BLOCK_LINE + string("\n"));
 
-	if (isWithErrors)
+	if (is_with_errors)
 	{
 		message = "Patch built with errors!\n";\
 	}
 	else
 	{
-		if (isWithWarnings)
+		if (is_with_warnings)
 		{
 			message = "Patch built with warnings!\n";
 		}
@@ -100,38 +106,40 @@ void PatchBuilder::buildPatch(const string directory)
 	addLog(message);
 }
 
-scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorType &objectDataVector) const
+scriptDataVector PatchBuilder::getScriptDataVector(const objectDataVector &objects) const
 {
 	// Not implemented
-	scriptDataVectorType scriptDataVector;
-	for (ObjectData objectData : objectDataVector)
+	scriptDataVector scripts;
+	for (ObjectData object : objects)
 	{
-		if (objectData.schema == "script")
+		if (object.schema == "script")
 		{
 			// Reading all text from file
-			ifstream input(objectData.name);
+			ifstream input(object.name);
 			const string text((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
 
 			// Remove path to file leave only name
-			const size_t slashPos = objectData.name.find_last_of("/");
-			objectData.name.erase(0, slashPos+1);
+			const size_t slash_pos = object.name.find_last_of("/");
+			object.name.erase(0, slash_pos+1);
 
 			// Add script in vector
-			const ScriptData scriptData(objectData, text);
-			scriptDataVector.push_back(scriptData);
+			const ScriptData script_data(object, text);
+			scripts.push_back(script_data);
+
+			input.close();
 		}
 		else
 		{
 			// Getting script data from DBProvider
-			vector<ScriptData> extraScriptDatas; // Vector for 
-			const ScriptData scriptData = provider->getScriptData(objectData, extraScriptDatas);
-			scriptDataVector.push_back(scriptData);
+			vector<ScriptData> extra_scripts; // Vector for 
+			const ScriptData script = provider->getScriptData(object, extra_scripts);
+			scripts.push_back(script);
 
-			if (!extraScriptDatas.empty())
+			if (!extra_scripts.empty())
 			{
-				for (const ScriptData &scriptData : extraScriptDatas)
+				for (const ScriptData &script : extra_scripts)
 				{
-					scriptDataVector.push_back(scriptData);
+					scripts.push_back(script);
 				}
 			}
 		}
@@ -139,150 +147,156 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 	const string message =  "Script vector created\n";
 	cout << message;
 	addLog(message);
-	return scriptDataVector;
+	return scripts;
 }
 
-objectDataVectorType PatchBuilder::getObjectDataVector() const
+objectDataVector PatchBuilder::getObjectDataVector() const
 {
 	// Getting all source database objects
-	objectDataVectorType objectVector = provider->getObjects();
+	objectDataVector objects = provider->getObjects();
 
 	const string message = "Object vector created\n";
 	cout << message;
 	addLog(message);
 
-	return objectVector;
+	return objects;
 }
 
-void PatchBuilder::createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
+void PatchBuilder::createInstallPocket(const string &directory, const scriptDataVector &scripts) const
 {
-	ofstream outputInstallScriptBat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
-	ofstream outputInstallScriptSh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
+	ofstream output_bat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
+	ofstream output_sh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
 
 	// Files to logging of install script working
-	vector<string> tempFileNames;
-	tempFileNames.push_back(TEMP_ERROR_FILE_NAME);
-	tempFileNames.push_back(TEMP_INFO_FILE_NAME);
+	vector<string> temp_names;
+	temp_names.push_back(TEMP_ERROR_FILE_NAME);
+	temp_names.push_back(TEMP_INFO_FILE_NAME);
 
-	string outputOperator = ">";
+	string out_operator = ">";
 
 	// Creating sql files for all scrpits and writing install script
-	for (const ScriptData data : scriptDataVector)
+	for (const ScriptData &data : scripts)
 	{
 		// Creating directory named as type of script
 		_mkdir(&(directory + "/" + data.schema)[0]);
 		_mkdir(&(directory + "/" + data.schema + "/" + data.type)[0]);
-		ofstream outputScript(directory + "/" + data.schema + "/" + data.type + "/" + data.name);
+		ofstream output_script(directory + "/" + data.schema + "/" + data.type + "/" + data.name);
 		// Writing script text in file
-		outputScript << data.text;
+		output_script << data.text;
+		output_script.close();
 
 		// Creating install command
-		string installString = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.schema + "/";
+		string install_command = string("psql -a -U ") + "%1" + " -d " + "%2" + " -h " + "%3" + " -p " + "%4" " -f " + data.schema + "/";
 		if (data.type != "")
 		{
-			installString += data.type + "/";
+			install_command += data.type + "/";
 		}
-		installString += data.name + " ";
+		install_command += data.name + " ";
 
-		installString += to_string(tempFileNames.size());
-		for (string fileName : tempFileNames)
+		install_command += to_string(temp_names.size());
+		for (const string &name : temp_names)
 		{
-			installString += outputOperator + fileName;
+			install_command += out_operator + name;
 		}
-		installString += "\n";
+		install_command += "\n";
 
-		outputInstallScriptBat << installString; // Writing psql command in InstallScript with .bat format
-		outputInstallScriptSh << installString; // Writing psql command in InstallScript with .sh format	
+		output_bat << install_command; // Writing psql command in InstallScript with .bat format
+		output_sh << install_command; // Writing psql command in InstallScript with .sh format	
 
 		// Should use > operator to create file and write in it
 		// Should use >> operator to write in existing file
-		if (outputOperator.size() == 1)
+		if (out_operator.size() == 1)
 		{
-			outputOperator += ">";
+			out_operator += ">";
 		}
 	}
+
+	output_bat.close();
+	output_sh.close();
+
 	const string message = "Install pocket created\n";
 	cout << message;
 	addLog(message);
 }
 
-bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
+bool PatchBuilder::isContains(const ObjectData &data, const string &script_text)
 {
 	cmatch result; // To contain result of searching
 
 	// If template is empty - searching by object name
-	if (templateString == "")
+	if (template_text.empty())
 	{
-		return (regex_search(scriptText.c_str(), result, regex(data.name)));
+		return (regex_search(script_text.c_str(), result, regex(data.name)));
 	}
 
 	// Checking on the content of the object in current script
-	const regex regularExpression = createExpression(data); // Creating regular expression 
+	const regex reg_ex = createExpression(data); // Creating regular expression 
 	try
 	{
-		return (regex_search(scriptText.c_str(), result, regularExpression));
+		return (regex_search(script_text.c_str(), result, reg_ex));
 	}
 	catch (exception &err)
 	{
 		// If can not searching regular expression
-		string waringStr = "WARNING - can not search regular expression from template:\nDESCRIPTION - ";
-		waringStr += err.what();
-		waringStr += "\n";
-		waringStr += "returning false result for " + data.name + "\n";
-		cerr << waringStr;
-		addLog(waringStr);
-		isWithWarnings = true;
+		string str = "WARNING - can not search regular expression from template:\nDESCRIPTION - ";
+		str += err.what();
+		str += "\n";
+		str += "returning false result for " + data.name + "\n";
+		cerr << str;
+		addLog(str);
+		is_with_warnings = true;
 		return false;
 	}
 }
 
-objectDataVectorType PatchBuilder::getPatchListVector() const
+objectDataVector PatchBuilder::getPatchListVector() const
 {
 	// Getting all patch objects
-	objectDataVectorType patchListVector;
-	ifstream input(patchListFullName);
+	objectDataVector patch_objects;
+	ifstream input(patch_list_full_name);
 	if (input.is_open())
 	{
 		while (!input.eof())
 		{
 			// Reading from PatchList file in patchListVector
-			ObjectData data;
-			input >> data.schema;
+			ObjectData object;
+			input >> object.schema;
 
 			// If end of file
-			if (data.schema.empty())
+			if (object.schema.empty())
 			{
-				return patchListVector;
+				return patch_objects;
 			}
 
 			// If this is script from outside - type field is empty
-			if (data.schema == "script")
+			if (object.schema == "script")
 			{
-				input >> data.name;
-				data.type = "";
+				input >> object.name;
+				object.type = "";
 			}
 			else
 			{
-				input >> data.name;
-				input >> data.type;
+				input >> object.name;
+				input >> object.type;
 			}
 
 			// If type is "function" reading params of it
-			if (data.type == "function")
+			if (object.type == "function")
 			{
-				string currentWord;
-				input >> currentWord;
-				input >> currentWord;
-				while (currentWord != ")")
+				string current_word;
+				input >> current_word;
+				input >> current_word;
+				while (current_word != ")")
 				{
-					data.params.push_back(currentWord);
-					input >> currentWord;
+					object.params.push_back(current_word);
+					input >> current_word;
 				}
 			}
-			patchListVector.push_back(data);
+			patch_objects.push_back(object);
 		}
 
-		return patchListVector;
+		input.close();
+		return patch_objects;
 	}
 	else
 	{
@@ -290,10 +304,10 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	}
 }
 
-void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVector, const string directory) const
+void PatchBuilder::createObjectList(const scriptDataVector &objects, const string &directory) const
 {
 	ofstream output(directory + "/" + OBJECT_LIST_NAME);
-	for (ObjectData data : objectDataVector)
+	for (ObjectData data : objects)
 	{
 		output << data.schema << " " << data.name << " " << data.type;
 		if (data.type == "function")
@@ -307,18 +321,19 @@ void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVecto
 		}
 		output << endl;
 	}
+	output.close();
 }
 
-void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second)
+void PatchBuilder::remove(objectDataVector &objects_first, const objectDataVector &objects_second)
 {
 	// Removing elements of second vector from first vector
-	for (size_t index = 0; index < objectDataVector_first.size(); index++)
+	for (size_t index = 0; index < objects_first.size(); index++)
 	{
-		for (const ObjectData objectData : objectDataVector_second)
+		for (const ObjectData &object : objects_second)
 		{
-			if (objectData == objectDataVector_first[index])
+			if (object == objects_first[index])
 			{
-				objectDataVector_first.erase(objectDataVector_first.begin() + index);
+				objects_first.erase(objects_first.begin() + index);
 				index--;
 				break;
 			}
@@ -326,31 +341,31 @@ void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const ob
 	}
 }
 
-void PatchBuilder::removeComments(scriptDataVectorType &scriptDataVector)
+void PatchBuilder::removeComments(scriptDataVector &scripts)
 {
 	// Removing of all commits
-	for (ScriptData &data : scriptDataVector)
+	for (ScriptData &script : scripts)
 	{
 		// "--" comments removing
-		string &text = data.text;
-		size_t startPosition = text.find("--"); // Find "--" in text
-		size_t endPosition;
-		while (startPosition != string::npos)
+		string &text = script.text;
+		size_t start = text.find("--"); // Find "--" in text
+		size_t end;
+		while (start != string::npos)
 		{
 			// While can not to find "--" in text
-			endPosition = text.find("\n", startPosition); // Find "new line symbol" in text after position of "--"
-			text.erase(startPosition, endPosition - startPosition + 1); // Remove this part of text
-			startPosition = text.find("--"); // Try to find next "--"
+			end = text.find("\n", start); // Find "new line symbol" in text after position of "--"
+			text.erase(start, end - start + 1); // Remove this part of text
+			start = text.find("--"); // Try to find next "--"
 		}
 
 		// "/* */" comments removing
-		startPosition = text.find("/*"); // Find "/*" in text
-		while (startPosition != string::npos)
+		start = text.find("/*"); // Find "/*" in text
+		while (start != string::npos)
 		{
 			// While can not to find "/*" in text
-			endPosition = text.find("*/", startPosition); // Find "*/" in text after position of "/*"
-			text.erase(startPosition, endPosition - startPosition + 2); // Remove this part of text
-			startPosition = text.find("/*"); // Try to find next "/*"
+			end = text.find("*/", start); // Find "*/" in text after position of "/*"
+			text.erase(start, end - start + 2); // Remove this part of text
+			start = text.find("/*"); // Try to find next "/*"
 		}
 	}
 }
@@ -358,80 +373,82 @@ void PatchBuilder::removeComments(scriptDataVectorType &scriptDataVector)
 regex PatchBuilder::createExpression(const ObjectData &data)
 {
 	// Determine the type of the object and use the appropriate template
-	string currentWord = "";
-	string regExStr = "";
-	stringstream templateStream;
-	templateStream << templateString;
-	while (!templateStream.eof())
+	string current_word = "";
+	string reg_ex = "";
+	stringstream template_stream;
+	template_stream << template_text;
+	while (!template_stream.eof())
 	{
-		templateStream >> currentWord;
+		template_stream >> current_word;
 		// if have found type code word 
-		if (currentWord == TYPE_CODE)
+		if (current_word == TYPE_CODE)
 		{
-			templateStream >> currentWord;
-			templateStream >> currentWord;
+			template_stream >> current_word;
+			template_stream >> current_word;
 			// Compare current template type with object type
-			if (currentWord == data.type || currentWord == ANY_TYPE_CODE)
+			if (current_word == data.type || current_word == ANY_TYPE_CODE)
 			{
 				// If types are equal or it template for any type
-				templateStream >> currentWord;
-				templateStream >> currentWord;
+				template_stream >> current_word;
+				template_stream >> current_word;
 				// Reading all reglular expressions
 				// until the end code word is found
-				while (currentWord != END_CODE)
+				while (current_word != END_CODE)
 				{
 					// Replace name code word on current object name
-					const size_t namePos = currentWord.find(NAME_CODE);
+					const size_t namePos = current_word.find(NAME_CODE);
 					if (namePos != string::npos)
 					{
-						currentWord.replace(namePos, NAME_LENGTH, data.name);
+						current_word.replace(namePos, NAME_LENGTH, data.name);
 					}
 
 					// Replace scheme code word on current object schema
-					const size_t schemaPos = currentWord.find(SCHEMA_CODE);
-					if (schemaPos != string::npos)
+					const size_t schema_pos = current_word.find(SCHEMA_CODE);
+					if (schema_pos != string::npos)
 					{
-						currentWord.replace(schemaPos, SCHEMA_LENGTH, data.schema);
+						current_word.replace(schema_pos, SCHEMA_LENGTH, data.schema);
 					}
 
 					// Replace scheme code word on current object schema
-					const size_t endlPos = currentWord.find("\n");
-					if (endlPos != string::npos)
+					const size_t endl_pos = current_word.find("\n");
+					if (endl_pos != string::npos)
 					{
-						currentWord.pop_back();
-						currentWord.pop_back();
+						current_word.pop_back();
+						current_word.pop_back();
 					}
 
 					// Concatenate this regular expressions with other
-					regExStr += currentWord;
-					regExStr += "|";
+					reg_ex += current_word;
+					reg_ex += "|";
 
 					// Reading next 
-					templateStream >> currentWord;
+					template_stream >> current_word;
 				}
 
 				// Remove last "|" symbol
-				regExStr.pop_back();
+				reg_ex.pop_back();
 				try 
 				{
-					return regex(regExStr);
+					return regex(reg_ex);
 				}
 				catch (exception &err)
 				{
 					// If cannot create regular expression
-					string warningStr = "WARNING - can not create regular expression from template:\nDESCRIPTION - ";
-					warningStr += err.what();
-					warningStr += "\n";
-					warningStr += "returning simple expression by object name for " + data.name + "\n";
-					cerr << warningStr;
-					addLog(warningStr);
-					isWithWarnings = true;
+					string str = "WARNING - can not create regular expression from template:\nDESCRIPTION - ";
+					str += err.what();
+					str += "\n";
+					str += "returning simple expression by object name for " + data.name + "\n";
+					cerr << str;
+					addLog(str);
+					is_with_warnings = true;
 					return  regex(data.name);
 				}
 			}
 		}
 	}
-	return {};
+	 
+	string str = "Cannot create regular expression for " + data.name;
+	throw exception(str.c_str());
 }
 
 string PatchBuilder::getCurrentDateTime()
@@ -448,7 +465,7 @@ string PatchBuilder::getCurrentDateTime()
 void PatchBuilder::addLog(const string message) const
 {
 	// Writing message in log file
-	ofstream output(logFileFullName, std::ios_base::app);
+	ofstream output(log_file_name, std::ios_base::app);
 	output << message;
 	output.close();
 }

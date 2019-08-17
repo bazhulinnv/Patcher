@@ -15,7 +15,7 @@ enum ArgumentKeys
 // Structure for input arguments information
 struct ArgumentData
 {
-	ArgumentData() : key(), isRequired(false)
+	ArgumentData() : key(), is_required(false)
 	{
 	}
 
@@ -24,13 +24,13 @@ struct ArgumentData
 		description = pDesciprion;
 		flags = pFlags;
 		key = pKey;
-		isRequired = pIsRequired;
+		is_required = pIsRequired;
 	}
 	string description; // description for help information
 	vector<string> flags; // all flags for argument
 	ArgumentKeys key; // unic key
 	string value; // value of argument
-	bool isRequired; // is required to build patch
+	bool is_required; // is required to build patch
 };
 
 ArgumentData* getArgByFlag(vector<ArgumentData>& args, string flag) // Get argument from vector by flag
@@ -39,9 +39,9 @@ ArgumentData* getArgByFlag(vector<ArgumentData>& args, string flag) // Get argum
 	// Looking for a match with the flag
 	for (ArgumentData& arg : args)
 	{
-		for (string& currentFlag : arg.flags)
+		for (string& current_flag : arg.flags)
 		{
-			if (currentFlag == flag)
+			if (current_flag == flag)
 			{
 				return &arg; // Return the argument with the right flag
 			}
@@ -50,7 +50,7 @@ ArgumentData* getArgByFlag(vector<ArgumentData>& args, string flag) // Get argum
 	return nullptr;
 }
 
-ArgumentData* getArgumentByKey(vector<ArgumentData>& args, ArgumentKeys key) // Get argument from vector by key
+ArgumentData* getArgumentByKey(vector<ArgumentData>& args, const ArgumentKeys &key) // Get argument from vector by key
 {
 	// Looking for a match with the лун
 	for (ArgumentData& arg : args)
@@ -77,10 +77,10 @@ void printHelp(const vector<ArgumentData>& params) // Print help information
 {
 	cout << "PatchBuilder - program for patch building by list of objects\n" << endl;
 	cout << "To run the program with the necessary parameters, use the following flags:\n\n";
-	for (ArgumentData paramData : params) // Print help information
+	for (ArgumentData param_data : params) // Print help information
 	{
-		cout << paramData.description << endl << "flags: ";
-		for (const string flag : paramData.flags)
+		cout << param_data.description << endl << "flags: ";
+		for (const string flag : param_data.flags)
 		{
 			cout << flag << " ";
 		}
@@ -95,21 +95,21 @@ int main(const int argc, char* argv[])
 {
 	vector<ArgumentData> args = getArguments(); // Get list of arguments
 
-	for (int argIndex = 1; argIndex < argc; argIndex++)
+	for (int arg_index = 1; arg_index < argc; arg_index++)
 	{
 		// Showing help information in this case
-		if ((argc == 2) && string(argv[argIndex]) == "-help")
+		if ((argc == 2) && string(argv[arg_index]) == "-help")
 		{
 			printHelp(args);
 			return 0;
 		}
 		else
 		{
-			ArgumentData* const param = getArgByFlag(args, argv[argIndex]); // Get argument by current flag
-			if (param != nullptr && argIndex < argc - 1) // if exist argument with current flag and it is not las argument
+			ArgumentData* const param = getArgByFlag(args, argv[arg_index]); // Get argument by current flag
+			if (param != nullptr && arg_index < argc - 1) // if exist argument with current flag and it is not las argument
 			{
-				argIndex++;
-				param->value = string(argv[argIndex]);
+				arg_index++;
+				param->value = string(argv[arg_index]);
 			}
 		}
 	}
@@ -117,7 +117,7 @@ int main(const int argc, char* argv[])
 	// Checking on emptiness of required arguments values
 	for (ArgumentData& param : args)
 	{
-		if (param.value.empty() && param.isRequired)
+		if (param.value.empty() && param.is_required)
 		{
 			cout << "You must specify the following argument:\n" << param.description;
 			return -1;
@@ -125,19 +125,19 @@ int main(const int argc, char* argv[])
 	}
 
 	// If everything is fine with the arguments try to build path
-	PatchBuilder builder{};
+	PatchBuilder *builder;
 	try
 	{
 		DBProvider provider(getArgumentByKey(args, KEY_CONNECTION)->value);
-		const string templatePath = getArgumentByKey(args, KEY_TEMPLATE)->value;
-		builder = PatchBuilder(getArgumentByKey(args, KEY_PATH)->value, provider, templatePath);
-		builder.buildPatch(getArgumentByKey(args, KEY_DIRECTORY)->value);
+		const string template_path = getArgumentByKey(args, KEY_TEMPLATE)->value;
+		builder = new PatchBuilder(getArgumentByKey(args, KEY_PATH)->value, provider, template_path);
+		builder->buildPatch(getArgumentByKey(args, KEY_DIRECTORY)->value);
 		return 0;
 	}
 	catch (exception& err)
 	{
 		cerr << err.what() << endl;
-		builder.addLog(err.what());
+		builder->addLog(err.what());
 		return -1;
 	}
 
