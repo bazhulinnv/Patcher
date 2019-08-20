@@ -73,7 +73,7 @@ private:
 
 	Function GetFunction(const ObjectData& data) const;
 
-	Trigger GetTrigger(const ObjectData& data) const;
+	Trigger GetTrigger(const ObjectData& data, const string& comment = "", const string& code = "") const;
 
 	Sequence GetSequence(const ObjectData& data,
 						 int start_value = 1,
@@ -85,7 +85,7 @@ private:
 
 	View GetView(const ObjectData& data) const;
 
-	Index GetIndex(const ObjectData& data);
+	Index GetIndex(const ObjectData& data) const;
 
 	// Get single value from Query
 	string GetValue(const string& query_string, const string& column_name) const;
@@ -101,7 +101,7 @@ private:
 
 	ScriptDefinition GetTriggerData(const ObjectData& data) const;
 
-	ScriptDefinition GetIndexData(const ObjectData& data);
+	ScriptDefinition GetIndexData(const ObjectData& data) const;
 
 	// Methods for initialization of Table structure
 	bool InitializePartitionTable(Table& table, const ObjectData& data) const;

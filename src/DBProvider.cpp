@@ -350,12 +350,9 @@ Function DBProvider::GetFunction(const ObjectData& data) const
 	function.external_language = row["external_language"].as<string>();
 
 	vector<string> function_parameters;
-	if (!row["array_to_string"].is_null())
-	{
-		function_parameters = ParsingTools::SplitToVector(to_string(row["array_to_string"]), ", ");
-	}
+	if (!row["array_to_string"].is_null()) function_parameters = ParsingTools::SplitToVector(to_string(row["array_to_string"]), ", ");
 
-	auto function_text_definition = row["pg_get_functiondef"].as<string>();
+	if (!row["pg_get_functiondef"].is_null()) function.function_text_definition = row["pg_get_functiondef"].as<string>();
 	auto function_signature = row["specific_name"].as<string>() + "(" + row["array_to_string"].as<string>() + ")";
 
 	function.schema = function.routine_schema; // Schema of object
@@ -365,7 +362,7 @@ Function DBProvider::GetFunction(const ObjectData& data) const
 	return function;
 }
 
-Trigger DBProvider::GetTrigger(const ObjectData& data) const
+Trigger DBProvider::GetTrigger(const ObjectData& data, const string& comment, const string& code) const
 {
 	const string query_request = "SELECT t.trigger_catalog, t.trigger_schema,"
 		" t.trigger_name, string_agg(t.event_manipulation, ' or ')"
@@ -388,7 +385,16 @@ Trigger DBProvider::GetTrigger(const ObjectData& data) const
 	trigger.schema = trigger.trigger_schema; // Schema of object
 	trigger.name = trigger.trigger_name; // Name of object
 
-	//"CREATE FUNCTION io.{@name}() RETURNS trigger LANGUAGE '{@language}' NOT LEAKPROOF AS $BODY$ {@WTF} $BODY$; ALTER FUNCTION io.{@name}() OWNER TO {@owner};";
+	using namespace ParsingTools;
+
+	trigger.trigger_text_definition =
+		InterpolateAll("CREATE FUNCTION ${}.'${}'()\n	RETURNS trigger\n	LANGUAGE 'plpgsql'\n", vector<string>{trigger.schema, trigger.name}) +
+		Interpolate("	NOT LEAKPROOF \n	AS $BODY${@code}$BODY$;\n\n", code, "{@code}") +
+		InterpolateAll("ALTER FUNCTION ${}.'${}'()\n", vector<string>{trigger.schema, trigger.name}) +
+		Interpolate("	OWNER TO ${};\n\n", current_connection_->GetParameters().username) +
+		InterpolateAll("COMMENT ON FUNCTION ${}.'${}'()\n", vector<string>{trigger.schema, trigger.name}) +
+		Interpolate("	IS '${}';\n", comment);
+
 	return trigger;
 }
 
@@ -421,14 +427,14 @@ Sequence DBProvider::GetSequence(const ObjectData& data, const int start_value, 
 	using namespace ParsingTools;
 
 	sequence.query_create_seq =
-		Interpolate("CREATE SEQUENCE common.'${}'\n	CYCLE\n", sequence.name) +
+		InterpolateAll("CREATE SEQUENCE ${}.'${}'\n	CYCLE\n", vector<string> {sequence.schema, sequence.name}) +
 		Interpolate("	INCREMENT ${}\n", sequence.increment) +
 		Interpolate("	START ${}\n", sequence.start_value) +
 		Interpolate("	MINVALUE ${}\n", sequence.minimum_value) +
 		Interpolate("	MAXVALUE ${};\n\n", sequence.maximum_value) +
-		Interpolate("ALTER SEQUENCE common.'${}'\n", sequence.name) +
+		InterpolateAll("ALTER SEQUENCE ${}.'${}'\n", vector<string> {sequence.schema, sequence.name}) +
 		Interpolate("	OWNER TO ${};\n\n", current_connection_->GetParameters().username) +
-		Interpolate("COMMENT ON SEQUENCE common.'${}'\n", sequence.name) +
+		InterpolateAll("COMMENT ON SEQUENCE ${}.'${}'\n", vector<string> {sequence.schema, sequence.name}) +
 		Interpolate("	IS '${}';", comment);
 
 	return sequence;
@@ -455,16 +461,30 @@ View DBProvider::GetView(const ObjectData& data) const
 	view.is_trigger_deletable = row["is_trigger_deletable"].as<string>();
 	view.is_trigger_insertable_into = row["is_trigger_insertable_into"].as<string>();
 
-	view.view_text_definition = row["view_text_definition"].as<string>();
+	if (!row["view_text_definition"].is_null()) view.view_text_definition = row["view_text_definition"].as<string>();
 
 	view.schema = view.table_schema; // Schema of object
 	view.name = view.table_name; // Name of object
 	return view;
 }
 
-Index DBProvider::GetIndex(const ObjectData& data)
+Index DBProvider::GetIndex(const ObjectData& data) const
 {
+	const string query_request =
+		ParsingTools::Interpolate("SELECT * FROM pg_indexes"
+								  " WHERE tablename not like 'pg%' AND schemaname = '${}'",
+								  data.schema) +
+		ParsingTools::Interpolate(" AND indexname LIKE '${}';", data.name);
+
+	const auto query_result = Query(query_request);
+	const auto row = query_result[0];
+
 	Index index = {};
+	index.schema_name = row["schemaname"].as<string>();
+	index.table_name = row["tablename"].as<string>();
+	index.index_name = row["indexname"].as<string>();
+
+	if (!row["indexdef"].is_null()) index.index_text_definition = row["indexdef"].as<string>();
 	return index;
 }
 
@@ -633,40 +653,40 @@ ScriptDefinition DBProvider::GetTableData(const ObjectData& data, vector<ScriptD
 
 ScriptDefinition DBProvider::GetFunctionData(const ObjectData& data) const
 {
-	Function function = GetFunction(data); // Getting information about object
-	ScriptDefinition scriptData = ScriptDefinition(data, "FUNCTION SCRIPT");
+	const Function function = GetFunction(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, function.function_text_definition);
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
 ScriptDefinition DBProvider::GetViewData(const ObjectData& data) const
 {
-	View view = GetView(data); // Getting information about object
-	ScriptDefinition scriptData = ScriptDefinition(data, "VIEW SCRIPT");
+	const View view = GetView(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, view.view_text_definition);
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
 ScriptDefinition DBProvider::GetSequenceData(const ObjectData& data) const
 {
-	Sequence sequence = GetSequence(data); // Getting information about object
-	ScriptDefinition scriptData = ScriptDefinition(data, "SEQUENCE SCRIPT");
+	const Sequence sequence = GetSequence(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, sequence.query_create_seq);
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
 ScriptDefinition DBProvider::GetTriggerData(const ObjectData& data) const
 {
-	Trigger trigger = GetTrigger(data); // Getting information about object
-	ScriptDefinition scriptData = ScriptDefinition(data, "TRIGGER SCRIPT");
+	const Trigger trigger = GetTrigger(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, trigger.trigger_text_definition);
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
-ScriptDefinition DBProvider::GetIndexData(const ObjectData& data)
+ScriptDefinition DBProvider::GetIndexData(const ObjectData& data) const
 {
-	Index index = GetIndex(data); // Getting information about object
-	ScriptDefinition scriptData = ScriptDefinition(data, "INDEX SCRIPT");
+	const Index index = GetIndex(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, index.index_text_definition);
 	scriptData.name += ".sql";
 	return scriptData;
 }
