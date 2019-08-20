@@ -5,13 +5,13 @@
 
 using namespace std;
 
-string ParsingTools::interpolate(string input, const string& replacement, const string toBeReplaced)
+string ParsingTools::Interpolate(string input, const string& replacement, const string& to_be_replaced)
 {
-	string newString = input.replace(input.find(toBeReplaced), toBeReplaced.length(), replacement);
-	return newString;
+	string new_string = input.replace(input.find(to_be_replaced), to_be_replaced.length(), replacement);
+	return new_string;
 }
 
-string ParsingTools::interpolateAll(const string& input, queue<string> replacements, const string toBeReplaced)
+string ParsingTools::InterpolateAll(const string& input, queue<string> replacements, const string& to_be_replaced)
 {
 	if (input.empty())
 	{
@@ -21,9 +21,9 @@ string ParsingTools::interpolateAll(const string& input, queue<string> replaceme
 	string res = input;
 	size_t start_pos = 0;
 
-	while ((start_pos = res.find(toBeReplaced, start_pos)) != string::npos && !replacements.empty())
+	while ((start_pos = res.find(to_be_replaced, start_pos)) != string::npos && !replacements.empty())
 	{
-		res.replace(start_pos, toBeReplaced.length(), replacements.front());
+		res.replace(start_pos, to_be_replaced.length(), replacements.front());
 		start_pos += replacements.front().length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 		replacements.pop();
 	}
@@ -31,9 +31,9 @@ string ParsingTools::interpolateAll(const string& input, queue<string> replaceme
 	return res;
 }
 
-string ParsingTools::interpolateAll(const string& input, vector<string> replacements, const string toBeReplaced)
+string ParsingTools::InterpolateAll(const string& input, vector<string> replacements, const string& to_be_replaced)
 {
-	if (toBeReplaced.empty() || input.empty())
+	if (to_be_replaced.empty() || input.empty())
 	{
 		return string();
 	}
@@ -41,9 +41,9 @@ string ParsingTools::interpolateAll(const string& input, vector<string> replacem
 	string res = input;
 	size_t start_pos = 0;
 
-	while ((start_pos = res.find(toBeReplaced, start_pos)) != string::npos && !replacements.empty())
+	while ((start_pos = res.find(to_be_replaced, start_pos)) != string::npos && !replacements.empty())
 	{
-		res.replace(start_pos, toBeReplaced.length(), replacements.front());
+		res.replace(start_pos, to_be_replaced.length(), replacements.front());
 		start_pos += replacements.front().length();
 		replacements.erase(replacements.begin());
 	}
@@ -52,41 +52,41 @@ string ParsingTools::interpolateAll(const string& input, vector<string> replacem
 }
 
 // string string("hello $name");
-// bool is_ok = replace(string, "Somename", "$name");
-bool ParsingTools::replace(string& input, const string& replacement, const string& toBeReplaced)
+// bool is_ok = Replace(string, "Somename", "$name");
+bool ParsingTools::Replace(string& input, const string& replacement, const string& to_be_replaced)
 {
-	size_t start_pos = input.find(toBeReplaced);
+	const size_t start_pos = input.find(to_be_replaced);
 
 	if (start_pos == string::npos)
 	{
 		return false;
 	}
 
-	input.replace(start_pos, toBeReplaced.length(), replacement);
+	input.replace(start_pos, to_be_replaced.length(), replacement);
 	return true;
 }
 
-void ParsingTools::replaceAll(string& input, const string& replacement, const string& toBeReplaced)
+void ParsingTools::ReplaceAll(string& input, const string& replacement, const string& to_be_replaced)
 {
-	if (toBeReplaced.empty())
+	if (to_be_replaced.empty())
 	{
 		return;
 	}
 
 	size_t start_pos = 0;
-	while ((start_pos = input.find(toBeReplaced, start_pos)) != string::npos)
+	while ((start_pos = input.find(to_be_replaced, start_pos)) != string::npos)
 	{
-		input.replace(start_pos, toBeReplaced.length(), replacement);
+		input.replace(start_pos, to_be_replaced.length(), replacement);
 		start_pos += replacement.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
 	}
 }
 
-vector<string> ParsingTools::splitToVector(string input, const string& delimiter)
+vector<string> ParsingTools::SplitToVector(string input, const string& delimiter)
 {
 	// In case empty string - result is empty vector<string>
 	vector<string> result;
 
-	while (input.size())
+	while (!input.empty())
 	{
 		size_t index = input.find(delimiter);
 
@@ -95,7 +95,7 @@ vector<string> ParsingTools::splitToVector(string input, const string& delimiter
 			result.push_back(input.substr(0, index));
 			input = input.substr(index + delimiter.size());
 
-			if (input.size() == 0)
+			if (input.empty())
 			{
 				result.push_back(input);
 			}
@@ -110,8 +110,10 @@ vector<string> ParsingTools::splitToVector(string input, const string& delimiter
 	return result;
 }
 
-string ParsingTools::joinAsString(const vector<string>& input, const char* delimiter)
+string ParsingTools::JoinAsString(const vector<string>& input, const char* delimiter)
 {
+
+	if (input.size() == 1) return input[0];
 	// If vector is empty, return empty string
 	if (input.empty()) return string("");
 
@@ -120,7 +122,7 @@ string ParsingTools::joinAsString(const vector<string>& input, const char* delim
 	return res.str();
 }
 
-string ParsingTools::parseCredentials(const string& pgLogin)
+string ParsingTools::ParseCredentials(const string& pg_login)
 {
 	vector<string> params =
 	{
@@ -131,19 +133,20 @@ string ParsingTools::parseCredentials(const string& pgLogin)
 		"password=${}",
 	};
 
-	vector<string> values = splitToVector(pgLogin, ":");
+	vector<string> values = SplitToVector(pg_login, ":");
 	if (values[0] == "localhost" || values[0] == "loopback") values[0] = "127.0.0.1";
 
 	vector<string> items;
+	items.reserve(params.size());
 	for (int i = 0; i < params.size(); ++i)
 	{
-		items.push_back(interpolate(params[i], values[i]));
+		items.push_back(Interpolate(params[i], values[i]));
 	}
 
-	return joinAsString(items, " ");
+	return JoinAsString(items, " ");
 }
 
-pair<bool, string> ParsingTools::tryParseCredentials(const string& pgLogin)
+pair<bool, string> ParsingTools::TryParseCredentials(const string& pg_login)
 {
 	string result;
 	vector<string> parsed;
@@ -158,20 +161,20 @@ pair<bool, string> ParsingTools::tryParseCredentials(const string& pgLogin)
 
 	try
 	{
-		vector<string> values = splitToVector(pgLogin, ":");
+		vector<string> values = SplitToVector(pg_login, ":");
 		if (values[0] == "localhost" || values[0] == "loopback") values[0] = "127.0.0.1";
 
 		for (int i = 0; i < params.size(); ++i)
 		{
-			parsed.push_back(interpolate(params[i], values[i]));
+			parsed.push_back(Interpolate(params[i], values[i]));
 		}
 	}
 	catch (const exception&)
 	{
-		return make_pair(false, joinAsString(parsed, " "));
+		return make_pair(false, JoinAsString(parsed, " "));
 	}
 
 	// If parsing succeeded
 	// convert to single string using stringstream
-	return make_pair(true, joinAsString(parsed, " "));
+	return make_pair(true, JoinAsString(parsed, " "));
 }

@@ -1,7 +1,5 @@
 #include "DBProvider/DBProvider.h"
 #include "Shared/ParsingTools.h"
-#include "Shared/Logger.h"
-#include "Shared/TextTable.h"
 #include <pqxx/pqxx>
 #include <pqxx/transaction>
 #include <string>
@@ -11,31 +9,31 @@
 using namespace std;
 using namespace DBConnection;
 
-DBProvider::DBProvider(string &loginStringPG)
+DBProvider::DBProvider(string& login_string_pg)
 {
 	try
 	{
-		currentConnection = make_shared<Connection>();
-		currentConnection->setConnection(loginStringPG);
+		current_connection_ = make_shared<Connection>();
+		current_connection_->SetConnection(login_string_pg);
 	}
-	catch (const exception& err)
+	catch (const exception& error)
 	{
-		cerr << "Wrong Parameters: " << loginStringPG << endl;
-		throw err;
+		cerr << "Wrong Parameters: " << login_string_pg << endl;
+		throw error;
 	}
 }
 
 DBProvider::~DBProvider()
 {
-	currentConnection.reset();
+	current_connection_.reset();
 }
 
-vector<ObjectData> DBProvider::getObjects() const
+vector<ObjectData> DBProvider::GetObjects() const
 {
 	// example:
 	// output - public, myFunction, function, <param1, param2, param3>
 	//          common, myTable,    table,    <>
-	string sql_getObjects = "SELECT /*sequences */"
+	const string sql_get_objects = "SELECT /*sequences */"
 		"f.sequence_schema AS obj_schema,"
 		"f.sequence_name AS obj_name,"
 		"'sequence' AS obj_type "
@@ -49,402 +47,633 @@ vector<ObjectData> DBProvider::getObjects() const
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";;
 
-	const auto queryResult = query(sql_getObjects);
+	const auto query_result = Query(sql_get_objects);
 	vector<ObjectData> objects;
 
-	for (pqxx::result::const_iterator row = queryResult.begin(); row != queryResult.end(); ++row)
+	for (pqxx::result::const_iterator row = query_result.begin(); row != query_result.end(); ++row)
 	{
 		const vector<string> parameters;
-		objects.push_back(ObjectData(row["obj_name"].as<string>(),
-									 row["obj_type"].as<string>(),
-									 row["obj_schema"].as<string>(), parameters));
+		objects.emplace_back(ObjectData(row["obj_name"].as<string>(),
+										row["obj_type"].as<string>(),
+										row["obj_schema"].as<string>(), parameters));
 	}
 
 	return objects;
 }
 
-ScriptData DBProvider::getScriptData(const ObjectData& data, vector<ScriptData> &extraScriptDatas)// Temporary only for tables
+ScriptDefinition DBProvider::GetScriptData(const ObjectData& data, vector<ScriptDefinition>& extra_script_data) // Temporary only for tables
 {
 	if (data.type == "table")
 	{
-		return getTableData(data, extraScriptDatas);
+		return GetTableData(data, extra_script_data);
 	}
 
 	if (data.type == "function")
 	{
-		return getFunctionData(data);
+		return GetFunctionData(data);
 	}
 
 	if (data.type == "trigger")
 	{
-		return getTriggerData(data);
+		return GetTriggerData(data);
 	}
 
 	if (data.type == "index")
 	{
-		return getIndexData(data);
+		return GetIndexData(data);
 	}
 
 	if (data.type == "table")
 	{
-		return getViewData(data);
+		return GetViewData(data);
 	}
 
 	if (data.type == "view")
 	{
-		return getViewData(data);
+		return GetViewData(data);
 	}
 
 	if (data.type == "sequence")
 	{
-		return getSequenceData(data);
+		return GetSequenceData(data);
 	}
+
+	throw invalid_argument(ParsingTools::Interpolate("ERROR: No such type:'${}' in database.\n", data.type));
 }
 
 // Checks if specified object exists in database
-bool DBProvider::doesCurrentObjectExists(const string& scheme, const string& signature, const string& type) const
+bool DBProvider::DoesCurrentObjectExists(const string& scheme, const string& signature, const string& type) const
 {
 	bool res = false;
+
 	if (type == "table")
 	{
-		res = tableExists(scheme, signature);
+		res = TableExists(scheme, signature);
 	}
 
 	if (type == "sequence")
 	{
-		res = sequenceExists(scheme, signature);
+		res = SequenceExists(scheme, signature);
 	}
 
 	if (type == "view")
 	{
-		res = viewExists(scheme, signature);
+		res = ViewExists(scheme, signature);
 	}
 
 	if (type == "trigger")
 	{
-		res = triggerExists(scheme, signature);
+		res = TriggerExists(scheme, signature);
 	}
 
 	if (type == "function")
 	{
-		res = functionExists(signature, signature);
+		res = FunctionExists(signature, signature);
 	}
 
 	if (type == "index")
 	{
-		res = indexExists(signature, signature);
+		res = IndexExists(signature, signature);
 	}
 
 	return res;
 }
 
-pqxx::result DBProvider::query(const string stringSQL) const
+pqxx::result DBProvider::Query(const string& string_PLPG_SQL) const
 {
-	pqxx::work trans(*currentConnection->getConnection(), "trans");
+	if (!current_connection_->IsOpen())
+	{
+		throw runtime_error("ERROR: Couldn't execute query. Database connection is dead.\n");
+	}
+
+	pqxx::work transaction(*current_connection_->GetConnection(), "query transaction");
 
 	// Get result from database
-	pqxx::result res = trans.exec(stringSQL);
-	trans.commit();
-	return res;
+	try
+	{
+		pqxx::result query_result = transaction.exec(string_PLPG_SQL);
+		transaction.commit();
+		return query_result;
+	}
+	catch (const pqxx::sql_error& err)
+	{
+		cerr << "Failed to execute query" << endl;
+		cerr << "SQL error: " << err.what() << endl;
+		cerr << "Query was: " << err.query() << endl;
+		throw runtime_error(ParsingTools::Interpolate(
+			"ERROR: Couldn't execute query. SQL error occured.\n${}\n",
+			err.what()
+		));
+	}
 }
 
-bool DBProvider::tableExists(const string& schema, const string& tableName) const
+pair<bool, pqxx::result> DBProvider::QueryWithStatus(const string& string_PLPG_SQL) const
+{
+	if (!current_connection_->IsOpen())
+	{
+		throw runtime_error("ERROR: Couldn't execute query. Database connection is dead.\n");
+	}
+
+	pqxx::work transaction(*current_connection_->GetConnection(), "query transaction");
+	pqxx::result query_result;
+
+	// Get result from database
+	try
+	{
+		query_result = transaction.exec(string_PLPG_SQL);
+		transaction.commit();
+		return make_pair(true, query_result);
+	}
+	catch (const pqxx::sql_error& err)
+	{
+		return make_pair(false, query_result);
+	}
+}
+
+void DBProvider::InsertToDB(ObjectData obj)
+{
+}
+
+void DBProvider::DeleteFromDB(ObjectData obj)
+{
+}
+
+void DBProvider::Update(ObjectData obj)
+{
+}
+
+ObjectDataVectorType DBProvider::GetType(ObjectData obj)
+{
+	return {};
+}
+
+vector<ObjectData> DBProvider::UseViewToGetData(string name_of_view)
+{
+	return {};
+}
+
+vector<ObjectData> DBProvider::CreateAndUseView(string name_of_view, string body_of_view)
+{
+	return {};
+}
+
+bool DBProvider::TableExists(const string& schema, const string& tableName) const
 {
 	// Define SQL request
-	string q =
-		ParsingTools::interpolateAll(
+	const string query_request =
+		ParsingTools::InterpolateAll(
 			"SELECT EXISTS (SELECT * "
 			"FROM information_schema.tables "
 			"WHERE table_schema = '${}' "
 			"AND table_name = '${}');",
 			vector<string> { schema, tableName });
 
-	const auto queryResult = query(q);
-	return queryResult.begin()["exists"].as<bool>();
+	const auto query_result = Query(query_request);
+	return query_result.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::sequenceExists(const string& schema, const string& sequenceName) const
+bool DBProvider::SequenceExists(const string& schema, const string& sequence_name) const
 {
-	string q =
-		ParsingTools::interpolateAll(
+	const string query_request =
+		ParsingTools::InterpolateAll(
 			"SELECT EXISTS (SELECT * "
 			"FROM information_schema.sequences "
 			"WHERE sequence_schema = '${}' "
 			"AND sequence_name = '${}');",
-			vector<string> { schema, sequenceName });
+			vector<string> { schema, sequence_name });
 
-	const auto queryResult = query(q);
+	const auto query_result = Query(query_request);
+	return query_result.begin()["exists"].as<bool>();
+}
+
+bool DBProvider::IndexExists(const string& schema, const string& index_name) const
+{
+	const string query_request = ParsingTools::InterpolateAll(
+		"SELECT EXISTS (SELECT * FROM pg_indexes WHERE schemaname = '${}'"
+		" AND indexname = '${}');", vector<string> { schema, index_name });
+
+	const auto query_result = Query(query_request);
+	return query_result.begin()["exists"].as<bool>();
+}
+
+bool DBProvider::FunctionExists(const string& schema, const string& func_signature) const
+{
+	const string query_request =
+		ParsingTools::InterpolateAll(
+			"SELECT EXISTS (SELECT * FROM information_schema.routines r, pg_catalog.pg_proc p WHERE"
+			" r.specific_schema = '${}' and r.routine_name||'('||COALESCE(array_to_string(p.proargnames, ',', '*'),'')||')' = '${}'"
+			" and r.external_language = 'PLPGSQL' and r.routine_name = p.proname and"
+			" r.specific_name = p.proname || '_' || p.oid);",
+			vector<string> { schema, func_signature });
+
+	const auto queryResult = Query(query_request);
 	return queryResult.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::indexExists(const string& schema, const string& indexName) const
+bool DBProvider::ViewExists(const string& table_schema, const string& table_name) const
 {
-	string q =
-		ParsingTools::interpolateAll("SELECT EXISTS (SELECT * FROM pg_indexes WHERE schemaname = '${}' and indexname = '${}');",
-									 vector<string> { schema, indexName });
-
-	const auto queryResult = query(q);
-	return queryResult.begin()["exists"].as<bool>();
-}
-
-bool DBProvider::functionExists(const string& schema, const string& funcSignature) const
-{
-	string q =
-		ParsingTools::interpolateAll("SELECT EXISTS (SELECT * FROM information_schema.routines r, pg_catalog.pg_proc p WHERE"
-									 " r.specific_schema = '${}' and r.routine_name||'('||COALESCE(array_to_string(p.proargnames, ',', '*'),'')||')' = '${}'"
-									 " and r.external_language = 'PLPGSQL' and r.routine_name = p.proname and"
-									 " r.specific_name = p.proname || '_' || p.oid);",
-									 vector<string> { schema, funcSignature });
-
-	const auto queryResult = query(q);
-	return queryResult.begin()["exists"].as<bool>();
-}
-
-bool DBProvider::viewExists(const string& tableSchema, const string& tableName) const
-{
-	string q =
-		ParsingTools::interpolateAll(
+	const string query_request =
+		ParsingTools::InterpolateAll(
 			"SELECT EXISTS (SELECT * "
 			"FROM information_schema.views "
 			"WHERE table_schema = '${}' "
 			"AND table_name = '${}');",
-			vector<string> { tableSchema, tableName });
+			vector<string> { table_schema, table_name });
 
-	const auto queryResult = query(q);
-	return queryResult.begin()["exists"].as<bool>();
+	const auto query_result = Query(query_request);
+	return query_result.begin()["exists"].as<bool>();
 }
 
-bool DBProvider::triggerExists(const string& triggerSchema, const string& triggerName) const
+bool DBProvider::TriggerExists(const string& trigger_schema, const string& trigger_name) const
 {
-	const string q =
-		ParsingTools::interpolateAll(
+	const string query_request =
+		ParsingTools::InterpolateAll(
 			"SELECT EXISTS (SELECT * "
 			"FROM information_schema.triggers "
 			"WHERE trigger_schema = '${}' "
 			"AND trigger_name = '${}');",
-			vector<string> { triggerSchema, triggerName });
+			vector<string> { trigger_schema, trigger_name });
 
-	const auto queryResult = query(q);
-	return queryResult.begin()["exists"].as<bool>();
+	const auto query_result = Query(query_request);
+	return query_result.begin()["exists"].as<bool>();
 }
 
-Table DBProvider::getTable(const ObjectData& data)
+Table DBProvider::GetTable(const ObjectData& data) const
 {
 	Table table;
 	// If table is partision of some other table
 	// need to know only parent
-	if (!initializePartitionTable(table, data))
+	if (!InitializePartitionTable(table, data))
 	{
-		initializeType(table, data);
-		initializeOwner(table, data);
-		initializeDescription(table, data);
-		initializeOptions(table, data);
-		initializeColumns(table, data);
-		initializeSpace(table, data);
-		initializeConstraints(table, data);
-		initializePartitionExpression(table, data);
-		initializeInheritTables(table, data);
-		initializeIndexExpressions(table, data);
+		InitializeType(table, data);
+		InitializeOwner(table, data);
+		InitializeDescription(table, data);
+		InitializeOptions(table, data);
+		InitializeColumns(table, data);
+		InitializeSpace(table, data);
+		InitializeConstraints(table, data);
+		InitializePartitionExpression(table, data);
+		InitializeInheritTables(table, data);
+		InitializeIndexExpressions(table, data);
 	}
+
 	return table;
 }
 
-string DBProvider::getSingleValue(const string& queryString, const string& columnName) const
+Function DBProvider::GetFunction(const ObjectData& data) const
 {
-	pqxx::result result = query(queryString);
-	pqxx::result::const_iterator row = result.begin();
-	return row[columnName].c_str();
+	string query_request =
+		"SELECT * , array_to_string(p.proargnames, ', ', '*'), pg_get_functiondef(p.oid)"
+		" FROM information_schema.routines r, pg_catalog.pg_proc p"
+		" WHERE r.external_language = 'PLPGSQL'"
+		" AND r.routine_name = p.proname"
+		" AND r.routine_schema = '${}'"
+		" AND r.specific_name = '${}' || '_' || p.oid;"
+		" AND array_to_string(p.proargnames, ', ', '*') = '${}'";
+
+	const auto data_params = ParsingTools::JoinAsString(data.params, ", ");
+
+	query_request = ParsingTools::InterpolateAll(query_request,
+												 vector<string>{ data.schema, data.name, data_params });
+	const auto query_result = Query(query_request);
+	const auto row = query_result[0];
+
+	Function function = {};
+	function.specific_catalog = row["specific_catalog"].as<string>();
+	function.specific_schema = row["specific_schema"].as<string>();
+	function.specific_name = row["specific_name"].as<string>();
+	function.routine_catalog = row["routine_catalog"].as<string>();
+	function.routine_schema = row["routine_schema"].as<string>();
+	function.routine_name = row["routine_name"].as<string>();
+	function.routine_type = row["routine_type"].as<string>();
+	function.data_type = row["data_type"].as<string>();
+	function.external_language = row["external_language"].as<string>();
+
+	vector<string> function_parameters;
+	if (!row["array_to_string"].is_null())
+	{
+		function_parameters = ParsingTools::SplitToVector(to_string(row["array_to_string"]), ", ");
+	}
+
+	auto function_text_definition = row["pg_get_functiondef"].as<string>();
+	auto function_signature = row["specific_name"].as<string>() + "(" + row["array_to_string"].as<string>() + ")";
+
+	function.schema = function.routine_schema; // Schema of object
+	function.name = function.routine_name; // Name of object
+	function.params = function_parameters; // Params of object
+
+	return function;
 }
 
-ScriptData DBProvider::getTableData(const ObjectData& data, vector<ScriptData> &extraScriptDatas)
+Trigger DBProvider::GetTrigger(const ObjectData& data) const
 {
-	Table table = getTable(data); // Getting information about object
-	string scriptString;
+	const string query_request = "SELECT t.trigger_catalog, t.trigger_schema,"
+		" t.trigger_name, string_agg(t.event_manipulation, ' or ')"
+		" FROM information_schema.triggers t"
+		" WHERE t.event_object_catalog = '" + current_connection_->GetParameters().database + "'"
+		" AND t.event_object_schema = '" + data.schema + "'"
+		" AND t.event_object_table = '" + data.name + "'"
+		" GROUP BY t.trigger_catalog, t.trigger_schema, t.trigger_name;";
 
-	// If table is not partission of some other table
-	if (!table.isPartition())
+	const auto query_result = Query(query_request);
+	const auto row = query_result[0];
+
+	Trigger trigger = {};
+	trigger.trigger_catalog = current_connection_->GetParameters().database;
+	trigger.trigger_schema = row["trigger_schema"].as<string>();
+	trigger.trigger_name = row["trigger_name"].as<string>();
+	trigger.string_agg = row["string_agg"].as<string>();
+	trigger.trigger_text_definition = string();
+
+	trigger.schema = trigger.trigger_schema; // Schema of object
+	trigger.name = trigger.trigger_name; // Name of object
+
+	//"CREATE FUNCTION io.{@name}() RETURNS trigger LANGUAGE '{@language}' NOT LEAKPROOF AS $BODY$ {@WTF} $BODY$; ALTER FUNCTION io.{@name}() OWNER TO {@owner};";
+	return trigger;
+}
+
+Sequence DBProvider::GetSequence(const ObjectData& data, const int start_value, const int minimum_value, const int maximum_value, const int increment, string cycle_option, string comment) const
+{
+	const string query_request =
+		"SELECT * FROM information_schema.sequences WHERE sequence_catalog = '"
+		+ current_connection_->GetParameters().database + "' AND"
+		" sequence_name = '" + data.name + "' AND"
+		" sequence_schema = '" + data.schema + "';";
+
+	const pqxx::result query_result = Query(query_request);
+	const auto row = query_result[0];
+
+	Sequence sequence = {};
+	sequence.sequence_catalog = row["sequence_catalog"].as<string>();
+	sequence.sequence_schema = row["sequence_schema"].as<string>();
+	sequence.sequence_name = row["sequence_name"].as<string>();
+	sequence.data_type = row["data_type"].as<string>();
+
+	sequence.start_value = to_string(start_value);
+	sequence.minimum_value = to_string(minimum_value);
+	sequence.maximum_value = to_string(maximum_value);
+	sequence.increment = to_string(increment);
+	sequence.cycle_option = move(cycle_option);
+
+	sequence.schema = sequence.sequence_schema; // Schema of object
+	sequence.name = sequence.sequence_name; // Name of object
+
+	using namespace ParsingTools;
+
+	sequence.query_create_seq =
+		Interpolate("CREATE SEQUENCE common.'${}'\n	CYCLE\n", sequence.name) +
+		Interpolate("	INCREMENT ${}\n", sequence.increment) +
+		Interpolate("	START ${}\n", sequence.start_value) +
+		Interpolate("	MINVALUE ${}\n", sequence.minimum_value) +
+		Interpolate("	MAXVALUE ${};\n\n", sequence.maximum_value) +
+		Interpolate("ALTER SEQUENCE common.'${}'\n", sequence.name) +
+		Interpolate("	OWNER TO ${};\n\n", current_connection_->GetParameters().username) +
+		Interpolate("COMMENT ON SEQUENCE common.'${}'\n", sequence.name) +
+		Interpolate("	IS '${}';", comment);
+
+	return sequence;
+}
+
+View DBProvider::GetView(const ObjectData& data) const
+{
+	const string query_request =
+		"SELECT * FROM information_schema.views WHERE"
+		" table_catalog = '" + current_connection_->GetParameters().database + "' AND"
+		" table_name = '" + data.name + "';";
+
+	const auto query_result = Query(query_request);
+	const auto row = query_result[0];
+
+	View view = {};
+	view.table_catalog = row["table_catalog"].as<string>();
+	view.table_schema = row["table_schema"].as<string>();
+	view.table_name = row["table_name"].as<string>();
+	view.check_option = row["check_option"].as<string>();
+	view.is_updatable = row["is_updatable"].as<string>();
+	view.is_insertable_into = row["is_insertable_into"].as<string>();
+	view.is_trigger_updatable = row["is_trigger_updatable"].as<string>();
+	view.is_trigger_deletable = row["is_trigger_deletable"].as<string>();
+	view.is_trigger_insertable_into = row["is_trigger_insertable_into"].as<string>();
+
+	view.view_text_definition = row["view_text_definition"].as<string>();
+
+	view.schema = view.table_schema; // Schema of object
+	view.name = view.table_name; // Name of object
+	return view;
+}
+
+Index DBProvider::GetIndex(const ObjectData& data)
+{
+	Index index = {};
+	return index;
+}
+
+string DBProvider::GetValue(const string& query_string, const string& column_name) const
+{
+	const auto query_result = Query(query_string);
+	const auto row = query_result.begin();
+	return row[column_name].c_str();
+}
+
+ScriptDefinition DBProvider::GetTableData(const ObjectData& data, vector<ScriptDefinition>& extra_script_data) const
+{
+	Table table = GetTable(data); // Getting information about object
+	string script_string;
+
+	// If table is not partition of some other table
+	if (!table.IsPartition())
 	{
 		// "CREATE TABLE" block - initialization of all table's columns
-		scriptString = "CREATE ";
+		script_string = "CREATE ";
 		if (table.type != "BASE TABLE")
 		{
-			scriptString += table.type = " ";
+			script_string += table.type = " ";
 		}
-		scriptString += "TABLE " + data.schema + "." + data.name + " (";
-		for (const Column& column : table.columns)
+		script_string += "TABLE " + data.schema + "." + data.name + " (";
+		for (const auto& column : table.columns)
 		{
-			scriptString += "\n" + column.name + " " + column.type;
-			if (!column.defaultValue.empty())
+			script_string += "\n" + column.name + " " + column.type;
+			if (!column.default_value.empty())
 			{
-				scriptString += " DEFAULT " + column.defaultValue;
+				script_string += " DEFAULT " + column.default_value;
 			}
-			if (!column.isNullable())
+			if (!column.IsNullable())
 			{
-				scriptString += " NOT NULL";
+				script_string += " NOT NULL";
 			}
-			scriptString += ",";
+			script_string += ",";
 		}
 
 		// Creation of constraints
-		for (Constraint constraint : table.constraints)
+		for (const Constraint& constraint : table.constraints)
 		{
-			scriptString += "\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
+			script_string += "\nCONSTRAINT " + constraint.name + " " + constraint.type + " ";
 			if (constraint.type == "PRIMARY KEY" || constraint.type == "UNIQUE")
 			{
-				scriptString += "(" + constraint.columnName + ")";
+				script_string += "(" + constraint.column_name + ")";
 			}
 			else if (constraint.type == "FOREIGN KEY")
 			{
-				scriptString += "(" + constraint.columnName + ")\n";
-				scriptString += "REFERENCES " + constraint.foreignTableSchema + "." + constraint.foreignTableName +
-					" (" + constraint.foreignColumnName + ") ";
-				if (constraint.matchOption == "NONE")
+				script_string += "(" + constraint.column_name + ")\n";
+				script_string += "REFERENCES " + constraint.foreign_table_schema + "." + constraint.foreign_table_name +
+					" (" + constraint.foreign_column_name + ") ";
+				if (constraint.match_option == "NONE")
 				{
-					scriptString += "MATCH SIMPLE";
+					script_string += "MATCH SIMPLE";
 				}
 				else
 				{
-					scriptString += constraint.matchOption;
+					script_string += constraint.match_option;
 				}
-				scriptString += "\nON UPDATE " + constraint.onUpdate;
-				scriptString += "\nON DELETE " + constraint.onDelete;
+				script_string += "\nON UPDATE " + constraint.on_update;
+				script_string += "\nON DELETE " + constraint.on_delete;
 			}
 			else if (constraint.type == "CHECK")
 			{
-				scriptString += constraint.checkClause;
+				script_string += constraint.check_clause;
 			}
-			scriptString += ",";
+			script_string += ",";
 		}
 
 		if (!table.columns.empty())
 		{
-			scriptString.pop_back(); // Removing an extra comma at the end
+			script_string.pop_back(); // Removing an extra comma at the end
 		}
-		scriptString += "\n)\n";
+		script_string += "\n)\n";
 
 		// "INHERITS" block
-		if (!table.inheritTables.empty())
+		if (!table.inherit_tables.empty())
 		{
-			scriptString += "INHERITS (\n";
-			scriptString += table.inheritTables[0];
-			for (int inheritIndex = 1; inheritIndex < table.inheritTables.size(); inheritIndex++)
+			script_string += "INHERITS (\n";
+			script_string += table.inherit_tables[0];
+			for (int inherit_index = 1; inherit_index < table.inherit_tables.size(); ++inherit_index)
 			{
-				scriptString += ",\n" + table.inheritTables[inheritIndex];
+				script_string += ",\n" + table.inherit_tables[inherit_index];
 			}
-			scriptString += "\n)\n";
+			script_string += "\n)\n";
 		}
 
 		// "PARTITION BY" block
-		if (!table.partitionExpression.empty())
+		if (!table.partition_expression.empty())
 		{
-			scriptString += "PARTITION BY " + table.partitionExpression + "\n";
+			script_string += "PARTITION BY " + table.partition_expression + "\n";
 		}
 
 		// "WITH" block to create storage parameters
-		scriptString += "WITH (\n" + table.options + "\n)\n";
+		script_string += "WITH (\n" + table.options + "\n)\n";
 
 		// "TABLESPACE" definition
-		scriptString += "TABLESPACE ";
+		script_string += "TABLESPACE ";
 		if (table.space.empty())
 		{
-			scriptString += "pg_default";
+			script_string += "pg_default";
 		}
 		else
 		{
-			scriptString += table.space;
+			script_string += table.space;
 		}
-		scriptString += ";\n\n";
+		script_string += ";\n\n";
 
 		// "OWNER TO" block to make the owner user
-		scriptString += "ALTER TABLE " + data.schema + "." + data.name + " OWNER TO " + table.owner + ";\n\n";
+		script_string += "ALTER TABLE " + data.schema + "." + data.name + " OWNER TO " + table.owner + ";\n\n";
 
 		// "COMMENT ON TABLE" block
 		if (!table.description.empty())
 		{
-			scriptString += "COMMENT ON TABLE " + data.schema + "." + data.name + "\nIS '" + table.description + "';\n\n";
+			script_string += "COMMENT ON TABLE " + data.schema + "." + data.name + "\nIS '" + table.description +
+				"';\n\n";
 		}
 
 		// "COMMENT ON COLUMN blocks
-		for (const Column& column : table.columns)
+		for (const auto& column : table.columns)
 		{
 			if (!column.description.empty())
 			{
-				scriptString += "COMMENT ON COLUMN " + data.schema + "." + data.name + "." + column.name + "\nIS '" + column.description + "';\n\n";
+				script_string += "COMMENT ON COLUMN " + data.schema + "." + data.name + "." + column.name + "\nIS '" +
+					column.description + "';\n\n";
 			}
 		}
 
 		// Indexes creation
-		for (const string &expression : table.indexCreateExpressions)
+		for (const auto& expression : table.index_create_expressions)
 		{
-			scriptString += expression + ";\n\n";
+			script_string += expression + ";\n\n";
 		}
 
 		// Getting all triggers in table
-		string queryString = string("SELECT t.trigger_catalog, t.trigger_schema, t.trigger_name, string_agg(t.event_manipulation, ' or ') ") +
+		string query_request = string(
+			"SELECT t.trigger_catalog, t.trigger_schema, t.trigger_name, string_agg(t.event_manipulation, ' or ') ")
+			+
 			"FROM information_schema.triggers t "
 			"WHERE t.event_object_catalog = 'Doors' "
 			"AND t.event_object_schema = '" + data.schema + "' "
 			"AND t.event_object_table = '" + data.name + "' "
 			"GROUP BY t.trigger_catalog, t.trigger_schema, t.trigger_name";
-		pqxx::result result = query(queryString);
-		for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+
+		auto query_result = Query(query_request);
+		for (auto row = query_result.begin(); row != query_result.end(); ++row)
 		{
 			ObjectData triggerObjectData(row["trigger_name"].c_str(), "trigger", row["trigger_schema"].c_str());
-			ScriptData triggerScriptData = getTriggerData(triggerObjectData);
-			extraScriptDatas.push_back(triggerScriptData);
+			ScriptDefinition triggerScriptData = GetTriggerData(triggerObjectData);
+			extra_script_data.push_back(triggerScriptData);
 		}
 	}
 	else
 	{
-		PartittionTable parentTable = table.getPartitionTable();
-		scriptString = "CREATE TABLE " + data.schema + "." + data.name +
-			" PARTITION OF " + parentTable.schema + "." + parentTable.name + "\n" +
-			parentTable.partitionExpression + ";\n";
+		PartitionTable parent_table = table.GetPartitionTable();
+		script_string = "CREATE TABLE " + data.schema + "." + data.name +
+			" PARTITION OF " + parent_table.schema + "." + parent_table.name + "\n" +
+			parent_table.partition_expression + ";\n";
 	}
 
-	ScriptData scriptData = ScriptData(data, scriptString);
+	auto script_data = ScriptDefinition(data, script_string);
+	script_data.name += ".sql";
+	return script_data;
+}
+
+ScriptDefinition DBProvider::GetFunctionData(const ObjectData& data) const
+{
+	Function function = GetFunction(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, "FUNCTION SCRIPT");
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
-ScriptData DBProvider::getFunctionData(const ObjectData& data) const
+ScriptDefinition DBProvider::GetViewData(const ObjectData& data) const
 {
-	ScriptData scriptData = ScriptData(data, "FUNCTION SCRIPT");
+	View view = GetView(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, "VIEW SCRIPT");
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
-ScriptData DBProvider::getViewData(const ObjectData& data) const
+ScriptDefinition DBProvider::GetSequenceData(const ObjectData& data) const
 {
-	ScriptData scriptData = ScriptData(data, "VIEW SCRIPT");
+	Sequence sequence = GetSequence(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, "SEQUENCE SCRIPT");
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
-ScriptData DBProvider::getSequenceData(const ObjectData& data) const
+ScriptDefinition DBProvider::GetTriggerData(const ObjectData& data) const
 {
-	ScriptData scriptData = ScriptData(data, "SEQUENCE SCRIPT");
+	Trigger trigger = GetTrigger(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, "TRIGGER SCRIPT");
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
-ScriptData DBProvider::getTriggerData(const ObjectData& data) const
+ScriptDefinition DBProvider::GetIndexData(const ObjectData& data)
 {
-	ScriptData scriptData = ScriptData(data, "TRIGGER SCRIPT");
+	Index index = GetIndex(data); // Getting information about object
+	ScriptDefinition scriptData = ScriptDefinition(data, "INDEX SCRIPT");
 	scriptData.name += ".sql";
 	return scriptData;
 }
 
-ScriptData DBProvider::getIndexData(const ObjectData& data) const
+bool DBProvider::InitializePartitionTable(Table& table, const ObjectData& data) const
 {
-	ScriptData scriptData = ScriptData(data, "INDEX SCRIPT");
-	scriptData.name += ".sql";
-	return scriptData;
-}
-
-bool DBProvider::initializePartitionTable(Table& table, const ObjectData& data)
-{
-	string queryString = ""
+	const string query_request = ""
 		"WITH recursive inh AS "
 		"( "
 		"SELECT i.inhrelid, i.inhparent, nsp.nspname AS parent_schema "
@@ -475,78 +704,81 @@ bool DBProvider::initializePartitionTable(Table& table, const ObjectData& data)
 		"AND c.relname = '" + data.name + "' "
 		"AND n.nspname = '" + data.schema + "' "
 		"AND c.relispartition = 'true'";
-	pqxx::result result = query(queryString);
 
-	if (result.empty())
+	const auto query_result = Query(query_request);
+	if (query_result.empty())
 	{
 		return false;
 	}
 
-	pqxx::result::const_iterator row = result.begin();
-	string parentSchema = row["parent_schema"].c_str();
-	string parentName = row["parent_name"].c_str();
-	string partitionExpression = row["partition_expression"].c_str();
-	table.setPartitionTable(parentSchema, parentName, partitionExpression);
+	const auto row = query_result.begin();
+	const string parent_schema = row["parent_schema"].c_str();
+	const string parent_name = row["parent_name"].c_str();
+	const string partition_expression = row["partition_expression"].c_str();
+	table.SetPartitionTable(parent_schema, parent_name, partition_expression);
 
 	return true;
 }
 
-void DBProvider::initializeType(Table& table, const ObjectData& data)
+void DBProvider::InitializeType(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT * FROM information_schema.tables t "
-		"WHERE t.table_schema = '" + data.schema + "' AND t.table_name = '" + data.name + "'";
-	table.type = getSingleValue(queryString, "table_type");
+	const string query_request = "SELECT * FROM information_schema.tables t "
+		"WHERE t.table_schema = '" + data.schema +
+		"' AND t.table_name = '" + data.name + "'";
+	table.type = GetValue(query_request, "table_type");
 }
 
-void DBProvider::initializeOwner(Table& table, const ObjectData& data)
+void DBProvider::InitializeOwner(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT * FROM pg_tables t where schemaname = '" + data.schema + "' and tablename = '" + data.name + "'";
-	table.owner = getSingleValue(queryString, "tableowner");
+	const string query_request =
+		"SELECT * FROM pg_tables t where schemaname = '" + data.schema +
+		"' and tablename = '" + data.name + "'";
+	table.owner = GetValue(query_request, "tableowner");
 }
 
-void DBProvider::initializeDescription(Table& table, const ObjectData& data)
+void DBProvider::InitializeDescription(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT obj_description('" + data.schema + "." + data.name + "'::regclass::oid)";
-	table.description = getSingleValue(queryString, "obj_description");
+	const string query_request =
+		"SELECT obj_description('" + data.schema + "." + data.name + "'::regclass::oid)";
+	table.description = GetValue(query_request, "obj_description");
 }
 
-void DBProvider::initializeOptions(Table& table, const ObjectData& data)
+void DBProvider::InitializeOptions(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
-	string queryValue = getSingleValue(queryString, "reloptions");
+	const string query_request = "SELECT * FROM pg_class WHERE relname = '" + data.name + "'";
+	auto query_value = GetValue(query_request, "reloptions");
 
 	// Getting OIDS value
-	string oidsExpression = "OIDS=false";
-	if (getSingleValue(queryString, "relhasoids") == "t")
+	string oids_expression = "OIDS=false";
+	if (GetValue(query_request, "relhasoids") == "t")
 	{
-		oidsExpression = "OIDS=true";
+		oids_expression = "OIDS=true";
 	}
-	table.options += oidsExpression;
 
-	// String feed in the required format
-	vector<string> expressionString;
-	if (!queryValue.empty())
+	table.options += oids_expression;
+
+	if (!query_value.empty())
 	{
-		queryValue.erase(0, 1); // Remove { symbol from beginning
-		queryValue.pop_back(); // Remove } symbol from ending
-		expressionString = ParsingTools::splitToVector(queryValue, ",");
-		for (int expressionIndex = 0; expressionIndex < expressionString.size(); expressionIndex++)
+		query_value.erase(0, 1); // Remove { symbol from beginning
+		query_value.pop_back(); // Remove } symbol from ending
+
+		vector<string> expression_string = ParsingTools::SplitToVector(query_value, ",");
+		for (const auto& expression_index : expression_string)
 		{
-			table.options += ",\n" + expressionString[expressionIndex];
+			table.options += ",\n" + expression_index;
 		}
 	}
-
 }
 
-void DBProvider::initializeSpace(Table& table, const ObjectData& data)
+void DBProvider::InitializeSpace(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT * FROM pg_tables WHERE tablename = '" + data.name + "' AND schemaname = '" + data.schema + "'";
-	table.space = getSingleValue(queryString, "tablespace");
+	const string query_request = "SELECT * FROM pg_tables WHERE tablename = '" + data.name + "' AND schemaname = '" + data.schema + "'";
+	table.space = GetValue(query_request, "tablespace");
 }
 
-void DBProvider::initializeColumns(Table& table, const ObjectData& data)
+void DBProvider::InitializeColumns(Table& table, const ObjectData& data) const
 {
-	string queryString = "select c.table_catalog, "
+	const string query_request = "select c.table_catalog, "
 		"c.table_schema, "
 		"c.table_name, "
 		"c.column_name, "
@@ -559,44 +791,46 @@ void DBProvider::initializeColumns(Table& table, const ObjectData& data)
 		"join pg_attribute pa on(pa.attrelid = pc.oid and pa.attname = c.column_name) "
 		"left join pg_catalog.pg_description pd on(pd.objoid = (c.table_schema || '.' || c.table_name)::regclass::oid and pd.objsubid = c.ordinal_position) "
 		"where 1 = 1 "
-		"and c.table_catalog = '" + currentConnection->getParameters().database + "' "
+		"and c.table_catalog = '" + current_connection_->GetParameters().database + "' "
 		"and c.table_schema = '" + data.schema + "' "
 		"and c.table_name = '" + data.name + "'";
 
-	pqxx::result result = query(queryString); // SQL query result, contains information in table format
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+	const auto query_result = Query(query_request); // SQL Query result, contains information in table format
+	for (auto row = query_result.begin(); row != query_result.end(); ++row)
 	{
 		Column column;
 		column.name = row["column_name"].c_str();
 		column.type = row["collumn_type"].c_str();
-		column.defaultValue = row["column_default"].c_str();
+		column.default_value = row["column_default"].c_str();
 		column.description = row["description"].c_str();
-		column.setNullable(row["is_nullable"].c_str());
+		column.SetNullable(row["is_nullable"].c_str());
 
 		table.columns.push_back(column);
 	}
 }
 
-void DBProvider::initializePartitionExpression(Table& table, const ObjectData& data)
+void DBProvider::InitializePartitionExpression(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT c.relnamespace::regnamespace::text, c.relname, pg_get_partkeydef(c.oid) AS partition_expression "
+	const string query_request = "SELECT c.relnamespace::regnamespace::text, c.relname, pg_get_partkeydef(c.oid) AS partition_expression "
 		"FROM   pg_class c "
 		"WHERE  1 = 1 "
 		"AND c.relkind = 'p' "
 		"AND c.relname = '" + data.name + "' "
 		"AND  c.relnamespace::regnamespace::text = '" + data.schema + "'";
-	pqxx::result result = query(queryString);
-	if (result.size() != 0)
+
+	const auto query_result = Query(query_request);
+
+	if (!query_result.empty())
 	{
-		pqxx::result::const_iterator row = result.begin();
-		table.partitionExpression = row["partition_expression"].c_str();
+		const auto row = query_result.begin();
+		table.partition_expression = row["partition_expression"].c_str();
 	}
 
 }
 
-void DBProvider::initializeConstraints(Table& table, const ObjectData& data)
+void DBProvider::InitializeConstraints(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT "
+	const string query_request = "SELECT "
 		"*, "
 		"ccu.table_schema AS foreign_table_schema, "
 		"ccu.table_name AS foreign_table_name, "
@@ -617,29 +851,30 @@ void DBProvider::initializeConstraints(Table& table, const ObjectData& data)
 		"WHERE tc.table_name = '" + data.name + "' "
 		"AND tc.table_schema = '" + data.schema + "' "
 		"AND COALESCE(cc.check_clause, '') NOT ILIKE '%IS NOT NULL%' ";
-	pqxx::result result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+
+	const auto query_result = Query(query_request);
+
+	for (auto row = query_result.begin(); row != query_result.end(); ++row)
 	{
 		Constraint constraint;
 		constraint.type = row["constraint_type"].c_str();
 		constraint.name = row["constraint_name"].c_str();
-		constraint.columnName = row["column_name"].c_str();
-		constraint.checkClause = row["check_clause"].c_str();
-		constraint.foreignTableSchema = row["foreign_table_schema"].c_str();
-		constraint.foreignTableName = row["foreign_table_name"].c_str();
-		constraint.foreignColumnName = row["foreign_column_name"].c_str();
-		constraint.matchOption = row["match_option"].c_str();
-		constraint.onDelete = row["delete_rule"].c_str();
-		constraint.onUpdate = row["update_rule"].c_str();
+		constraint.column_name = row["column_name"].c_str();
+		constraint.check_clause = row["check_clause"].c_str();
+		constraint.foreign_table_schema = row["foreign_table_schema"].c_str();
+		constraint.foreign_table_name = row["foreign_table_name"].c_str();
+		constraint.foreign_column_name = row["foreign_column_name"].c_str();
+		constraint.match_option = row["match_option"].c_str();
+		constraint.on_delete = row["delete_rule"].c_str();
+		constraint.on_update = row["update_rule"].c_str();
 
 		table.constraints.push_back(constraint);
 	}
-
 }
 
-void DBProvider::initializeInheritTables(Table& table, const ObjectData& data)
+void DBProvider::InitializeInheritTables(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT "
+	const string query_request = "SELECT "
 		"nmsp_parent.nspname AS parent_schema, "
 		"parent.relname      AS parent_name, "
 		"nmsp_child.nspname  AS child_schema, "
@@ -652,74 +887,38 @@ void DBProvider::initializeInheritTables(Table& table, const ObjectData& data)
 		"WHERE child.relispartition = 'false' "
 		"AND child.relname = '" + data.name + "' "
 		"AND nmsp_child.nspname = '" + data.schema + "'";
-	pqxx::result result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+
+	const auto result = Query(query_request);
+	for (auto row = result.begin(); row != result.end(); ++row)
 	{
-		table.inheritTables.push_back(row["parent_name"].c_str());
+		table.inherit_tables.emplace_back(row["parent_name"].c_str());
 	}
 }
 
-void DBProvider::initializeIndexExpressions(Table & table, const ObjectData & data)
+void DBProvider::InitializeIndexExpressions(Table& table, const ObjectData& data) const
 {
-	string queryString = "SELECT * FROM pg_indexes "
+	const string query_request = "SELECT * FROM pg_indexes "
 		"WHERE 1 = 1 "
 		"AND schemaname = '" + data.schema + "' "
 		"AND tablename = '" + data.name + "'";
-	pqxx::result result = query(queryString);
-	for (pqxx::result::const_iterator row = result.begin(); row != result.end(); ++row)
+
+	const auto query_result = Query(query_request);
+	for (auto row = query_result.begin(); row != query_result.end(); ++row)
 	{
-		table.indexCreateExpressions.push_back(row["indexdef"].c_str());
+		table.index_create_expressions.emplace_back(row["indexdef"].c_str());
 	}
 }
 
-void printObjectsData(const pqxx::result& queryResult)
+void PrintObjectsData(const pqxx::result& query_result)
 {
 	// Iterate over the rows in our result set.
 	// Result objects are containers similar to vector and such.
-	for (pqxx::result::const_iterator row = queryResult.begin();
-		 row != queryResult.end();
+	for (auto row = query_result.begin();
+		 row != query_result.end();
 		 ++row)
 	{
-		cout
-			<< row["obj_schema"].as<string>() << "\t"
+		cout << row["obj_schema"].as<string>() << "\t"
 			<< row["obj_name"].as<string>() << "\t"
-			<< row["obj_type"].as<string>()
-			<< endl;
+			<< row["obj_type"].as<string>() << endl;
 	}
-}
-
-bool Column::isNullable() const
-{
-	return this->nullable_;
-}
-
-void Column::setNullable(string value)
-{
-	transform(value.begin(), value.end(), value.begin(), tolower);
-	if (value == "yes")
-	{
-		this->nullable_ = true;
-	}
-	else
-	{
-		this->nullable_ = false;
-	}
-}
-
-void Table::setPartitionTable(string schema, string name, string partitionExpression)
-{
-	this->_partitionTable.name = std::move(name);
-	this->_partitionTable.schema = std::move(schema);
-	this->_partitionTable.partitionExpression = std::move(partitionExpression);
-	this->_isPartition = true;
-}
-
-auto Table::getPartitionTable() const -> PartittionTable
-{
-	return _partitionTable;
-}
-
-bool Table::isPartition() const
-{
-	return _isPartition;
 }

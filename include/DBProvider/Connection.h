@@ -16,18 +16,22 @@ namespace DBConnection
 
 		explicit Connection(std::string& pgpass_str);
 
+		bool IsConnectionSet() override;
+
+		bool IsOpen() override;
+
 		~Connection();
 
-		void setConnection(std::string& pgpass_str) override;
+		void SetConnection(std::string& pgpass_str) override;
 
-		void setConnection();
+		void SetConnection();
 
-		LoginData getParameters() override;
+		LoginData GetParameters() override;
 
-		std::shared_ptr<pqxx::connection_base> getConnection() override;
+		std::shared_ptr<pqxx::connection_base> GetConnection() override;
 
 	private:
-		void closeConnection() override;
+		void CloseConnection() override;
 	};
 }
 

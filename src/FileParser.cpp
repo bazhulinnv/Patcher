@@ -19,7 +19,7 @@ bool FileParser::checkInputCorrect(std::string nameOfFile) {
 		std::getline(dependencies, buffer);
 
 		if (!buffer.empty()) {
-			std::vector<std::string> parameters = ParsingTools::splitToVector(buffer, " ");
+			std::vector<std::string> parameters = ParsingTools::SplitToVector(buffer, " ");
 			if (parameters.size() != 3) {
 				return false;
 			}		

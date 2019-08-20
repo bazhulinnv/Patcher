@@ -14,24 +14,24 @@ namespace DBConnection
 
 		virtual ~ConnectionBase();
 
-		virtual void setConnection(std::string& parameters) = 0;
+		virtual void SetConnection(std::string& parameters) = 0;
 
-		virtual bool isConnectionSet();
+		virtual bool IsConnectionSet();
 
-		virtual bool isOpen();
+		virtual bool IsOpen();
 
-		virtual LoginData getParameters() = 0;
+		virtual LoginData GetParameters() = 0;
 
-		virtual std::shared_ptr<pqxx::connection_base> getConnection() = 0;
+		virtual std::shared_ptr<pqxx::connection_base> GetConnection() = 0;
 
 	protected:
-		bool parametersSet = false;
-		bool connectionSet = false;
-		LoginData connectionParams;
-		std::shared_ptr<pqxx::connection_base> dbConnection;
+		bool parameters_set_ = false;
+		bool connection_set_ = false;
+		LoginData connection_params_;
+		std::shared_ptr<pqxx::connection_base> db_connection_;
 
 	private:
-		virtual void closeConnection() = 0;
+		virtual void CloseConnection() = 0;
 	};
 }
 

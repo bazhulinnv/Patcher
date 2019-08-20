@@ -42,19 +42,19 @@ void PatchBuilder::buildPatch(const string directory)
 		throw exception("Incorrect patch directory");
 	}
 
-	// Creating log file
+	// Creating LogWithLevel file
 	string logDirectory = (directory + "/" + LOG_FOLDER);
 	_mkdir(&logDirectory[0]);
 	logFileFullName = logDirectory + "/" + LOG_NAME + getCurrentDateTime() + LOG_FORMAT;
 
 	// Executing all methods for patch building
 	ofstream output(directory + "/" + DEPENDENCY_LIST_NAME); // Dependency list directory
-	const objectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
-	scriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
+	const ObjectDataVectorType patchListVector = getPatchListVector(); // Getting vector that contains all patch objects
+	ScriptDataVectorType scriptDataVector = getScriptDataVector(patchListVector); // Getting all scripts created by DBProvider
 	createObjectList(scriptDataVector, directory); // Creating of ObjectList
 	createInstallPocket(directory, scriptDataVector); // Creaing all instalation components
 	removeComments(scriptDataVector);
-	objectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
+	ObjectDataVectorType objectDataVector = getObjectDataVector(); // Getting vector that contains all objects of source databse
 	remove(objectDataVector, patchListVector); // Removing path objects from objectDataVector
 
 	// Writing of DependencyList
@@ -64,7 +64,7 @@ void PatchBuilder::buildPatch(const string directory)
 	for (const ObjectData objectData : objectDataVector)
 	{
 		// Checking all objects for the presence in scripts
-		for (const ScriptData scriptData : scriptDataVector)
+		for (const ScriptDefinition scriptData : scriptDataVector)
 		{
 			if (isContains(objectData, scriptData.text))
 			{
@@ -100,10 +100,10 @@ void PatchBuilder::buildPatch(const string directory)
 	addLog(message);
 }
 
-scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorType &objectDataVector) const
+ScriptDataVectorType PatchBuilder::getScriptDataVector(const ObjectDataVectorType &objectDataVector) const
 {
 	// Not implemented
-	scriptDataVectorType scriptDataVector;
+	ScriptDataVectorType scriptDataVector;
 	for (ObjectData objectData : objectDataVector)
 	{
 		if (objectData.schema == "script")
@@ -117,19 +117,19 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 			objectData.name.erase(0, slashPos+1);
 
 			// Add script in vector
-			const ScriptData scriptData(objectData, text);
+			const ScriptDefinition scriptData(objectData, text);
 			scriptDataVector.push_back(scriptData);
 		}
 		else
 		{
 			// Getting script data from DBProvider
-			vector<ScriptData> extraScriptDatas; // Vector for 
-			const ScriptData scriptData = provider->getScriptData(objectData, extraScriptDatas);
+			vector<ScriptDefinition> extraScriptDatas; // Vector for 
+			const ScriptDefinition scriptData = provider->GetScriptData(objectData, extraScriptDatas);
 			scriptDataVector.push_back(scriptData);
 
 			if (!extraScriptDatas.empty())
 			{
-				for (const ScriptData &scriptData : extraScriptDatas)
+				for (const ScriptDefinition &scriptData : extraScriptDatas)
 				{
 					scriptDataVector.push_back(scriptData);
 				}
@@ -142,10 +142,10 @@ scriptDataVectorType PatchBuilder::getScriptDataVector(const objectDataVectorTyp
 	return scriptDataVector;
 }
 
-objectDataVectorType PatchBuilder::getObjectDataVector() const
+ObjectDataVectorType PatchBuilder::getObjectDataVector() const
 {
 	// Getting all source database objects
-	objectDataVectorType objectVector = provider->getObjects();
+	ObjectDataVectorType objectVector = provider->GetObjects();
 
 	const string message = "Object vector created\n";
 	cout << message;
@@ -154,7 +154,7 @@ objectDataVectorType PatchBuilder::getObjectDataVector() const
 	return objectVector;
 }
 
-void PatchBuilder::createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const
+void PatchBuilder::createInstallPocket(const string directory, const ScriptDataVectorType &scriptDataVector) const
 {
 	ofstream outputInstallScriptBat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
 	ofstream outputInstallScriptSh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
@@ -167,7 +167,7 @@ void PatchBuilder::createInstallPocket(const string directory, const scriptDataV
 	string outputOperator = ">";
 
 	// Creating sql files for all scrpits and writing install script
-	for (const ScriptData data : scriptDataVector)
+	for (const ScriptDefinition data : scriptDataVector)
 	{
 		// Creating directory named as type of script
 		_mkdir(&(directory + "/" + data.schema)[0]);
@@ -236,10 +236,10 @@ bool PatchBuilder::isContains(const ObjectData data, const string &scriptText)
 	}
 }
 
-objectDataVectorType PatchBuilder::getPatchListVector() const
+ObjectDataVectorType PatchBuilder::getPatchListVector() const
 {
 	// Getting all patch objects
-	objectDataVectorType patchListVector;
+	ObjectDataVectorType patchListVector;
 	ifstream input(patchListFullName);
 	if (input.is_open())
 	{
@@ -290,7 +290,7 @@ objectDataVectorType PatchBuilder::getPatchListVector() const
 	}
 }
 
-void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVector, const string directory) const
+void PatchBuilder::createObjectList(const ScriptDataVectorType & objectDataVector, const string directory) const
 {
 	ofstream output(directory + "/" + OBJECT_LIST_NAME);
 	for (ObjectData data : objectDataVector)
@@ -309,7 +309,7 @@ void PatchBuilder::createObjectList(const scriptDataVectorType & objectDataVecto
 	}
 }
 
-void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second)
+void PatchBuilder::remove(ObjectDataVectorType &objectDataVector_first, const ObjectDataVectorType &objectDataVector_second)
 {
 	// Removing elements of second vector from first vector
 	for (size_t index = 0; index < objectDataVector_first.size(); index++)
@@ -326,10 +326,10 @@ void PatchBuilder::remove(objectDataVectorType &objectDataVector_first, const ob
 	}
 }
 
-void PatchBuilder::removeComments(scriptDataVectorType &scriptDataVector)
+void PatchBuilder::removeComments(ScriptDataVectorType &scriptDataVector)
 {
 	// Removing of all commits
-	for (ScriptData &data : scriptDataVector)
+	for (ScriptDefinition &data : scriptDataVector)
 	{
 		// "--" comments removing
 		string &text = data.text;
@@ -447,7 +447,7 @@ string PatchBuilder::getCurrentDateTime()
 
 void PatchBuilder::addLog(const string message) const
 {
-	// Writing message in log file
+	// Writing message in LogWithLevel file
 	ofstream output(logFileFullName, std::ios_base::app);
 	output << message;
 	output.close();

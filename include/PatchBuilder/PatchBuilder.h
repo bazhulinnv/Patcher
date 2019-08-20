@@ -25,9 +25,9 @@ constexpr auto INSTALL_SCRIPT_NAME_SH = "Install.sh"; // Name of install script 
 constexpr auto TEMPLATES_FILE_NAME = "Templates.ini"; // Name of file with tamplates for searching dependencyes
 constexpr auto TEMP_ERROR_FILE_NAME = "tempError.txt"; // Name of file with errors of installation script
 constexpr auto TEMP_INFO_FILE_NAME = "tempInfo.txt"; // Name of file with information of installation script
-constexpr auto LOG_NAME = "PatchBuilder_"; // Begining of the log file name
+constexpr auto LOG_NAME = "PatchBuilder_"; // Begining of the LogWithLevel file name
 constexpr auto LOG_FOLDER = "logs"; // Folder name for logs
-constexpr auto LOG_FORMAT = ".log"; // Folder name for logs
+constexpr auto LOG_FORMAT = ".LogWithLevel"; // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
 using namespace std;
@@ -39,7 +39,7 @@ public:
   PatchBuilder(const string pPatchListFullName, DBProvider &pProvider, const string pTemplatesFullName = ""); // Constructor
   ~PatchBuilder(); // Distructor
   void buildPatch(const string directory); // Build patch in choosen directory
-  void addLog(const string message) const; // Add message in log file
+  void addLog(const string message) const; // Add message in LogWithLevel file
 
 private:
 	string patchListFullName; // Directory and name of PatchList
@@ -48,14 +48,14 @@ private:
 	DBProvider *provider; // Ptr to provider class
 	bool isWithErrors = false; // Become true after some error
 	bool isWithWarnings = false; // Become true after some warning
-	scriptDataVectorType getScriptDataVector(const objectDataVectorType &objectDataVector) const;// Getting vector of scripts, created by DBProvider
-	objectDataVectorType getObjectDataVector() const; // Getting vector of objects from source database
-	void createInstallPocket(const string directory, const scriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file
+	ScriptDataVectorType getScriptDataVector(const ObjectDataVectorType &objectDataVector) const;// Getting vector of scripts, created by DBProvider
+	ObjectDataVectorType getObjectDataVector() const; // Getting vector of objects from source database
+	void createInstallPocket(const string directory, const ScriptDataVectorType &scriptDataVector) const; // Creating sql files for scripts from scriptDataVector and creating install script file
 	bool isContains(const ObjectData data, const string &scriptText); // Returns true, if the object was found in the script
-	objectDataVectorType getPatchListVector() const; // Getting vector of objects that contains a patch
-	void createObjectList(const scriptDataVectorType &objectDataVector, const string directory) const; // Creating of ObjectList
-	static void remove(objectDataVectorType &objectDataVector_first, const objectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
-	static void removeComments(scriptDataVectorType &scriptDataVector); // Removing all commits from script text
+	ObjectDataVectorType getPatchListVector() const; // Getting vector of objects that contains a patch
+	void createObjectList(const ScriptDataVectorType &objectDataVector, const string directory) const; // Creating of ObjectList
+	static void remove(ObjectDataVectorType &objectDataVector_first, const ObjectDataVectorType &objectDataVector_second); // Removing elements of second vector from first vector
+	static void removeComments(ScriptDataVectorType &scriptDataVector); // Removing all commits from script text
 	regex createExpression(const ObjectData &data); // Creating regular expression for data from params
 	static string getCurrentDateTime(); // Get current date
 };

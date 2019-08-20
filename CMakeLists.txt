@@ -59,6 +59,7 @@ set(patcher_INCS_prov
   include/Shared/Logger.h
   include/Shared/TextTable.h
   include/Shared/ParsingTools.h
+  include/Shared/DBObjects.h
   include/DBProvider/LoginData.h
   include/DBProvider/ConnectionBase.h
   include/DBProvider/Connection.h
@@ -71,6 +72,7 @@ set(patcher_SRCS_prov
   src/Logger.cpp
   src/TextTable.cpp
   src/ParsingTools.cpp
+  src/DBObjects.cpp
   src/TestUtility.cpp
   src/LoginData.cpp
   src/ConnectionBase.cpp
@@ -93,11 +95,12 @@ set(patcher_SRCS_bld
 set(patcher_INCS_inst
 	include/Shared/Logger.h
 	include/Shared/ParsingTools.h
+	include/Shared/DBObjects.h
 	include/DBProvider/DBProvider.h
 	include/PatchInstaller/DependenciesChecker.h
 	include/PatchInstaller/FileParser.h
 	include/PatchInstaller/PatchInstaller.h
-  ) #вообще стоит собирать все же проект PatchInstaller_exe (ну просто он ведь генерит мне нужный ехе для gui)
+  )
 
 set(patcher_SRCS_inst
 	src/Logger.cpp

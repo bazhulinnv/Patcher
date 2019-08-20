@@ -1,17 +1,21 @@
+#ifndef TESTUTILITY_H
+#define TESTUTILITY_H
+
 #include "DBProvider/DBProvider.h"
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace TestUtility
 {
-	void runTest(const string& testInfo, function<bool(DBProvider*)> sut, DBProvider* dbProv);
+	void RunTest(const string& test_info, function<bool(DBProvider*)> sut, DBProvider* db_prov);
 
-	void runTest(const string& testInfo, function<bool(shared_ptr<DBProvider>)> sut, shared_ptr<DBProvider> dbProv);
+	void RunTest(const string& test_info, const function<bool(shared_ptr<DBProvider>)>& sut, shared_ptr<DBProvider> db_prov);
 
-	void runAll(vector<pair<const string, function<bool(DBProvider*)>>> providerTests, DBProvider* dbProv);
+	void RunAll(const vector<pair<const string, function<bool(DBProvider*)>>>& provider_tests, DBProvider* db_prov);
 
-	void runAll(vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTests,
-				shared_ptr<DBProvider> dbProv);
+	void RunAll(const vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>>& provider_tests, const shared_ptr<DBProvider>& db_prov);
 
-	void runSimpleTests(vector<pair<const string, function<bool()>>> simpleTests);
+	void RunSimpleTests(const vector<pair<const string, function<bool()>>>& simple_tests);
 }
+
+#endif // TESTUTILITY_H

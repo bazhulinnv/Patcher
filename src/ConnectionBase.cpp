@@ -2,20 +2,20 @@
 
 DBConnection::ConnectionBase::ConnectionBase()
 {
-	dbConnection = std::make_shared<pqxx::lazyconnection>();
+	db_connection_ = std::make_shared<pqxx::lazyconnection>();
 }
 
 DBConnection::ConnectionBase::~ConnectionBase()
 {
-	dbConnection.reset();
+	db_connection_.reset();
 }
 
-bool DBConnection::ConnectionBase::isConnectionSet()
+bool DBConnection::ConnectionBase::IsConnectionSet()
 {
-	return connectionSet && parametersSet;
+	return connection_set_ && parameters_set_;
 }
 
-bool DBConnection::ConnectionBase::isOpen()
+bool DBConnection::ConnectionBase::IsOpen()
 {
-	return dbConnection->is_open();
+	return db_connection_->is_open();
 }

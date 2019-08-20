@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
 	PatchInstaller patchInstaller;
 	bool returnCode = false;
 	if (argv[1] == nullptr) {
-		// If user did not enter connection parameters
-		std::cerr << "Please, enter database connection parameters. \n";
+		// If user did not enter Connection parameters
+		std::cerr << "Please, enter database Connection parameters. \n";
 		printNecessaryParameters();
 		returnCode = true;
 	}
@@ -86,8 +86,8 @@ int main(int argc, char* argv[]) {
 			delete dbProvider;
 		}
 		catch (std::exception e) {
-			//Incorrect connection parameters were entered - incorrect port, host etc.
-			std::cerr << "Please, enter correct database connection parameters. \n";
+			//Incorrect Connection parameters were entered - incorrect port, host etc.
+			std::cerr << "Please, enter correct database Connection parameters. \n";
 			printNecessaryParameters();
 			returnCode = true;
 		}

@@ -1,9 +1,12 @@
-#include "DBProvider/DBProvider.h"
 #include "Shared/Logger.h"
 #include "Shared/TestUtility.h"
 #include "Shared/TextTable.h"
+#include "Shared/ParsingTools.h"
+
+#include "DBProvider/DBProvider.h"
 #include "DBProvider/ConnectionPool.h"
 #include "DBProvider/Connection.h"
+
 #include <pqxx/pqxx>
 #include <iostream>
 #include <memory>
@@ -12,27 +15,27 @@
 
 using namespace std;
 
-bool test_sequenceExists(DBProvider* dbProv)
+bool Test_sequenceExists(DBProvider* db_prov)
 {
-	return dbProv->sequenceExists("public", "math_blob_id_seq");
+	return db_prov->SequenceExists("public", "math_blob_id_seq");
 }
 
-bool test_tableExists(DBProvider* dbProv)
+bool Test_tableExists(DBProvider* db_prov)
 {
-	return dbProv->tableExists("public", "errors");
+	return db_prov->TableExists("public", "errors");
 }
 
-bool test_PrintTableList(DBProvider* dbProv)
+bool Test_PrintTableList(DBProvider* db_prov)
 {
-	pqxx::result queryResult;
+	pqxx::result query_result;
 
-	string requestSQL = "SELECT * FROM pg_catalog.pg_tables "
+	const string request_sql = "SELECT * FROM pg_catalog.pg_tables "
 		"WHERE schemaname != 'pg_catalog' "
 		"AND schemaname != 'information_schema'; ";
 	try
 	{
 		// Get all tables from database
-		queryResult = dbProv->query(requestSQL);
+		query_result = db_prov->Query(request_sql);
 	}
 	catch (const exception& e)
 	{
@@ -40,7 +43,7 @@ bool test_PrintTableList(DBProvider* dbProv)
 		return false;
 	}
 
-	if (queryResult.empty())
+	if (query_result.empty())
 	{
 		return false;
 	}
@@ -51,8 +54,8 @@ bool test_PrintTableList(DBProvider* dbProv)
 	result.endOfRow();
 
 	cout << "\nList of all available tables:" << endl;
-	for (pqxx::result::const_iterator row = queryResult.begin();
-		 row != queryResult.end(); ++row)
+	for (pqxx::result::const_iterator row = query_result.begin();
+		 row != query_result.end(); ++row)
 	{
 		result.add(row["tablename"].as<string>(), green);
 		result.endOfRow();
@@ -63,44 +66,97 @@ bool test_PrintTableList(DBProvider* dbProv)
 	return true;
 }
 
-bool test_GetFunctions(DBProvider* dbProv)
+bool Test_GetFunctions(DBProvider* db_prov)
 {
 	return false;
 }
 
-bool test_GetFunctionParameters(DBProvider* dbProv)
+bool Test_GetFunctionParameters(DBProvider* db_prov)
 {
 	return false;
 }
 
-bool test_GetTriggers(DBProvider* dbProv)
+bool Test_GetTriggers(DBProvider* db_prov)
 {
 	return false;
 }
 
-bool test_PrintFunctions(DBProvider* dbProv)
+bool Test_PrintFunctions(DBProvider* db_prov)
+{
+	std::string query_request = "SELECT r.routine_name ,"
+		" array_to_string(p.proargnames, ', ', '*'),"
+		" pg_get_functiondef(p.oid)"
+		" FROM information_schema.routines r, pg_catalog.pg_proc p"
+		" WHERE r.external_language = 'PLPGSQL'"
+		" AND r.specific_name = p.proname || '_' || p.oid;";
+
+	// Init text table
+	TextTable text_table('-', '|', '+');
+
+	auto query_result = db_prov->Query(query_request);
+
+	vector<string> func_names;
+	vector<string> func_params;
+
+	map<string, vector<string>> result;
+
+	for (pqxx::result::const_iterator row = query_result.begin();
+		 row != query_result.end();
+		 ++row)
+	{
+		auto f_name = row["routine_name"].as<string>();
+		func_names.emplace_back(f_name);
+
+		std::string f_params;
+
+		bool lala = row["array_to_string"].is_null();
+		if (!lala)
+		{
+			f_params = row["array_to_string"].as<string>();
+		}
+
+		func_params.emplace_back(f_params);
+
+		auto prams_vec = ParsingTools::SplitToVector(f_params, ", ");
+
+		result[f_name] = prams_vec;
+	}
+
+	text_table.add("  NAME  ");
+	text_table.add("    PARAMS    ");
+	text_table.endOfRow();
+
+	for (auto& item : result)
+	{
+		auto str = ParsingTools::JoinAsString(item.second, ", ");
+		text_table.add(item.first, red);
+		text_table.add(str, yellow);
+		text_table.endOfRow();
+	}
+
+	text_table.setAlignment(2, TextTable::Alignment::RIGHT);
+	cout << text_table;
+	return !result.empty();
+}
+
+bool Test_PrintFunctionParameters(DBProvider* db_prov)
 {
 	return false;
 }
 
-bool test_PrintFunctionParameters(DBProvider* dbProv)
+bool Test_PrintTriggers(DBProvider* db_prov)
 {
 	return false;
 }
 
-bool test_PrintTriggers(DBProvider* dbProv)
+bool Test_PrintObjectsAsTable(DBProvider* db_prov)
 {
-	return false;
-}
-
-bool test_PrintObjectsAsTable(DBProvider* dbProv)
-{
-	vector<ObjectData> objs;
+	vector<ObjectData> objects;
 
 	try
 	{
 		// Get all objects from database
-		objs = dbProv->getObjects();
+		objects = db_prov->GetObjects();
 	}
 	catch (const exception& e)
 	{
@@ -108,14 +164,14 @@ bool test_PrintObjectsAsTable(DBProvider* dbProv)
 		return false;
 	}
 
-	if (objs.empty())
+	if (objects.empty())
 	{
 		cout << "\nCould not get objects from database." << endl;
 		cout << "[No exception thrown]" << endl;
 		return false;
 	}
 
-	// Print objs using TextTable
+	// Print objects using TextTable
 	TextTable result('-', '|', '+');
 	result.add("NAME");
 	result.add("TYPE");
@@ -123,16 +179,16 @@ bool test_PrintObjectsAsTable(DBProvider* dbProv)
 	result.add("PARAMS");
 	result.endOfRow();
 
-	for (auto i = 0; i < objs.size(); ++i)
+	for (auto& object : objects)
 	{
-		result.add(objs[i].name);
-		result.add(objs[i].type);
-		result.add(objs[i].schema);
+		result.add(object.name);
+		result.add(object.type);
+		result.add(object.schema);
 
 		string acc = "";
-		if (!objs[i].params.empty())
+		if (!object.params.empty())
 		{
-			for (const auto& param : objs[i].params)
+			for (const auto& param : object.params)
 			{
 				acc += param + " ";
 			}
@@ -147,7 +203,7 @@ bool test_PrintObjectsAsTable(DBProvider* dbProv)
 	return true;
 }
 
-bool test_PqxxConnection()
+bool Test_PqxxConnection()
 {
 	try
 	{
@@ -173,26 +229,26 @@ bool test_PqxxConnection()
 	return true;
 }
 
-void runConnectionPool(shared_ptr<DBConnection::ConnectionPool> pgPool, size_t id)
+void RunConnectionPool(const shared_ptr<DBConnection::ConnectionPool>& pg_pool, size_t id)
 {
-	auto conn = pgPool->connection();
-	string requestSQL = "SELECT * FROM pg_catalog.pg_tables "
+	auto conn = pg_pool->GetConnectionFromPool();
+	string request_sql = "SELECT * FROM pg_catalog.pg_tables "
 		"WHERE schemaname != 'pg_catalog' "
 		"AND schemaname != 'information_schema'; ";
 	try
 	{
-		// create a transaction from a connection
-		pqxx::work W(reinterpret_cast<pqxx::connection&>(*conn->getConnection()));
-		pqxx::result R = W.exec(requestSQL);
+		// create a transaction from a GetConnectionFromPool
+		pqxx::work work(reinterpret_cast<pqxx::connection&>(*conn->GetConnection()));
+		pqxx::result query_result = work.exec(request_sql);
 
-		// Print objs using TextTable
+		// Print objects using TextTable
 		TextTable result('-', '|', '+');
 		result.add(" TABLE NAME ");
 		result.endOfRow();
 
 		cout << "\nList of all available tables:" << endl;
-		for (pqxx::result::const_iterator row = R.begin();
-			 row != R.end(); ++row)
+		for (pqxx::result::const_iterator row = query_result.begin();
+			 row != query_result.end(); ++row)
 		{
 			result.add(row["tablename"].as<string>(), green);
 			result.endOfRow();
@@ -201,29 +257,29 @@ void runConnectionPool(shared_ptr<DBConnection::ConnectionPool> pgPool, size_t i
 		result.setAlignment(2, TextTable::Alignment::RIGHT);
 		cout << result;
 		cout << "ID: " << id << endl;
-		W.commit();
+		work.commit();
 
-		// free connection when things done
-		pgPool->freeConnection(conn);
+		// free GetConnectionFromPool when things done
+		pg_pool->FreeConnection(conn);
 	}
 	catch (const exception& e)
 	{
 		cerr << e.what() << endl;
-		// free connection when error kicks in
-		pgPool->freeConnection(conn);
+		// free GetConnectionFromPool when error kicks in
+		pg_pool->FreeConnection(conn);
 	}
 }
 
-void testConnectionPool(string& pgLogin)
+void TestConnectionPool_MultiThreading(string& pg_login)
 {
-	auto pgPool = make_shared<DBConnection::ConnectionPool>(pgLogin);
+	auto pg_pool = make_shared<DBConnection::ConnectionPool>(pg_login);
 	vector<shared_ptr<thread>> vec;
 
 	// number of thread here should be number of thread available in your thread pool waiting for incoming job to execute
 	// imagine X threads are waiting to execute task
 	for (size_t i = 0; i < 10; i++)
 	{
-		vec.push_back(make_shared<thread>(thread(runConnectionPool, pgPool, i)));
+		vec.push_back(make_shared<thread>(thread(RunConnectionPool, pg_pool, i)));
 	}
 
 	for (auto& i : vec)
@@ -232,36 +288,58 @@ void testConnectionPool(string& pgLogin)
 	}
 }
 
-bool test_Logger()
+void PrintAllFunctionParams(DBProvider* db_prov)
+{
+	const auto query_result = db_prov->Query("SELECT r.routine_name, array_to_string(p.proargnames, ', ', '*')\
+								   FROM information_schema.routines r, pg_catalog.pg_proc p\
+								   WHERE r.external_language = 'PLPGSQL'  AND r.routine_name = p.proname AND r.specific_name = p.proname || '_' || p.oid;");
+	// Print objects using TextTable
+	TextTable text_table('-', '|', '+');
+
+	cout << blue << "\nList of all function parameters:" << reset << endl;
+	for (pqxx::result::const_iterator row = query_result.begin();
+		 row != query_result.end();
+		 ++row)
+	{
+		text_table.add(row["routine_name"].c_str(), red);
+		text_table.add(row["array_to_string"].c_str(), yellow);
+		text_table.endOfRow();
+	}
+
+	text_table.setAlignment(2, TextTable::Alignment::RIGHT);
+	cout << text_table;
+}
+
+bool Test_Logger()
 {
 	try
 	{
 		using namespace PatcherLogger;
 
 		// create two different logs
-		auto* testLog = new Log();
+		auto* test_log = new Log();
 
 		// write some messages to both
-		testLog->setLogByPath("../build/DBProvider.dir/log_test.txt");
-		testLog->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
-		testLog->addLog(DEBUG, "TEST - 01");
+		test_log->SetLogByPath("../build/DBProvider.dir/log_test.txt");
+		test_log->AddLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
+		test_log->AddLog(DEBUG, "TEST - 01");
 
-		auto* logInStdDir = new Log();
+		auto* log_in_std_dir = new Log();
 
-		logInStdDir->setLogByName("new_log.log");
-		logInStdDir->addLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
-		logInStdDir->addLog(DEBUG, "TEST - 02");
+		log_in_std_dir->SetLogByName("new_log.LogWithLevel");
+		log_in_std_dir->AddLog(DEBUG, "RUNNING: testLogger() from DBProvider_tests");
+		log_in_std_dir->AddLog(DEBUG, "TEST - 02");
 
-		// init global log 
-		startGlobalLog("../build/DBProvider.dir/global_log.txt");
+		// init global LogWithLevel 
+		StartGlobalLog("../build/DBProvider.dir/global_log.txt");
 
-		// write some messages to global log
-		logDebug("Test GLOBAL LOG");
+		// write some messages to global LogWithLevel
+		LogDebug("Test GLOBAL LOG");
 
 		// delete logs (not files)
-		delete logInStdDir;
-		delete testLog;
-		stopGlobalLog();
+		delete log_in_std_dir;
+		delete test_log;
+		StopGlobalLog();
 	}
 	catch (const exception& e)
 	{
@@ -272,29 +350,29 @@ bool test_Logger()
 	return true;
 }
 
-bool test_CustomConnection()
+bool Test_CustomConnection()
 {
 	try
 	{
 		string str = "Doors:doo:rc:127.0.0.1:5432";
-		auto dbConn = make_shared<DBConnection::Connection>(str);
+		auto db_conn = make_shared<DBConnection::Connection>(str);
 
 		cout << "hostaddr= "
-			<< dbConn->getConnection()->hostname() << endl;
+			<< db_conn->GetConnection()->hostname() << endl;
 
 		cout << "port= "
-			<< dbConn->getConnection()->port() << endl;
+			<< db_conn->GetConnection()->port() << endl;
 
 		cout << "dbname= "
-			<< dbConn->getConnection()->dbname() << endl;
+			<< db_conn->GetConnection()->dbname() << endl;
 
 		cout << "user= "
-			<< dbConn->getConnection()->username() << endl;
+			<< db_conn->GetConnection()->username() << endl;
 
 		cout << "password= "
-			<< dbConn->getConnection()->username() << endl;
+			<< db_conn->GetConnection()->username() << endl;
 
-		dbConn.reset();
+		db_conn.reset();
 	}
 	catch (const exception& e)
 	{
@@ -305,9 +383,9 @@ bool test_CustomConnection()
 	return true;
 }
 
-bool test_PrintObjectsData(DBProvider* dbProv)
+bool Test_PrintObjectsData(DBProvider* db_prov)
 {
-	string getObjects =
+	const string get_objects =
 		"SELECT /*sequences */"
 		"f.sequence_schema AS obj_schema,"
 		"f.sequence_name AS obj_name,"
@@ -322,14 +400,14 @@ bool test_PrintObjectsData(DBProvider* dbProv)
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";
 
-	auto result = dbProv->query(getObjects);
-	printObjectsData(result);
+	const auto query_result = db_prov->Query(get_objects);
+	PrintObjectsData(query_result);
 	return true;
 }
 
-bool test_PrintObjectsDataShared(shared_ptr<DBProvider> dbProv)
+bool Test_PrintObjectsDataShared(const shared_ptr<DBProvider>& db_prov)
 {
-	string getObjects =
+	const string get_objects =
 		"SELECT /*sequences */"
 		"f.sequence_schema AS obj_schema,"
 		"f.sequence_name AS obj_name,"
@@ -344,72 +422,73 @@ bool test_PrintObjectsDataShared(shared_ptr<DBProvider> dbProv)
 		"WHERE f.table_schema in"
 		"('public', 'io', 'common', 'secure');";
 
-	auto result = dbProv->query(getObjects);
-	printObjectsData(result);
+	const auto query_result = db_prov->Query(get_objects);
+	PrintObjectsData(query_result);
 	return true;
 }
 
 int main()
 {
 	using namespace TestUtility;
-	string sql_publicRoleAction = "SELECT * FROM public.role_action";
+	string sql_public_role_action = "SELECT * FROM public.role_action";
 
-	string loginData = "127.0.0.1:5432:Doors:doo:rs";
-	DBProvider* dbProvider = new DBProvider(loginData);
+	string login_data = "127.0.0.1:5432:Doors:doo:rs";
+	auto* db_provider = new DBProvider(login_data);
 
 	// < test_info, pointer_to_test_function >
-	vector<pair<const string, function<bool()>>> simpleTests;
-	simpleTests.emplace_back("Standart Test : make shure pqxx::connection works",
-							 test_PqxxConnection);
+	vector<pair<const string, function<bool()>>> simple_tests;
+	simple_tests.emplace_back("Standard Test : make sure pqxx::GetConnectionFromPool works",
+							  Test_PqxxConnection);
 
-	simpleTests.emplace_back("Test PatchLogger::Log : write to different logs",
-							 test_Logger);
-	/*simpleTests.push_back(make_pair("Test Connection : connect to 'Doors'", test_CustomConnection));*/
+	simple_tests.emplace_back("Test PatchLogger::Log : write to different logs",
+							  Test_Logger);
+	/*simpleTests.push_back(make_pair("Test Connection : connect to 'Doors'", Test_CustomConnection));*/
 
-	vector<pair<const string, function<bool(DBProvider*)>>> providerTest;
-	vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTestsShared;
+	vector<pair<const string, function<bool(DBProvider*)>>> provider_test;
+	vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> provider_tests_shared;
 
-	providerTest.emplace_back("Test printing raw data : printing raw objects data",
-							  test_PrintObjectsData);
+	provider_test.emplace_back("Test printing raw data : printing raw objects data",
+							   Test_PrintObjectsData);
 
-	providerTest.emplace_back("Test printing data in table : printing objects data wrapped in table",
-							  test_PrintObjectsAsTable);
+	provider_test.emplace_back("Test printing data in table : printing objects data wrapped in table",
+							   Test_PrintObjectsAsTable);
 
-	providerTest.emplace_back("Test printing all tables : printing tables in io, public, common, secure",
-							  test_PrintTableList);
+	provider_test.emplace_back("Test printing all tables : printing tables in io, public, common, secure",
+							   Test_PrintTableList);
 
-	providerTest.emplace_back("Test : check table existence",
-							  test_tableExists);
+	provider_test.emplace_back("Test : check table existence",
+							   Test_tableExists);
 
-	providerTest.emplace_back("Test : check sequence existence",
-							  test_sequenceExists);
+	provider_test.emplace_back("Test : check sequence existence",
+							   Test_sequenceExists);
 
-	testConnectionPool(loginData);
+	//TestConnectionPool_MultiThreading(loginData);
 
+	PrintAllFunctionParams(db_provider);
 
-	providerTest.emplace_back("Test functions",
-							  test_GetFunctions);
+	provider_test.emplace_back("Test functions",
+							   Test_GetFunctions);
 
-	providerTest.emplace_back("Test function parameters",
-							  test_GetFunctionParameters);
+	provider_test.emplace_back("Test function parameters",
+							   Test_GetFunctionParameters);
 
-	providerTest.emplace_back("Test triggers",
-							  test_GetTriggers);
+	provider_test.emplace_back("Test triggers",
+							   Test_GetTriggers);
 
-	providerTest.emplace_back("Test printing functions",
-							  test_PrintFunctions);
+	provider_test.emplace_back("Test printing functions",
+							   Test_PrintFunctions);
 
-	providerTest.emplace_back("Test printing function parameters",
-							  test_PrintFunctionParameters);
+	provider_test.emplace_back("Test printing function parameters",
+							   Test_PrintFunctionParameters);
 
-	providerTest.emplace_back("Test printing triggers",
-							  test_PrintTriggers);
+	provider_test.emplace_back("Test printing triggers",
+							   Test_PrintTriggers);
 
 	// Run all simple test functions
-	runSimpleTests(simpleTests);
+	RunSimpleTests(simple_tests);
 
 	// Run all test functions for DBProvider
-	runAll(providerTest, dbProvider);
+	RunAll(provider_test, db_provider);
 
 	return 0;
 }

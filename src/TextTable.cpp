@@ -1,4 +1,6 @@
 #include "Shared\TextTable.h"
+#include <iostream>
+#include <iomanip>
 
 TextTable::TextTable(char horizontal, char vertical, char corner) :
 	_horizontal(horizontal),

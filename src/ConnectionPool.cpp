@@ -9,100 +9,100 @@ namespace DBConnection
 {
 	ConnectionPool::ConnectionPool(string& pgpass_string)
 	{
-		createPool(pgpass_string);
+		CreatePool(pgpass_string);
 	}
 
 	ConnectionPool::ConnectionPool(string& pgpass_string, const int size)
 	{
-		poolSize = size;
-		createPool(pgpass_string);
+		pool_size_ = size;
+		CreatePool(pgpass_string);
 	}
 
-	void ConnectionPool::resetPoolParameters(string& pgpass_string)
+	void ConnectionPool::ResetPoolParameters(string& pgpass_string)
 	{
 		void resetPoolParameters(LoginData(pgpass_string));
 	}
 
-	void ConnectionPool::resetPoolParameters(const LoginData& params)
+	void ConnectionPool::ResetPoolParameters(const LoginData& params)
 	{
-		PatcherLogger::Log connPoolLog;
-		connPoolLog.setLogByName("ConnectionPool_setConnection.log");
-		connPoolLog.addLog(PatcherLogger::INFO, "Connecting through libpqxx to database with params:\n\t\t" + params.loginStringPqxx());
+		PatcherLogger::Log conn_pool_log;
+		conn_pool_log.SetLogByName("ConnectionPool_setConnection.log");
+		conn_pool_log.AddLog(PatcherLogger::INFO, "Connecting through libpqxx to database with params:\n\t\t" + params.LoginString_Pqxx());
 
 		lock_guard<mutex> locker(mtx);
-		for (auto& conn : pool)
+		for (auto& conn : pool_)
 		{
 			try
 			{
-				// Reset current connection from connection pool
-				conn->setConnection(params.loginStringPG());
+				// Reset current GetConnectionFromPool from GetConnectionFromPool pool
+				conn->SetConnection(params.LoginString_PG());
 			}
 			catch (exception& err)
 			{
 				// Nothing to do. Other connections may work.
-				connPoolLog.addLog(PatcherLogger::WARNING, "DBConnectionPool exception: Couldn't connect to database with:\n\t\t" + params.loginStringPqxx());
+				conn_pool_log.AddLog(PatcherLogger::WARNING, "DBConnectionPool exception: Couldn't connect to database with:\n\t\t" + params.LoginString_Pqxx());
 				clog << "DBConnectionPool exception: " << err.what() << endl;
-				freeConnection(conn);
+				FreeConnection(conn);
 			}
 		}
 
-		const int actualQuantity = pool.size();
+		const int actual_quantity = pool_.size();
 
-		if (actualQuantity == 0)
+		if (actual_quantity == 0)
 		{
-			connPoolLog.addLog(PatcherLogger::ERROR, "DBConnectionPool exception: ALL CONNECTIONS FAILED.");
-			cerr << "DBConnectionPool Pool: ALL CONNECTIONS FAILED.\n Check connection parameters" << endl;
-			throw invalid_argument("Couldn't connect to database with:\n\t\t" + params.loginStringPqxx());
+			conn_pool_log.AddLog(PatcherLogger::ERROR, "DBConnectionPool exception: ALL CONNECTIONS FAILED.");
+			cerr << "DBConnectionPool Pool: ALL CONNECTIONS FAILED.\n Check GetConnectionFromPool parameters" << endl;
+			throw invalid_argument("Couldn't connect to database with:\n\t\t" + params.LoginString_Pqxx());
 		}
 
-		if (actualQuantity < poolSize)
+		if (actual_quantity < pool_size_)
 		{
-			poolSize = actualQuantity;
+			pool_size_ = actual_quantity;
 		}
 	}
 
-	shared_ptr<Connection> ConnectionPool::connection()
+	shared_ptr<Connection> ConnectionPool::GetConnectionFromPool()
 	{
 		unique_lock<mutex> lock(mtx);
 
 		// if pool is empty, then wait until it notifies back
-		while (pool.empty())
+		while (pool_.empty())
 		{
-			poolCondition.wait(lock);
+			pool_condition_.wait(lock);
 		}
 
-		// get new connection in queue
-		auto conn = pool.front();
+		// get new GetConnectionFromPool in queue
+		auto conn = pool_.front();
 		// immediately pop as we will use it now
-		pool.pop_front();
+		pool_.pop_front();
 
 		return conn;
 	}
 
-	void ConnectionPool::freeConnection(shared_ptr<Connection> conn)
+	void ConnectionPool::FreeConnection(const shared_ptr<Connection> conn)
 	{
 		unique_lock<mutex> lock(mtx);
 
-		// push a new connection into a pool
-		pool.push_back(conn);
+		// push a new GetConnectionFromPool into a pool
+		pool_.push_back(conn);
 
 		// unlock mutex
 		lock.unlock();
 
 		// notify one of thread that is waiting
-		poolCondition.notify_one();
+		pool_condition_.notify_one();
 	}
 
-	void ConnectionPool::createPool(string& pgpass_string)
+	void ConnectionPool::CreatePool(string& pgpass_string)
 	{
 		lock_guard<mutex> locker(mtx);
-		for (int i = 0; i < poolSize; ++i)
+		for (int i = 0; i < pool_size_; ++i)
 		{
 			try
 			{
 				auto conn = make_shared<Connection>(pgpass_string);
-				conn->setConnection();
-				pool.emplace_back(conn);
+				conn->SetConnection();
+				pool_.emplace_back(conn);
 			}
 			catch (exception& err)
 			{
@@ -111,7 +111,7 @@ namespace DBConnection
 			}
 		}
 
-		if (pool.empty())
+		if (pool_.empty())
 		{
 			throw invalid_argument("CONENECTION POOL: ALL CONNECTIONS FAILED.");
 		}

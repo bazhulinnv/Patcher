@@ -1,6 +1,5 @@
 #include "DBProvider/LoginData.h"
 #include "Shared/ParsingTools.h"
-
 #include <iostream>
 #include <stdexcept>
 
@@ -16,11 +15,11 @@ LoginData::LoginData(string hostname_, unsigned int port_, string database_, str
 	password = move(password_);
 }
 
-LoginData::LoginData(const string& pgpass_str)
+LoginData::LoginData(const string& pgpass_string_)
 {
 	try
 	{
-		vector<string> values = ParsingTools::splitToVector(pgpass_str, ":");
+		vector<string> values = ParsingTools::SplitToVector(pgpass_string_, ":");
 		hostname = values[0];
 		port = stoi(values[1]);
 		database = values[2];
@@ -37,7 +36,7 @@ LoginData::LoginData(const string& pgpass_str)
 // Returns login data as single string in libpqxx format
 // e.g. "hostname=127.0.0.1 port=5432 dbname=example username=user password=qwerty123"
 
-string LoginData::loginStringPqxx() const
+string LoginData::LoginString_Pqxx() const
 {
 	if (hostname.empty() || database.empty() || username.empty() || password.empty())
 	{
@@ -45,13 +44,13 @@ string LoginData::loginStringPqxx() const
 	}
 
 	const auto pgLogin = hostname + ":" + to_string(port) + ":" + database + ":" + username + ":" + password;
-	return ParsingTools::parseCredentials(pgLogin);
+	return ParsingTools::ParseCredentials(pgLogin);
 }
 
 // Returns login data as single string (PGPASSFILE format)
 // e.g. "hostname:port:database:username:password"
 
-string LoginData::loginStringPG() const
+string LoginData::LoginString_PG() const
 {
 	if (hostname.empty() || database.empty() || username.empty() || password.empty())
 	{

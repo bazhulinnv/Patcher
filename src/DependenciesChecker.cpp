@@ -44,14 +44,14 @@ void DependenciesChecker::print() {
 //Private implementation of check
 bool DependenciesChecker::check(DBObjects &objectsParameters, DBProvider *dbProvider) {
 	for (auto i : objectsParameters) {
-		bool doesCurrentObjectExist = dbProvider->doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+		bool doesCurrentObjectExist = dbProvider->DoesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
 		if (!doesCurrentObjectExist) {
 			allObjectsExists = false;
 		}
 		//generate list of existence each object in format: 0 if object does not exist in current database, 1 if exists
 		existenceEachObject.emplace_back(doesCurrentObjectExist);
 		
-		//generate data for log: object parameters + existence; example public cats table exists
+		//generate data for LogWithLevel: object parameters + existence; example public cats table exists
 		dataForLog += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
 		if (!doesCurrentObjectExist) {
 			dataForLog += "does not exist\n";

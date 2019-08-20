@@ -15,11 +15,11 @@ using namespace PatcherLogger;
 PatchInstaller::PatchInstaller() {}
 PatchInstaller::~PatchInstaller() {}
 
-/** Creates log for both parts of PatchInstaller. */
+/** Creates LogWithLevel for both parts of PatchInstaller. */
 void createLog(std::string path, Level level, std::string data) {
 	Log log;
-	log.setLogByPath(path);
-	log.addLog(level, data);
+	log.SetLogByPath(path);
+	log.AddLog(level, data);
 
 }
 
@@ -50,7 +50,7 @@ bool PatchInstaller::checkDependencyList(std::string nameOfFile, DBProvider *dbP
 		passCheckLogsForGui(checker.getDataForLog(), result);
 		// print in stdout the same list of existence objects: 0 if object does not exist, 1 if object exists
 		checker.print();
-		createLog("logs/CheckingDependenciesErrors.log", INFO, checker.getDataForLog());
+		createLog("logs/CheckingDependenciesErrors.LogWithLevel", INFO, checker.getDataForLog());
 
 		return result;
 	}
@@ -128,8 +128,8 @@ bool PatchInstaller::startInstallation(LoginData p) {
 	remove("tempError.txt");
 	remove("tempInfo.txt");
 
-	createLog("logs/InstallationErrors.log", ERROR, dataForErrorLog);
-	createLog("logs/InstallationInfo.log", INFO, dataForInfoLog);
+	createLog("logs/InstallationErrors.LogWithLevel", ERROR, dataForErrorLog);
+	createLog("logs/InstallationInfo.LogWithLevel", INFO, dataForInfoLog);
 
 	return installWithErrors;
 }

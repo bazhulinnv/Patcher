@@ -1,163 +1,159 @@
 #include "Shared/Logger.h"
-
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <ctime>
+#include <memory>
 
 using namespace std;
 
 namespace PatcherLogger
-{	
+{
 	// Returns current date-time formatted like [YYYY-MM-DD] [HH:mm:ss]
-	inline const std::string GetCurrentDateTime()
+	inline string GetCurrentDateTime()
 	{
-		time_t currentTime = time(0);
-		struct tm localDateTime;
+		auto current_time = time(nullptr);
+		struct tm local_date_time;
 		char buf[80];
-
-		localtime_s(&localDateTime, &currentTime);
-		strftime(buf, sizeof(buf), "[%Y-%m-%d] [%X]", &localDateTime);
-
+		localtime_s(&local_date_time, &current_time);
+		strftime(buf, sizeof(buf), "[%Y-%m-%d] [%X]", &local_date_time);
 		return buf;
 	}
 
-	Log::Log()
-	{
-	}
+	Log::Log() = default;
 
-	Log::Log(const std::string &filePath) : _currentLog{}
+	Log::Log(const string& file_path) : current_log_{}
 	{
-		tryToOpenLog(filePath);
-		_logPath = filePath;
+		TryOpenLog(file_path);
+		log_path_ = file_path;
 	}
 
 	Log::~Log()
 	{
-		closeLog();
+		CloseLog();
 	}
 
-	void Log::addLog(Level s, const std::string &msg)
+	void Log::AddLog(Level s, const string& msg)
 	{
-		if (!_currentLog.is_open())
+		if (!current_log_.is_open())
 		{
-			std::cerr	<<	"\nFirst you need to set up custom log path\nExample:\n\t"
-							"auto customLog = new DBLog();\n\t"
-							"customLog->setPathAndOpen(\"../pat_to_log/customLog.log\");"
-						<< std::endl;
-			throw new std::exception("ERROR: Log file was not set or missing.\n");
+			cerr << "\nFirst you need to set up custom LogWithLevel path\nExample:\n\t"
+				"auto custom_log = new DBLog();\n\t"
+				"custom_log->setPathAndOpen(\"../pat_to_log/custom_log.LogWithLevel\");"
+				<< endl;
+			throw exception("ERROR: Log file was not set or missing.\n");
 		}
 
-		_currentLog << GetCurrentDateTime() << " ";
-		_currentLog << _levels[static_cast<int>(s)] << ": " << msg << std::endl;
+		current_log_ << GetCurrentDateTime() << " ";
+		current_log_ << levels_[static_cast<int>(s)] << ": " << msg << endl;
 	}
 
-	void Log::setLogByPath(const std::string &filePath)
+	void Log::SetLogByPath(const string& file_path)
 	{
-		tryToOpenLog(filePath);
-		_logPath = filePath;
+		TryOpenLog(file_path);
+		log_path_ = file_path;
 	}
 
-	void Log::setLogByName(const std::string &logName)
+	void Log::SetLogByName(const string& log_name)
 	{
-		tryToOpenLog(_stdLoggingPath + logName);
-		_logPath = _stdLoggingPath + logName;
+		TryOpenLog(std_logging_path_ + log_name);
+		log_path_ = std_logging_path_ + log_name;
 	}
 
-	// Returns current log path
-	std::string Log::getCurrentLogPath()
+	// Returns current LogWithLevel path
+	string Log::GetCurrentLogPath() const
 	{
-		return _logPath;
+		return log_path_;
 	}
 
 	// Returns standard logging directory
-	std::string Log::getStdLoggingPath()
+	string Log::GetStdLoggingPath() const
 	{
-		return _stdLoggingPath;
+		return std_logging_path_;
 	}
 
 	// Resets standard logging directory
-	void Log::setStdLoggingPath(const std::string& path)
+	void Log::SetStdLoggingPath(const string& path)
 	{
-		_stdLoggingPath = path;
+		std_logging_path_ = path;
 	}
 
-	void Log::tryToOpenLog(const std::string& filePath)
+	void Log::TryOpenLog(const string& file_path)
 	{
 		// handle ofstream properly
-		const char *filename = filePath.c_str();
-		_currentLog.open(filename, std::ios::app);
+		const char* filename = file_path.c_str();
+		current_log_.open(filename, ios::app);
 
-		if (!_currentLog.is_open())
+		if (!current_log_.is_open())
 		{
-			std::cerr << "Logger: incorrect path to log." << std::endl;
-			throw new std::exception("ERROR: Failed opening log file.\n");
+			cerr << "Logger: incorrect path to LogWithLevel." << endl;
+			throw exception("ERROR: Failed opening LogWithLevel file.\n");
 		}
 	}
 
-	// Closes current log
-	inline void Log::closeLog()
+	// Closes current LogWithLevel
+	inline void Log::CloseLog()
 	{
-		_currentLog.close();
+		current_log_.close();
 	}
 
 	// Global Log Object.
-	inline Log *getGlobalLog()
+	inline Log* getGlobalLog()
 	{
-		static std::unique_ptr<Log> glog = std::make_unique<Log>();
+		static unique_ptr<Log> glog = make_unique<Log>();
 		return glog.get();
 	}
 
-	void startGlobalLog()
+	void StartGlobalLog()
 	{
-		Log *glog = getGlobalLog();
-		const std::string path = glog->getStdLoggingPath() + "global_log.log";
-		glog->setLogByPath(path);
-		log(INFO, "Started global logging.");
+		Log* glog = getGlobalLog();
+		const string path = glog->GetStdLoggingPath() + "global_log.LogWithLevel";
+		glog->SetLogByPath(path);
+		LogWithLevel(INFO, "Started global logging.");
 	}
 
-	void startGlobalLog(const std::string &filePath)
+	void StartGlobalLog(const string& file_path)
 	{
-		Log *glog = getGlobalLog();
-		glog->setLogByPath(filePath);
-		log(INFO, "Started global logging.");
+		Log* glog = getGlobalLog();
+		glog->SetLogByPath(file_path);
+		LogWithLevel(INFO, "Started global logging.");
 	}
 
-	void stopGlobalLog()
+	void StopGlobalLog()
 	{
-		Log *glog = getGlobalLog();
-		log(INFO, "Stopped global logging.");
-		glog->closeLog();
+		Log* glog = getGlobalLog();
+		LogWithLevel(INFO, "Stopped global logging.");
+		glog->CloseLog();
 	}
 
-	void log(Level s, const std::string &msg)
+	void LogWithLevel(Level s, const string& msg)
 	{
-		Log *glog = getGlobalLog();
-		glog->addLog(s, msg);
+		Log* glog = getGlobalLog();
+		glog->AddLog(s, msg);
 	}
 
-	void logFatal(const std::string &msg)
+	void LogFatal(const string& msg)
 	{
-		log(FATAL, msg);
-	}
-	
-	void logError(const std::string &msg)
-	{
-		log(ERROR, msg);
-	}
-	
-	void logWarning(const std::string &msg)
-	{
-		log(WARNING, msg);
-	}
-	
-	void logInfo(const std::string &msg)
-	{
-		log(INFO, msg);
+		LogWithLevel(FATAL, msg);
 	}
 
-	void logDebug(const std::string &msg)
+	void LogError(const string& msg)
 	{
-		log(DEBUG, msg);
+		LogWithLevel(ERROR, msg);
+	}
+
+	void LogWarning(const string& msg)
+	{
+		LogWithLevel(WARNING, msg);
+	}
+
+	void LogInfo(const string& msg)
+	{
+		LogWithLevel(INFO, msg);
+	}
+
+	void LogDebug(const string& msg)
+	{
+		LogWithLevel(DEBUG, msg);
 	}
 }

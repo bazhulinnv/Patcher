@@ -6,37 +6,48 @@ using namespace std;
 
 DBConnection::Connection::Connection()
 {
-	dbConnection = make_shared<pqxx::lazyconnection>();
+	db_connection_ = make_shared<pqxx::lazyconnection>();
 }
 
 DBConnection::Connection::Connection(string& pgpass_str)
 {
-	connectionParams = LoginData(pgpass_str);
-	parametersSet = true;
+	connection_params_ = LoginData(pgpass_str);
+	parameters_set_ = true;
+}
+
+bool DBConnection::Connection::IsConnectionSet()
+{
+	return connection_set_ && parameters_set_;
+}
+
+bool DBConnection::Connection::IsOpen()
+{
+	return db_connection_->is_open();
 }
 
 DBConnection::Connection::~Connection()
 {
-	if (connectionSet)
+	if (ConnectionBase::IsOpen())
 	{
-		Connection::closeConnection();
+		Connection::CloseConnection();
 	}
 }
 
-void DBConnection::Connection::setConnection(string& pgpass_str)
+void DBConnection::Connection::SetConnection(string& pgpass_str)
 {
-	if (connectionSet)
+	if (connection_set_)
 	{
-		Connection::closeConnection();
+		Connection::CloseConnection();
 	}
 
-	connectionParams = LoginData(pgpass_str);
-	parametersSet = true;
+	connection_params_ = LoginData(pgpass_str);
+	parameters_set_ = true;
 
 	try
 	{
-		dbConnection = make_shared<pqxx::lazyconnection>(connectionParams.loginStringPqxx());
-		connectionSet = true;
+		db_connection_ = make_shared<pqxx::lazyconnection>(connection_params_.LoginString_Pqxx());
+		db_connection_->activate();
+		connection_set_ = true;
 	}
 	catch (exception& err)
 	{
@@ -45,46 +56,46 @@ void DBConnection::Connection::setConnection(string& pgpass_str)
 	}
 }
 
-void DBConnection::Connection::setConnection()
+void DBConnection::Connection::SetConnection()
 {
-	if (!parametersSet)
+	if (!parameters_set_)
 	{
 		throw runtime_error("ERROR: Tried to access parameters, but parameters"
-							"weren't set properly in constructor or by \"setConnection(loginStringPG)\".");
+							"weren't set properly in constructor or by \"SetConnection(LoginString_PG)\".");
 	}
 
-	setConnection(connectionParams.loginStringPG());
+	SetConnection(connection_params_.LoginString_PG());
 }
 
-LoginData DBConnection::Connection::getParameters()
+LoginData DBConnection::Connection::GetParameters()
 {
-	if (!parametersSet)
+	if (!parameters_set_)
 	{
 		throw runtime_error(
 			R"(ERROR: Tried to get parameters, but parameters weren't"
-					"set properly in constructor or by "setConnection".)");
+					"set properly in constructor or by "SetConnection".)");
 	}
 
-	return connectionParams;
+	return connection_params_;
 }
 
-shared_ptr<pqxx::connection_base> DBConnection::Connection::getConnection()
+shared_ptr<pqxx::connection_base> DBConnection::Connection::GetConnection()
 {
-	if (!connectionSet)
+	if (!connection_set_)
 	{
 		throw runtime_error(
 			R"(ERROR: Tried to get pqxx::connection_base, but parameters weren't"
-					"set properly in constructor or by "setConnection".)");
+					"set properly in constructor or by "SetConnection".)");
 	}
 
-	return dbConnection;
+	return db_connection_;
 }
 
-void DBConnection::Connection::closeConnection()
+void DBConnection::Connection::CloseConnection()
 {
-	dbConnection->disconnect();
-	dbConnection.reset();
-	connectionParams = LoginData();
-	parametersSet = false;
-	connectionSet = false;
+	db_connection_->disconnect();
+	db_connection_.reset();
+	connection_params_ = LoginData();
+	parameters_set_ = false;
+	connection_set_ = false;
 }

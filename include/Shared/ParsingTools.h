@@ -1,3 +1,6 @@
+#ifndef PARSINGTOOLS_H
+#define PARSINGTOOLS_H
+
 #include <string>
 #include <vector>
 #include <utility>
@@ -5,23 +8,26 @@
 
 namespace ParsingTools
 {
-	std::string interpolate(std::string input, const std::string& replacement, const std::string toBeReplaced = "${}");
+	std::string Interpolate(std::string input, const std::string& replacement, const std::string&
+							to_be_replaced = "${}");
 
-	std::string interpolateAll(const std::string& input, std::queue<std::string> replacements, const std::string toBeReplaced = "${}");
+	std::string InterpolateAll(const std::string& input, std::queue<std::string> replacements, const std::string& to_be_replaced = "${}");
 
-	std::string interpolateAll(const std::string& input, std::vector<std::string> replacements, const std::string toBeReplaced = "${}");
+	std::string InterpolateAll(const std::string& input, std::vector<std::string> replacements, const std::string& to_be_replaced = "${}");
 
 	// std::string string("hello $name");
-	// bool is_ok = replace(string, "Somename", "$name");
-	bool replace(std::string& input, const std::string& replacement, const std::string& toBeReplaced = "${}");
+	// bool is_ok = Replace(string, "Somename", "$name");
+	bool Replace(std::string& input, const std::string& replacement, const std::string& to_be_replaced = "${}");
 
-	void replaceAll(std::string& input, const std::string& replacement, const std::string& toBeReplaced = "${}");
+	void ReplaceAll(std::string& input, const std::string& replacement, const std::string& to_be_replaced = "${}");
 
-	std::vector<std::string> splitToVector(std::string input, const std::string& delimiter);
+	std::vector<std::string> SplitToVector(std::string input, const std::string& delimiter);
 
-	std::string joinAsString(const std::vector<std::string>& input, const char* delimiter = "");
+	std::string JoinAsString(const std::vector<std::string>& input, const char* delimiter = "");
 
-	std::string parseCredentials(const std::string& pgLogin);
+	std::string ParseCredentials(const std::string& pg_login);
 
-	std::pair<bool, std::string> tryParseCredentials(const std::string& pgLogin);
+	std::pair<bool, std::string> TryParseCredentials(const std::string& pg_login);
 }
+
+#endif

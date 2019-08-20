@@ -1,85 +1,84 @@
 #include "Shared/TestUtility.h"
 #include "Shared/TextTable.h"
 #include <iostream>
+#include <utility>
 
 using namespace std;
 
-void TestUtility::runTest(const string& testInfo, function<bool(DBProvider*)> sut, DBProvider* dbProv)
+void TestUtility::RunTest(const string& test_info, const function<bool(DBProvider*)> sut, DBProvider* db_prov)
 {
 	cout << yellow;
-	cout << "\nRUNNING: " << reset << testInfo << endl;
+	cout << "\nRUNNING: " << reset << test_info << endl;
 
-	if (!sut(dbProv))
+	if (!sut(db_prov))
 	{
 		cout << red;
 		cout << "FAILED: ";
 		cout << yellow;
-		cout << testInfo << reset << endl;
+		cout << test_info << reset << endl;
 		return;
 	}
 
 	cout << green;
 	cout << "SUCCEEDED: " << reset;
-	cout << testInfo << endl;
+	cout << test_info << endl;
 	cout << endl;
 }
 
-void TestUtility::runTest(const string& testInfo, function<bool(shared_ptr<DBProvider>)> sut,
-                          shared_ptr<DBProvider> dbProv)
+void TestUtility::RunTest(const string& test_info, const function<bool(shared_ptr<DBProvider>)>& sut, shared_ptr<DBProvider> db_prov)
 {
 	cout << yellow;
-	cout << "\nRUNNING: " << reset << testInfo << endl;
+	cout << "\nRUNNING: " << reset << test_info << endl;
 
-	if (!sut(dbProv))
+	if (!sut(std::move(db_prov)))
 	{
 		cout << red;
 		cout << "FAILED: ";
 		cout << yellow;
-		cout << testInfo << reset << endl;
+		cout << test_info << reset << endl;
 		return;
 	}
 
 	cout << green;
 	cout << "SUCCEEDED: " << reset;
-	cout << testInfo << endl;
+	cout << test_info << endl;
 	cout << endl;
 }
 
-void TestUtility::runAll(vector<pair<const string, function<bool(DBProvider*)>>> providerTests, DBProvider* dbProv)
+void TestUtility::RunAll(const vector<pair<const string, function<bool(DBProvider*)>>>& provider_tests, DBProvider* db_prov)
 {
 	cout << yellow;
 	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
 
-	for (auto& test : providerTests)
+	for (auto& test : provider_tests)
 	{
-		runTest(test.first, test.second, dbProv);
+		RunTest(test.first, test.second, db_prov);
 	}
 
 	cout << yellow;
 	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
 }
 
-void TestUtility::runAll(vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>> providerTests,
-                         shared_ptr<DBProvider> dbProv)
+void TestUtility::RunAll(const vector<pair<const string, function<bool(shared_ptr<DBProvider>)>>>& provider_tests, const shared_ptr<DBProvider>& db_prov)
 {
 	cout << yellow;
 	cout << "\t##########\t" << "\tTESTING STARTED\t" << "\t##########" << reset << endl;
 
-	for (auto& test : providerTests)
+	for (auto& test : provider_tests)
 	{
-		runTest(test.first, test.second, dbProv);
+		RunTest(test.first, test.second, db_prov);
 	}
 
 	cout << yellow;
 	cout << "\t##########\t" << "\tTESTING FINISHED.\t" << "\t##########" << reset << endl;
 }
 
-void TestUtility::runSimpleTests(vector<pair<const string, function<bool()>>> simpleTests)
+void TestUtility::RunSimpleTests(const vector<pair<const string, function<bool()>>>& simple_tests)
 {
 	cout << yellow;
 	cout << "\t##########\t" << "RUNNING SIMPLE TESTS" << "\t##########" << reset << endl;
 
-	for (auto& test : simpleTests)
+	for (auto& test : simple_tests)
 	{
 		cout << yellow;
 		cout << "\nRUNNING: " << reset << test.first << endl;

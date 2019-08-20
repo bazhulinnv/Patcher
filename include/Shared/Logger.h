@@ -1,4 +1,5 @@
-#include <memory>
+#ifndef LOGGER_H
+#define LOGGER_H
 #include <fstream>
 #include <string>
 
@@ -13,7 +14,7 @@ namespace PatcherLogger
 		ERROR,
 		FATAL,
 	};
-	
+
 	// Logging class.
 	class Log
 	{
@@ -21,77 +22,79 @@ namespace PatcherLogger
 
 		// Creates empty instance.
 		Log();
-		
-		// Creates log file on specified path.
-		Log(const std::string &filePath);		
-		
-		// Safely deletes log.
+
+		// Creates LogWithLevel file on specified path.
+		Log(const std::string& file_path);
+
+		// Safely deletes LogWithLevel.
 		~Log();
 
-		// Sets log file by path.
-		void setLogByPath(const std::string& filePath);
-		
-		// Sets log file by name using stdLoggingPath.
-		void setLogByName(const std::string& logName);
-		
-		// Returns current log path
-		std::string getCurrentLogPath();
+		// Sets LogWithLevel file by path.
+		void SetLogByPath(const std::string& file_path);
+
+		// Sets LogWithLevel file by name using stdLoggingPath.
+		void SetLogByName(const std::string& log_name);
+
+		// Returns current LogWithLevel path
+		std::string GetCurrentLogPath() const;
 
 		// Returns standard logging directory
-		std::string getStdLoggingPath();
+		std::string GetStdLoggingPath() const;
 
 		// Resets standard logging directory
-		void setStdLoggingPath(const std::string& path);
+		void SetStdLoggingPath(const std::string& path);
 
-		// Writes to current log file
-		void addLog(Level s, const std::string &msg);
+		// Writes to current LogWithLevel file
+		void AddLog(Level s, const std::string& msg);
 
-		// Closes current log
-		void closeLog();
+		// Closes current LogWithLevel
+		void CloseLog();
 
 	private:
 		// File for logging.
-		std::ofstream _currentLog;
+		std::ofstream current_log_;
 
-		// Path to log.
-		std::string _logPath;
+		// Path to LogWithLevel.
+		std::string log_path_;
 
-		// Path to standard log directory.
-		std::string _stdLoggingPath = "../build/DBProvider.dir/";
-		
+		// Path to standard LogWithLevel directory.
+		std::string std_logging_path_ = "../build/DBProvider.dir/";
+
 		// Message levels
-		std::string _levels[5] = { "Debug", "Info", "Warning", "Error", "Fatal" };
+		std::string levels_[5] = { "Debug", "Info", "Warning", "Error", "Fatal" };
 
-		/*	Opens log if path is correct,
+		/*	Opens LogWithLevel if path is correct,
 			otherwise throws exception.
 		*/
-		void tryToOpenLog(const std::string& filePath);
+		void TryOpenLog(const std::string& file_path);
 	};
 
-	// Initalizes global log.
-	void startGlobalLog();
-	
-	// Initalizes global log on peth.
-	void startGlobalLog(const std::string& filePath);
+	// Initializes global LogWithLevel.
+	void StartGlobalLog();
 
-	// Stops global log.
-	void stopGlobalLog();
+	// Initializes global LogWithLevel on peth.
+	void StartGlobalLog(const std::string& file_path);
 
-	// Logs a message to global log.
-	void log(Level s, const std::string &msg);
+	// Stops global LogWithLevel.
+	void StopGlobalLog();
 
-	// Logs message with level:FATAL to global log.
-	void logFatal(const std::string &msg);
+	// Logs a message to global LogWithLevel.
+	void LogWithLevel(Level s, const std::string& msg);
 
-	// Logs message with level:ERROR to global log.
-	void logError(const std::string &msg);
+	// Logs message with level:FATAL to global LogWithLevel.
+	void LogFatal(const std::string& msg);
 
-	// Logs message with level:WARNING to global log.
-	void logWarning(const std::string &msg);
+	// Logs message with level:ERROR to global LogWithLevel.
+	void LogError(const std::string& msg);
 
-	// Logs message with level:INFO to global log.
-	void logInfo(const std::string &msg);
+	// Logs message with level:WARNING to global LogWithLevel.
+	void LogWarning(const std::string& msg);
 
-	// Logs message with level:DEBUG to global log.
-	void logDebug(const std::string &msg);
+	// Logs message with level:INFO to global LogWithLevel.
+	void LogInfo(const std::string& msg);
+
+	// Logs message with level:DEBUG to global LogWithLevel.
+	void LogDebug(const std::string& msg);
 }
+
+#endif // LOGGER_H

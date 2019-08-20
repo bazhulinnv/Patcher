@@ -16,21 +16,21 @@ namespace DBConnection
 
 		explicit ConnectionPool(std::string& pgpass_string, int size);
 
-		void resetPoolParameters(std::string& pgpass_string);
+		static void ResetPoolParameters(std::string& pgpass_string);
 
-		void resetPoolParameters(const LoginData& params);
+		void ResetPoolParameters(const LoginData& params);
 
-		std::shared_ptr<Connection> connection();
+		std::shared_ptr<Connection> GetConnectionFromPool();
 
-		void freeConnection(std::shared_ptr<Connection> conn);
+		void FreeConnection(std::shared_ptr<Connection> conn);
 
 	private:
 		std::mutex mtx;
-		std::condition_variable poolCondition;
-		std::deque<std::shared_ptr<Connection>> pool;
-		int poolSize = 10;
+		std::condition_variable pool_condition_;
+		std::deque<std::shared_ptr<Connection>> pool_;
+		int pool_size_ = 10;
 
-		void createPool(std::string& pgpass_string);
+		void CreatePool(std::string& pgpass_string);
 	};
 };
 
