@@ -5,7 +5,7 @@
 
 //Constructor and destructor
 DependenciesChecker::DependenciesChecker() {
-	allObjectsExists = true;
+	all_objects_exists = true;
 };
 
 DependenciesChecker::~DependenciesChecker() {
@@ -13,25 +13,25 @@ DependenciesChecker::~DependenciesChecker() {
 
 //Getters
 std::list<bool> DependenciesChecker::getListWithExistenceEachObject() {
-	return existenceEachObject;
+	return existence_each_object;
 }
 
 bool DependenciesChecker::getIfAllObjectsExists() {
-	return allObjectsExists;
+	return all_objects_exists;
 }
 
 std::string DependenciesChecker::getDataForLog() {
-	return dataForLog;
+	return data_for_log;
 }
 
-bool DependenciesChecker::getCheck(DBObjects &objectsParameters, DBProvider &dbProvider) {
-	return check(objectsParameters, dbProvider);
+bool DependenciesChecker::getCheck(DBObjects &objects_parameters, DBProvider &dbProvider) {
+	return check(objects_parameters, dbProvider);
 }
 
 //Passing output in cout to GUI
 void DependenciesChecker::printExistenceOfEachObject() {
 	std::list <bool> ::iterator iterator;
-	for (auto x : existenceEachObject) {
+	for (auto x : existence_each_object) {
 		std::cout << x;
 	}
 }
@@ -44,23 +44,23 @@ void DependenciesChecker::print() {
 //Private implementation of check
 bool DependenciesChecker::check(DBObjects &objectsParameters, DBProvider &dbProvider) {
 	for (auto i : objectsParameters) {
-		bool doesCurrentObjectExist = dbProvider.doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
-		if (!doesCurrentObjectExist) {
-			allObjectsExists = false;
+		bool does_current_object_exist = dbProvider.doesCurrentObjectExists(std::get<0>(i), std::get<1>(i), std::get<2>(i));
+		if (!does_current_object_exist) {
+			all_objects_exists = false;
 		}
 		//generate list of existence each object in format: 0 if object does not exist in current database, 1 if exists
-		existenceEachObject.emplace_back(doesCurrentObjectExist);
+		existence_each_object.emplace_back(does_current_object_exist);
 		
 		//generate data for log: object parameters + existence; example public cats table exists
-		dataForLog += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
-		if (!doesCurrentObjectExist) {
-			dataForLog += "does not exist\n";
+		data_for_log += std::get<0>(i) + " " + std::get<1>(i) + " " + std::get<2>(i) + " ";
+		if (!does_current_object_exist) {
+			data_for_log += "does not exist\n";
 		}
 		else {
-			dataForLog += "exists\n";
+			data_for_log += "exists\n";
 		}
 	}
 	//return true if all objects from lists exist, false otherwise
-	return allObjectsExists;
+	return all_objects_exists;
 
 }

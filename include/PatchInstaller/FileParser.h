@@ -12,9 +12,9 @@ public:
 	FileParser();
 	~FileParser();
 	//
-	bool checkInputCorrect(std::string nameOfFile);
-	DBObjects getResultOfParsing(std::string nameOfFile);
+	bool checkInputCorrect(std::string file_name);
+	DBObjects getResultOfParsing(std::string file_name);
 private:
-	DBObjects parse(std::string nameOfFile);
+	DBObjects parse(std::string file_name);
 };
 #endif

@@ -11,9 +11,9 @@ FileParser::FileParser() {}
 FileParser::~FileParser() {}
 
 /** Check if file DependencyList is incorrect: if any string has more or less than 3 parameters, file considered incorrect. */
-bool FileParser::checkInputCorrect(std::string nameOfFile) {
+bool FileParser::checkInputCorrect(std::string file_name) {
 	std::ifstream dependencies;
-	dependencies.open(nameOfFile);
+	dependencies.open(file_name);
 	while (!dependencies.eof()) {
 		std::string buffer;
 		std::getline(dependencies, buffer);
@@ -30,34 +30,34 @@ bool FileParser::checkInputCorrect(std::string nameOfFile) {
 }
 
 //public wrapper for private implementation
-DBObjects FileParser::getResultOfParsing(std::string nameOfFile) 
+DBObjects FileParser::getResultOfParsing(std::string file_name) 
 {
 	FileParser parser;
-	return parser.parse(nameOfFile);
+	return parser.parse(file_name);
 }
 
 /** Parsing of file with list of objects. */
-DBObjects FileParser::parse(std::string nameOfFile)
+DBObjects FileParser::parse(std::string file_name)
 {
-	DBObjects objectParametersFromFile;
+	DBObjects object_parameters_from_file;
 	std::ifstream dependencies;
-	dependencies.open(nameOfFile);
+	dependencies.open(file_name);
 
 	std::string schema("");
-	std::string objectName("");
-	std::string objectType("");
+	std::string object_name("");
+	std::string object_type("");
 
 	//Try to read first string from file
 	while (!dependencies.eof()) {
-		dependencies >> schema >> objectName >> objectType;
-		if (!schema.empty() && !objectName.empty() && !objectType.empty()) {
-			objectParametersFromFile.emplace_back(schema, objectName, objectType);
+		dependencies >> schema >> object_name >> object_type;
+		if (!schema.empty() && !object_name.empty() && !object_type.empty()) {
+			object_parameters_from_file.emplace_back(schema, object_name, object_type);
 		}
-		schema = ""; objectName = ""; objectType = "";
+		schema = ""; object_name = ""; object_type = "";
 	}
 
 	dependencies.close();
-	return objectParametersFromFile;
+	return object_parameters_from_file;
 }
 
 

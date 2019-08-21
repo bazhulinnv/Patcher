@@ -16,7 +16,7 @@ public:
   PatchInstaller();
   ~PatchInstaller();
   //reading list of objects from DependencyList.dpn and check it for existence
-  bool checkDependencyList(std::string nameOfFile, DBProvider &dbProvider);
+  bool checkDependencyList(std::string file_name, DBProvider &dbProvider);
   //start installation script
   bool startInstallation(LoginData p);
 };
