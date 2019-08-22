@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
+
 set(MODULE_NAME Patcher)
 project(${MODULE_NAME})
 
@@ -55,10 +56,28 @@ set(PATCH_INSTALLER PatchInstaller)
 
 #---------------------------------
 set(patcher_INCS_prov
+  include/Shared/Logger.h
+  include/Shared/TextTable.h
+  include/Shared/ParsingTools.h
+  include/Shared/DBObjects.h
+  include/DBProvider/LoginData.h
+  include/DBProvider/ConnectionBase.h
+  include/DBProvider/Connection.h
+  include/DBProvider/ConnectionPool.h
   include/DBProvider/DBProvider.h
+  include/Shared/TestUtility.h
   )
 
 set(patcher_SRCS_prov
+  src/Logger.cpp
+  src/TextTable.cpp
+  src/ParsingTools.cpp
+  src/DBObjects.cpp
+  src/TestUtility.cpp
+  src/LoginData.cpp
+  src/ConnectionBase.cpp
+  src/Connection.cpp
+  src/ConnectionPool.cpp
   src/DBProvider.cpp
   )
 
@@ -74,12 +93,20 @@ set(patcher_SRCS_bld
 
 #---------------------------------
 set(patcher_INCS_inst
-  include/DBProvider/DBProvider.h
-  include/PatchInstaller/PatchInstaller.h
+	include/Shared/Logger.h
+	include/Shared/ParsingTools.h
+	include/Shared/DBObjects.h
+	include/DBProvider/DBProvider.h
+	include/PatchInstaller/DependenciesChecker.h
+	include/PatchInstaller/FileParser.h
+	include/PatchInstaller/PatchInstaller.h
   )
 
 set(patcher_SRCS_inst
-  src/PatchInstaller.cpp
+	src/Logger.cpp
+	src/PatchInstaller.cpp
+  	src/DependenciesChecker.cpp
+	src/FileParser.cpp
   )
 
 
@@ -94,6 +121,7 @@ target_include_directories(${DB_PROVIDER}
 target_link_libraries(${DB_PROVIDER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY})
 
 add_executable(${DB_PROVIDER}_test tests/DBProvider_tests.cpp)
+
 target_link_libraries(${DB_PROVIDER}_test PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 
@@ -104,10 +132,10 @@ target_include_directories(${PATCH_BUILDER}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
-target_link_libraries(${PATCH_BUILDER} PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
+target_link_libraries(${PATCH_BUILDER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 add_executable(${PATCH_BUILDER}_exe  src/PatchBuilder_exe.cpp)
-target_link_libraries(${PATCH_BUILDER}_exe PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_BUILDER})
+target_link_libraries(${PATCH_BUILDER}_exe PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_BUILDER})
 
 
 #---------------------------------
@@ -117,10 +145,10 @@ target_include_directories(${PATCH_INSTALLER}
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
-target_link_libraries(${PATCH_INSTALLER} PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
+target_link_libraries(${PATCH_INSTALLER} PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER})
 
 add_executable(${PATCH_INSTALLER}_exe src/PatchInstaller_exe.cpp)
-target_link_libraries(${PATCH_INSTALLER}_exe PRIVATE ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_INSTALLER}) 
+target_link_libraries(${PATCH_INSTALLER}_exe PRIVATE ${pqxx_libs} ${FILESYSTEM_LIBRARY} ${DB_PROVIDER} ${PATCH_INSTALLER}) 
 
 
 
