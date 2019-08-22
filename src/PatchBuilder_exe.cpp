@@ -28,9 +28,8 @@ struct ArgumentData {
   bool is_required;     // is required to build patch
 };
 
-optional<ArgumentData *>
-getArgByFlag(vector<ArgumentData> &args,
-             string flag) // Get argument from vector by flag
+void setArgValue(vector<ArgumentData> &args,
+             string flag, const string &value) // Get argument from vector by flag
 {
   transform(flag.begin(), flag.end(), flag.begin(),
             tolower); // Transform to lower register
@@ -38,18 +37,17 @@ getArgByFlag(vector<ArgumentData> &args,
   for (ArgumentData &arg : args) {
     for (const string &current_flag : arg.flags) {
       if (current_flag == flag) {
-        return &arg; // Return the argument with the right flag
+        arg.value = value;
       }
     }
   }
-  return nullopt;
 }
 
 ArgumentData &
 getArgumentByKey(vector<ArgumentData> &args,
                  const ArgumentKeys &key) // Get argument from vector by key
 {
-  // Looking for a match with the лун
+  // Looking for a match with the key
   for (ArgumentData &arg : args) {
     if (arg.key == key) {
       return arg; // Return the argument with the right key
@@ -106,13 +104,12 @@ int main(const int argc, char *argv[]) {
       printHelp(args);
       return 0;
     } else {
-      optional<ArgumentData *> arg =
-          getArgByFlag(args, argv[arg_index]); // Get argument by current flag
-      if (arg && arg_index < argc - 1) // if exist argument with current flag
-                                       // and it is not las argument
+      const string flag = argv[arg_index]; // Get argument by current flag
+      if (arg_index < argc - 1) // if it is not last argument
       {
         arg_index++;
-        arg.value()->value = string(argv[arg_index]);
+        const string value = string(argv[arg_index]);
+        setArgValue(args, flag, value);
       }
     }
   }
