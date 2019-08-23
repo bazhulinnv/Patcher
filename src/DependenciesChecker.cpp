@@ -36,7 +36,7 @@ void DependenciesChecker::print() {
 }
 
 // Private implementation of check
-bool DependenciesChecker::check(DBObjs &objectsParameters,
+bool DependenciesChecker::check(DBObjs &objects_parameters,
                                 DBProvider &dbProvider) {
   for (auto i : objectsParameters) {
     bool does_current_object_exist = dbProvider.doesCurrentObjectExists(
