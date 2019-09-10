@@ -15,9 +15,9 @@ LoginData::LoginData(string hostname_, unsigned int port_, string database_,
   password = move(password_);
 }
 
-LoginData::LoginData(const string &pgpass_string_) {
+LoginData::LoginData(const string &login_pgpass_string) {
   try {
-    vector<string> values = ParsingTools::SplitToVector(pgpass_string_, ":");
+  	auto values = ParsingTools::SplitToVector(login_pgpass_string, ":");
     hostname = values[0];
     port = stoi(values[1]);
     database = values[2];

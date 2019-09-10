@@ -1,4 +1,4 @@
-#include "Shared\TextTable.h"
+#include "Shared/TextTable.h"
 #include <iomanip>
 #include <iostream>
 
@@ -100,7 +100,7 @@ std::ostream &operator<<(std::ostream &stream, TextTable const &table) {
                            ? std::left
                            : std::right;
       stream << row_color[i] << std::setw(table.width(i)) << alignment << row[i]
-             << reset;
+             << colors::reset;
       stream << table.vertical();
     }
 
