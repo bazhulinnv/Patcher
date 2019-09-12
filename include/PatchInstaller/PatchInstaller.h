@@ -14,9 +14,12 @@ using DBObjs = std::list<DBObj>;
 class PatchInstaller {
 public:
   PatchInstaller(std::string conn_param);
+  
   ~PatchInstaller();
+  
   // reading list of objects from DependencyList.dpn and check it for existence
   bool checkDependencyList(std::string file_name);
+  
   // start installation script
   bool startInstallation(LoginData p);
 
