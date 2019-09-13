@@ -54,17 +54,31 @@ void PatchBuilder::buildPatch(const string directory) {
   // Executing all methods for patch building
   ofstream output(directory + "/" +
                   DEPENDENCY_LIST_NAME); // Dependency list directory
+<<<<<<< Updated upstream
   const objectDataVector patch_objects =
       getPatchListVector(); // Getting vector that contains all patch objects
   scriptDataVector scripts = getScriptDataVector(
+=======
+  const ObjectsDataVector patch_objects =
+      getPatchListVector(); // Getting vector that contains all patch objects
+  DefinitionsVector scripts = getScriptDataVector(
+>>>>>>> Stashed changes
       patch_objects); // Getting all scripts created by DBProvider
   createObjectList(scripts, directory);    // Creating of ObjectList
   createInstallPocket(directory, scripts); // Creaing all instalation components
   removeComments(scripts);
+<<<<<<< Updated upstream
   objectDataVector objects =
       getObjectDataVector();      // Getting vector that contains all objects of
                                   // source databse
   remove(objects, patch_objects); // Removing path objects from objectDataVector
+=======
+  ObjectsDataVector objects =
+      getObjectDataVector(); // Getting vector that contains all objects of
+                             // source databse
+  remove(objects,
+         patch_objects); // Removing path objects from ObjectsDataVector
+>>>>>>> Stashed changes
 
   // Writing of DependencyList
   showMessage(string("Parsing started...\n") + BLOCK_LINE + "\n");
@@ -97,10 +111,17 @@ void PatchBuilder::buildPatch(const string directory) {
   showMessage(message);
 }
 
+<<<<<<< Updated upstream
 scriptDataVector
 PatchBuilder::getScriptDataVector(const objectDataVector &objects) {
   // Not implemented
   scriptDataVector scripts;
+=======
+DefinitionsVector
+PatchBuilder::getScriptDataVector(const ObjectsDataVector &objects) {
+  // Not implemented
+  DefinitionsVector scripts;
+>>>>>>> Stashed changes
   for (ObjectData object : objects) {
     if (object.schema == "script") {
       // Reading all text from file
@@ -134,16 +155,26 @@ PatchBuilder::getScriptDataVector(const objectDataVector &objects) {
   return scripts;
 }
 
+<<<<<<< Updated upstream
 objectDataVector PatchBuilder::getObjectDataVector() {
   // Getting all source database objects
   objectDataVector objects = provider.getObjects();
+=======
+ObjectsDataVector PatchBuilder::getObjectDataVector() {
+  // Getting all source database objects
+  ObjectsDataVector objects = provider.GetObjects();
+>>>>>>> Stashed changes
 
   showMessage("Object vector created\n");
   return objects;
 }
 
 void PatchBuilder::createInstallPocket(const string &directory,
+<<<<<<< Updated upstream
                                        const scriptDataVector &scripts) const {
+=======
+                                       const DefinitionsVector &scripts) const {
+>>>>>>> Stashed changes
   ofstream output_bat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
   ofstream output_sh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
 
@@ -226,9 +257,15 @@ bool PatchBuilder::isContains(const ObjectData &data,
   }
 }
 
+<<<<<<< Updated upstream
 objectDataVector PatchBuilder::getPatchListVector() const {
   // Getting all patch objects
   objectDataVector patch_objects;
+=======
+ObjectsDataVector PatchBuilder::getPatchListVector() const {
+  // Getting all patch objects
+  ObjectsDataVector patch_objects;
+>>>>>>> Stashed changes
   ifstream input(patch_list_full_name);
   if (input.is_open()) {
     while (!input.eof()) {
@@ -270,7 +307,11 @@ objectDataVector PatchBuilder::getPatchListVector() const {
   }
 }
 
+<<<<<<< Updated upstream
 void PatchBuilder::createObjectList(const scriptDataVector &objects,
+=======
+void PatchBuilder::createObjectList(const DefinitionsVector &objects,
+>>>>>>> Stashed changes
                                     const string &directory) const {
   ofstream output(directory + "/" + OBJECT_LIST_NAME);
   for (ObjectData data : objects) {
@@ -287,8 +328,13 @@ void PatchBuilder::createObjectList(const scriptDataVector &objects,
   output.close();
 }
 
+<<<<<<< Updated upstream
 void PatchBuilder::remove(objectDataVector &objects_first,
                           const objectDataVector &objects_second) {
+=======
+void PatchBuilder::remove(ObjectsDataVector &objects_first,
+                          const ObjectsDataVector &objects_second) {
+>>>>>>> Stashed changes
   // Removing elements of second vector from first vector
   for (size_t index = 0; index < objects_first.size(); index++) {
     for (const ObjectData &object : objects_second) {
@@ -301,7 +347,11 @@ void PatchBuilder::remove(objectDataVector &objects_first,
   }
 }
 
+<<<<<<< Updated upstream
 void PatchBuilder::removeComments(scriptDataVector &scripts) {
+=======
+void PatchBuilder::removeComments(DefinitionsVector &scripts) {
+>>>>>>> Stashed changes
   // Removing of all commits
   for (ScriptData &script : scripts) {
     // "--" comments removing

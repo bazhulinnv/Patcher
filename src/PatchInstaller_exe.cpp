@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iostream>
 
+using namespace std;
+
 inline bool fileExists(std::string directory) {
   std::string file_name1 = directory;
   std::string file_name2 = directory;
@@ -94,11 +96,11 @@ void printHelp(const vector<ArgumentData> &params) // Print help information
     std::cout << std::endl << std::endl;
   }
   std::cout << "Examples:" << std::endl;
-  std::cout << "1)  PatchInstaller_exe.exe -d C:/Users/Katinka/Desktop/test/ "
+  std::cout << "1)  PatchInstaller_exe.exe -d C:/Users/User/Desktop/test/ "
                "-cn 127.0.0.1:5432:Doors:doo:rs -cm install"
             << std::endl;
   std::cout
-      << "2) PatchInstaller_exe.exe -directory C:/Users/Katinka/Desktop/test/ "
+      << "2) PatchInstaller_exe.exe -directory C:/Users/User/Desktop/test/ "
          "-connection 127.0.0.1:5432:Doors:doo:rs -command check"
       << std::endl;
 }

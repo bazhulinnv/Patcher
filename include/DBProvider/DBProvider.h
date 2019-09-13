@@ -4,8 +4,6 @@
 #include "DBProvider/DBConnection.h"
 #include <pqxx/pqxx>
 
-using namespace std;
-
 namespace Provider {
 
 /**
@@ -21,12 +19,12 @@ enum class ObjectType {
   Sequence
 };
 
-struct ObjectData // Structure contains object data
+struct ObjectData // Structure describes object data
 {
   std::string name;                    // Name of object
   ObjectType type = ObjectType::Empty; // Type of object
   std::string schema;                  // Scheme of object
-  std::vector<std::string> params;     // Params of object
+  std::vector<std::string> params;     // Parameters of object
 
   ObjectData() = default;
 
@@ -51,7 +49,16 @@ struct ScriptDefinition : ObjectData // Structure contains script data
   ScriptDefinition(const ObjectData &object_data, const std::string &p_text);
 };
 
-struct Column // Structure contains information about column of table
+// Vector contains objects data.
+using ObjectsDataVector = std::vector<ObjectData>;
+
+// Vector contains scripts definitions.
+using DefinitionsVector = std::vector<ScriptDefinition> ;
+
+/**
+ * @brief Describes column of table
+ */
+struct Column
 {
   std::string name;
   std::string type;
@@ -64,6 +71,9 @@ private:
   bool nullable_ = false;
 };
 
+/**
+ * @brief Describes constraints structure.
+ */
 struct Constraint {
   std::string type;
   std::string name;
@@ -77,13 +87,16 @@ struct Constraint {
   std::string on_update;
 };
 
+/**
+ * @brief Describes partition table structure.
+ */
 struct PartitionTable {
   std::string schema;
   std::string name;
   std::string partition_expression;
 };
 
-struct TableStructure // Structure contains table structure information
+struct TableStructure // Structure contains table information
 {
   std::string type;
   std::string owner;
@@ -107,15 +120,11 @@ private:
   bool i_partition_ = false;
 };
 
+// Casts instance of enum class ObjectType to std::string.
 std::string CastObjectType(const ObjectType &object_type);
 
+// Casts std::string ObjectType to instance of enum class ObjectType.
 ObjectType CastObjectType(const std::string &object_type);
-
-// Vector for containing object data
-typedef vector<ObjectData> ObjectDataVectorType;
-
-// Vector for containing script data
-typedef vector<ScriptDefinition> ScriptDataVectorType;
 
 /**
  * @brief Provides various methods of working with the database.
@@ -123,133 +132,191 @@ typedef vector<ScriptDefinition> ScriptDataVectorType;
  */
 class DBProvider {
 public:
-  // Default constructor
+  // Default constructor for DBProvider.
   DBProvider();
 
-  explicit DBProvider(const string &connection_params);
+  /**
+   * @brief Sets up connection parameters explicitly.
+   * @param connection_params String containing connection parameters, in format:
+   *							< localhost:5432:database:username:password >.
+   */
+  explicit DBProvider(const std::string & connection_params);
 
-  explicit DBProvider(shared_ptr<DBConnection> already_set_connection);
+  /**
+   * @brief Sets up connection explicitly.
+   * @param already_set_connection Pointer to DBConnection which was already set.
+   */
+  explicit DBProvider(std::shared_ptr<DBConnection> already_set_connection);
 
+   // Safely deletes DBProvider with its state.
   ~DBProvider();
 
-  void InitializeStatements();
-
+  /**
+   * @brief Prepares standard statements frequently used by DBProvider.
+   */
   void PrepareAllStatements();
 
+  /**
+   * @brief Prepares statement
+   * @param key 
+   * @param statement_definition 
+   */
   void PrepareStatement(const std::string &key,
-                        const std::string &statement_definition);
+                        const std::string &statement_definition) const;
 
-  void PrepareStatements(const std::map<std::string, std::string> &statements);
+  /**
+   * @brief Prepares custom statements (queries) for future use.
+   * @param statements Map describes all custom statements.
+   */
+  void PrepareStatements(const std::map<std::string, std::string> &statements) const;
 
-  void
-  ExecutePreparedWithoutArgs(const std::vector<std::string> &statement_keys);
+  /**
+   * @brief Executes already prepared statement by given statement key. 
+   * @param statement_keys Statement identifier.
+   */
+  void ExecutePreparedWithoutArgs(const std::vector<std::string> &statement_keys) const;
 
-  // Returns all objects of database
-  vector<ObjectData> GetObjects() const;
+  /**
+   * @brief Gets all objects from database.
+   * @return Vector containing all object descriptors with metadata.
+   */
+  std::vector<ObjectData> GetObjects() const;
 
-  // Returns script data by object data
-  ScriptDefinition
-  GetScriptData(const ObjectData &data,
-                vector<ScriptDefinition> &extra_script_data) const;
-
-  // Checks if specified object exists in database
+  // Returns script data for specified object data
+  ScriptDefinition GetScriptData(const ObjectData &data,
+                std::vector<ScriptDefinition> &extra_script_data) const;
+  /**
+   * @brief Checks existence of an object in specified schema.
+   * @param scheme Schema to check.
+   * @param signature Full object name or signature.
+   * @param type Type of an object. Can be: Table, Function, Trigger, View, Index, Sequence.
+   * @return True if object exists in specified schema, otherwise returns false.
+   */
   bool DoesCurrentObjectExists(const std::string &scheme,
                                const std::string &signature,
                                const std::string &type) const;
 
+  /**
+   * @brief Performs query request.
+   * @param sql_request PLPG SQL request to perform.
+   * @return Object of type pqxx::result containing all affected queries.
+   */
   pqxx::result Query(const std::string &sql_request) const;
 
-  pair<bool, pqxx::result> QueryWithStatus(const string &sql_request) const;
+  /**
+   * @brief Tries to performs query request, if request succeeded returns with boolean status 'True'.
+   * @param sql_request PLPG SQL request to perform.
+   * @return Object containing query result and query status.
+   */
+  std::pair<bool, pqxx::result> QueryWithStatus(const std::string &sql_request) const;
 
-  // Returns the MIME type of the data at the given URI
-  static ObjectDataVectorType GetType(ObjectData obj);
+  /**
+   * @brief Checks existence of the table in specified schema.
+   * @param table_schema Schema to check.
+   * @param table_name Name of the table to check.
+   * @return True if table exists in specified schema, otherwise returns false.
+   */
+  bool TableExists(const std::string &table_schema,
+                   const std::string &table_name) const;
 
-  // Uses specified view
-  static std::vector<ObjectData> UseViewToGetData(std::string name_of_view);
-
-  // Creates new view
-  static std::vector<ObjectData> CreateAndUseView(std::string name_of_view,
-                                                  std::string body_of_view);
-
-  bool TableExists(const std::string &schema,
-                   const std::string &tableName) const;
-
-  bool SequenceExists(const std::string &schema,
+  /**
+   * @brief Checks existence of the sequence in specified schema.
+   * @param sequence_schema Schema to check.
+   * @param sequence_name Name of the table to check.
+   * @return True if sequence exists in specified schema, otherwise returns false.
+   */
+  bool SequenceExists(const std::string &sequence_schema,
                       const std::string &sequence_name) const;
 
-  bool FunctionExists(const std::string &schema,
-                      const std::string &func_signature) const;
+  /**
+   * @brief Checks existence of the function in specified schema.
+   * @param function_schema Schema to check.
+   * @param function_signature Full function signature to check, in format:
+				<FunctionName(parameter_1, parameter_1, ...)>.
+   * @return True if function exists in specified schema, otherwise returns false.
+   */
+  bool FunctionExists(const std::string &function_schema,
+                      const std::string &function_signature) const;
 
-  bool IndexExists(const std::string &schema,
+  /**
+   * @brief Checks existence of the index in specified schema.
+   * @param index_schema Schema to check.
+   * @param index_name Name of the index to check.
+   * @return True if index exists, otherwise returns false.
+   */
+  bool IndexExists(const std::string &index_schema,
                    const std::string &index_name) const;
 
-  bool ViewExists(const std::string &table_schema,
-                  const std::string &table_name) const;
+  /**
+   * @brief Checks existence of the view in specified schema.
+   * @param view_schema Schema to check.
+   * @param view_name Name of the view to check.
+   * @return True if view exists, otherwise returns false.
+   */
+  bool ViewExists(const std::string &view_schema,
+                  const std::string &view_name) const;
 
+  /**
+   * @brief Checks existence of the trigger in specified schema.
+   * @param trigger_schema Schema to check.
+   * @param trigger_name Name of the trigger to check.
+   * @return True if trigger exists, otherwise returns false.
+   */
   bool TriggerExists(const std::string &trigger_schema,
                      const std::string &trigger_name) const;
 
 private:
-  // DBConnectionPool Pool
-  shared_ptr<DBConnection> current_connection_;
+  // Points to current connection
+  std::shared_ptr<DBConnection> current_connection_;
 
+  // Keeps prepared statement
   std::map<std::string, std::string> prepared_statements_;
+  
+  /**
+   * @brief Initializes map of standard statements (queries) frequently used by DBProvider.
+   */
+  void InitializeStatements();
 
   // Getting information about object from database
   TableStructure GetTable(const ObjectData &data) const;
 
-  ScriptDefinition GetFunctionDefinition(const ObjectData &data) const;
+  ScriptDefinition FunctionDefinition(const ObjectData &data) const;
 
-  ScriptDefinition GetTriggerDefinition(const ObjectData &data,
-                                        const string &comment = "",
-                                        const string &code = "") const;
+  ScriptDefinition TriggerDefinition(const ObjectData &data,
+                                        const std::string &comment = "",
+                                        const std::string &code = "") const;
 
   ScriptDefinition
-  GetSequenceDefinition(const ObjectData &data, int start_value = 1,
+  SequenceDefinition(const ObjectData &data, int start_value = 1,
                         int minimum_value = 1, int maximum_value = 2147483647,
-                        int increment = 1, std::string cycle_option = "NO",
-                        std::string comment = "") const;
+                        int increment = 1, bool cycle_option = false,
+                        const std::string& comment = "") const;
 
-  ScriptDefinition GetViewDefinition(const ObjectData &data) const;
+  ScriptDefinition ViewDefinition(const ObjectData &data) const;
 
-  ScriptDefinition GetIndexDefinition(const ObjectData &data) const;
+  ScriptDefinition IndexDefinition(const ObjectData &data) const;
 
-  // Get single value from Query
-  string GetValue(const string &query_string, const string &column_name) const;
+  // Gets single value from Query.
+  std::string GetValue(const std::string &sql_request, const std::string &column_name) const;
 
-  // Get ScriptDefinition for current type
+  // Gets ScriptDefinition for current type.
   ScriptDefinition
   GetTableData(const ObjectData &data,
-               vector<ScriptDefinition> &extra_script_data) const;
-
-  ScriptDefinition GetFunctionData(const ObjectData &data) const;
-
-  ScriptDefinition GetViewData(const ObjectData &data) const;
-
-  ScriptDefinition GetSequenceData(const ObjectData &data) const;
-
-  ScriptDefinition GetTriggerData(const ObjectData &data) const;
-
-  ScriptDefinition GetIndexData(const ObjectData &data) const;
+               std::vector<ScriptDefinition> &extra_script_data) const;
 
   // Methods for initialization of TableStructure structure
-  bool InitializePartitionTable(TableStructure &table,
-                                const ObjectData &data) const;
+
+  bool InitializePartitionTable(TableStructure &table, const ObjectData &data) const;
   void InitializeType(TableStructure &table, const ObjectData &data) const;
   void InitializeOwner(TableStructure &table, const ObjectData &data) const;
-  void InitializeDescription(TableStructure &table,
-                             const ObjectData &data) const;
+  void InitializeDescription(TableStructure &table, const ObjectData &data) const;
   void InitializeOptions(TableStructure &table, const ObjectData &data) const;
   void InitializeSpace(TableStructure &table, const ObjectData &data) const;
   void InitializeColumns(TableStructure &table, const ObjectData &data) const;
-  void InitializePartitionExpression(TableStructure &table,
-                                     const ObjectData &data) const;
-  void InitializeConstraints(TableStructure &table,
-                             const ObjectData &data) const;
-  void InitializeInheritTables(TableStructure &table,
-                               const ObjectData &data) const;
-  void InitializeIndexExpressions(TableStructure &table,
-                                  const ObjectData &data) const;
+  void InitializePartitionExpression(TableStructure &table, const ObjectData &data) const;
+  void InitializeConstraints(TableStructure &table, const ObjectData &data) const;
+  void InitializeInheritTables(TableStructure &table, const ObjectData &data) const;
+  void InitializeIndexExpressions(TableStructure &table, const ObjectData &data) const;
 };
 
 void PrintObjectsData(const pqxx::result &query_result);
