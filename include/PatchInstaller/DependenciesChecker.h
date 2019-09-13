@@ -1,9 +1,6 @@
 #ifndef DEPENDENCIESCHECKER_H
 #define DEPENDENCIESCHECKER_H
 
-#include <iostream>
-#include <unordered_map>
-
 #include "DBProvider/DBProvider.h"
 #include "PatchInstaller.h"
 

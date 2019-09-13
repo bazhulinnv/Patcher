@@ -3,13 +3,14 @@
 
 #include "DBProvider/DBProvider.h"
 #include "DBProvider/LoginData.h"
-#include <cstdio>
 #include <string>
 
 // type for object identification: schema-name-type
 using DBObj = std::tuple<std::string, std::string, std::string>;
 // list of objects
 using DBObjs = std::list<DBObj>;
+
+using namespace Provider;
 
 class PatchInstaller {
 public:

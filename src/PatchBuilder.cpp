@@ -9,6 +9,7 @@
 #include <streambuf>
 
 using namespace std;
+using namespace Provider;
 
 PatchBuilder::PatchBuilder(const string &value_patch_list_name,
                            const string &connect_args,
@@ -54,28 +55,29 @@ void PatchBuilder::buildPatch(const string directory) {
   // Executing all methods for patch building
   ofstream output(directory + "/" +
                   DEPENDENCY_LIST_NAME); // Dependency list directory
-  const objectDataVector patch_objects =
+  const ObjectDataVectorType patch_objects =
       getPatchListVector(); // Getting vector that contains all patch objects
-  scriptDataVector scripts = getScriptDataVector(
+  ScriptDataVectorType scripts = getScriptDataVector(
       patch_objects); // Getting all scripts created by DBProvider
   createObjectList(scripts, directory);    // Creating of ObjectList
   createInstallPocket(directory, scripts); // Creaing all instalation components
   removeComments(scripts);
-  objectDataVector objects =
-      getObjectDataVector();      // Getting vector that contains all objects of
-                                  // source databse
-  remove(objects, patch_objects); // Removing path objects from objectDataVector
+  ObjectDataVectorType objects =
+      getObjectDataVector(); // Getting vector that contains all objects of
+                             // source databse
+  remove(objects,
+         patch_objects); // Removing path objects from ObjectDataVectorType
 
   // Writing of DependencyList
   showMessage(string("Parsing started...\n") + BLOCK_LINE + "\n");
   for (const ObjectData object : objects) {
     // Checking all objects for the presence in scripts
-    for (const ScriptData script : scripts) {
+    for (const ScriptDefinition script : scripts) {
       if (isContains(object, script.text)) {
         // If object was found - writing it's name and type in DependencyList
-        output << object.schema << " " << object.name << " " << object.type
-               << endl;
-        showMessage(" - " + object.type + " " + object.name +
+        output << object.schema << " " << object.name << " "
+               << CastObjectType(object.type) << endl;
+        showMessage(" - " + CastObjectType(object.type) + " " + object.name +
                     " included - dependency in " + script.name + "\n");
         break;
       }
@@ -97,10 +99,10 @@ void PatchBuilder::buildPatch(const string directory) {
   showMessage(message);
 }
 
-scriptDataVector
-PatchBuilder::getScriptDataVector(const objectDataVector &objects) {
+ScriptDataVectorType
+PatchBuilder::getScriptDataVector(const ObjectDataVectorType &objects) {
   // Not implemented
-  scriptDataVector scripts;
+  ScriptDataVectorType scripts;
   for (ObjectData object : objects) {
     if (object.schema == "script") {
       // Reading all text from file
@@ -113,18 +115,19 @@ PatchBuilder::getScriptDataVector(const objectDataVector &objects) {
       object.name.erase(0, slash_pos + 1);
 
       // Add script in vector
-      const ScriptData script_data(object, text);
+      const ScriptDefinition script_data(object, text);
       scripts.push_back(script_data);
 
       input.close();
     } else {
       // Getting script data from DBProvider
-      vector<ScriptData> extra_scripts; // Vector for
-      const ScriptData script = provider.getScriptData(object, extra_scripts);
+      vector<ScriptDefinition> extra_scripts; // Vector for
+      const ScriptDefinition script =
+          provider.GetScriptData(object, extra_scripts);
       scripts.push_back(script);
 
       if (!extra_scripts.empty()) {
-        for (const ScriptData &script : extra_scripts) {
+        for (const ScriptDefinition &script : extra_scripts) {
           scripts.push_back(script);
         }
       }
@@ -134,16 +137,16 @@ PatchBuilder::getScriptDataVector(const objectDataVector &objects) {
   return scripts;
 }
 
-objectDataVector PatchBuilder::getObjectDataVector() {
+ObjectDataVectorType PatchBuilder::getObjectDataVector() {
   // Getting all source database objects
-  objectDataVector objects = provider.getObjects();
+  ObjectDataVectorType objects = provider.GetObjects();
 
   showMessage("Object vector created\n");
   return objects;
 }
 
-void PatchBuilder::createInstallPocket(const string &directory,
-                                       const scriptDataVector &scripts) const {
+void PatchBuilder::createInstallPocket(
+    const string &directory, const ScriptDataVectorType &scripts) const {
   ofstream output_bat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
   ofstream output_sh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
 
@@ -155,12 +158,13 @@ void PatchBuilder::createInstallPocket(const string &directory,
   string out_operator = ">";
 
   // Creating sql files for all scrpits and writing install script
-  for (const ScriptData &data : scripts) {
+  for (const ScriptDefinition &data : scripts) {
     // Creating directory named as type of script
     _mkdir(&(directory + "/" + data.schema)[0]);
-    _mkdir(&(directory + "/" + data.schema + "/" + data.type)[0]);
-    ofstream output_script(directory + "/" + data.schema + "/" + data.type +
-                           "/" + data.name);
+    _mkdir(
+        &(directory + "/" + data.schema + "/" + CastObjectType(data.type))[0]);
+    ofstream output_script(directory + "/" + data.schema + "/" +
+                           CastObjectType(data.type) + "/" + data.name);
     // Writing script text in file
     output_script << data.text;
     output_script.close();
@@ -171,8 +175,8 @@ void PatchBuilder::createInstallPocket(const string &directory,
                              "%4"
                              " -f " +
                              data.schema + "/";
-    if (!data.type.empty()) {
-      install_command += data.type + "/";
+    if (data.type != ObjectType::Empty) {
+      install_command += CastObjectType(data.type) + "/";
     }
     install_command += data.name + " ";
 
@@ -226,9 +230,9 @@ bool PatchBuilder::isContains(const ObjectData &data,
   }
 }
 
-objectDataVector PatchBuilder::getPatchListVector() const {
+ObjectDataVectorType PatchBuilder::getPatchListVector() const {
   // Getting all patch objects
-  objectDataVector patch_objects;
+  ObjectDataVectorType patch_objects;
   ifstream input(patch_list_full_name);
   if (input.is_open()) {
     while (!input.eof()) {
@@ -244,14 +248,16 @@ objectDataVector PatchBuilder::getPatchListVector() const {
       // If this is script from outside - type field is empty
       if (object.schema == "script") {
         input >> object.name;
-        object.type = "";
+        object.type = ObjectType::Empty;
       } else {
         input >> object.name;
-        input >> object.type;
+        string temp;
+        input >> temp;
+        object.type = CastObjectType(temp);
       }
 
       // If type is "function" reading params of it
-      if (object.type == "function") {
+      if (object.type == CastObjectType("function")) {
         string current_word;
         input >> current_word;
         input >> current_word;
@@ -270,12 +276,13 @@ objectDataVector PatchBuilder::getPatchListVector() const {
   }
 }
 
-void PatchBuilder::createObjectList(const scriptDataVector &objects,
+void PatchBuilder::createObjectList(const ScriptDataVectorType &objects,
                                     const string &directory) const {
   ofstream output(directory + "/" + OBJECT_LIST_NAME);
   for (ObjectData data : objects) {
-    output << data.schema << " " << data.name << " " << data.type;
-    if (data.type == "function") {
+    output << data.schema << " " << data.name << " "
+           << CastObjectType(data.type);
+    if (data.type == CastObjectType("function")) {
       output << " ( ";
       for (string param : data.params) {
         output << param << " ";
@@ -287,8 +294,8 @@ void PatchBuilder::createObjectList(const scriptDataVector &objects,
   output.close();
 }
 
-void PatchBuilder::remove(objectDataVector &objects_first,
-                          const objectDataVector &objects_second) {
+void PatchBuilder::remove(ObjectDataVectorType &objects_first,
+                          const ObjectDataVectorType &objects_second) {
   // Removing elements of second vector from first vector
   for (size_t index = 0; index < objects_first.size(); index++) {
     for (const ObjectData &object : objects_second) {
@@ -301,9 +308,9 @@ void PatchBuilder::remove(objectDataVector &objects_first,
   }
 }
 
-void PatchBuilder::removeComments(scriptDataVector &scripts) {
+void PatchBuilder::removeComments(ScriptDataVectorType &scripts) {
   // Removing of all commits
-  for (ScriptData &script : scripts) {
+  for (ScriptDefinition &script : scripts) {
     // "--" comments removing
     string &text = script.text;
     size_t start = text.find("--"); // Find "--" in text
@@ -340,7 +347,8 @@ regex PatchBuilder::createExpression(const ObjectData &data) {
       template_stream >> current_word;
       template_stream >> current_word;
       // Compare current template type with object type
-      if (current_word == data.type || current_word == ANY_TYPE_CODE) {
+      if (current_word == CastObjectType(data.type) ||
+          current_word == ANY_TYPE_CODE) {
         // If types are equal or it template for any type
         template_stream >> current_word;
         template_stream >> current_word;

@@ -1,11 +1,9 @@
-#include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/FileParser.h"
+#include "PatchInstaller/PatchInstaller.h"
+#include "Shared/ParsingTools.h"
 
-#include <iostream>
 #include <fstream>
 #include <string>
-
-#include "Shared/ParsingTools.h"
 
 FileParser::FileParser() {}
 FileParser::~FileParser() {}
@@ -19,7 +17,7 @@ bool FileParser::checkInputCorrect(std::string file_name) {
 		std::getline(dependencies, buffer);
 
 		if (!buffer.empty()) {
-			std::vector<std::string> parameters = ParsingTools::splitToVector(buffer, " ");
+			std::vector<std::string> parameters = ParsingTools::SplitToVector(buffer, " ");
 			if (parameters.size() != 3) {
 				return false;
 			}		

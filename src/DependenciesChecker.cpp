@@ -1,7 +1,7 @@
-#include <iostream>
-
 #include "PatchInstaller/DependenciesChecker.h"
 #include "PatchInstaller/PatchInstaller.h"
+
+#include <iostream>
 
 // Constructor and destructor
 DependenciesChecker::DependenciesChecker() { all_objects_exists = true; };
@@ -39,7 +39,7 @@ void DependenciesChecker::print() {
 bool DependenciesChecker::check(DBObjs &objectsParameters,
                                 DBProvider &dbProvider) {
   for (auto i : objectsParameters) {
-    bool does_current_object_exist = dbProvider.doesCurrentObjectExists(
+    bool does_current_object_exist = dbProvider.DoesCurrentObjectExists(
         std::get<0>(i), std::get<1>(i), std::get<2>(i));
     if (!does_current_object_exist) {
       all_objects_exists = false;

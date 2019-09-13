@@ -1,10 +1,7 @@
-#include "PatchInstaller/DependenciesChecker.h"
-#include "PatchInstaller/FileParser.h"
 #include "PatchInstaller/PatchInstaller.h"
 #include "Shared/ParsingTools.h"
 #include <direct.h>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 
 inline bool fileExists(std::string directory) {

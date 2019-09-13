@@ -1,14 +1,11 @@
-#include <array>
-#include <direct.h>
+#include "PatchInstaller/PatchInstaller.h"
+#include "PatchInstaller/DependenciesChecker.h"
+#include "PatchInstaller/FileParser.h"
+#include "Shared/Logger.h"
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <time.h>
-
-#include "PatchInstaller/DependenciesChecker.h"
-#include "PatchInstaller/FileParser.h"
-#include "PatchInstaller/PatchInstaller.h"
-#include "Shared/Logger.h"
 
 using namespace PatcherLogger;
 
@@ -20,8 +17,8 @@ PatchInstaller::~PatchInstaller() {}
 /** Creates log for both parts of PatchInstaller. */
 void createLog(std::string path, Level level, std::string data) {
   Log log;
-  log.setLogByPath(path);
-  log.addLog(level, data);
+  log.SetLogByPath(path);
+  log.AddLog(level, data);
 }
 
 /** Checking dependencies part. */
