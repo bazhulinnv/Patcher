@@ -66,9 +66,9 @@ unsigned TextTable::columns() const { return _rows[0].size(); }
 
 void TextTable::determineWidths() const {
   _width.assign(columns(), 0);
-  for (auto rowIterator = _rows.begin(); rowIterator != _rows.end();
-       ++rowIterator) {
-    Row const &row = *rowIterator;
+  for (auto row_iterator = _rows.begin(); row_iterator != _rows.end();
+       ++row_iterator) {
+    Row const &row = *row_iterator;
     for (unsigned i = 0; i < row.size(); ++i) {
       _width[i] = _width[i] > row[i].size() ? _width[i] : row[i].size();
     }

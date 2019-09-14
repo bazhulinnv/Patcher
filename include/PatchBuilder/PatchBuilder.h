@@ -3,9 +3,7 @@
 
 #include "DBProvider/DBProvider.h"
 #include <regex>
-#include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 // Templates code words
@@ -40,7 +38,9 @@ constexpr auto LOG_FOLDER = "logs";        // Folder name for logs
 constexpr auto LOG_FORMAT = ".log";        // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
+
 using namespace std;
+using namespace Provider; // DBProvider namespace
 
 class PatchBuilder {
 public:
@@ -58,54 +58,30 @@ private:
   DBProvider provider;           // Ptr to provider class
   bool is_with_errors = false;   // Become true after some error
   bool is_with_warnings = false; // Become true after some warning
-<<<<<<< Updated upstream
-  scriptDataVector getScriptDataVector(
-      const objectDataVector &object_data_vector); // Getting vector of scripts,
-                                                   // created by DBProvider
-  objectDataVector
-  getObjectDataVector(); // Getting vector of objects from source database
-  void createInstallPocket(const string &directory,
-                           const scriptDataVector &script_data_vector)
-      const; // Creating sql files for scripts from scriptDataVector and
-=======
-  DefinitionsVector getScriptDataVector(
-      const ObjectsDataVector &object_data_vector); // Getting vector of scripts,
-                                                   // created by DBProvider
+  DefinitionsVector
+  getScriptDataVector(const ObjectsDataVector
+                          &object_data_vector) const; // Getting vector of scripts,
+                                                // created by DBProvider
   ObjectsDataVector
-  getObjectDataVector(); // Getting vector of objects from source database
+  getObjectDataVector() const; // Getting vector of objects from source database
   void createInstallPocket(const string &directory,
-                           const DefinitionsVector &script_data_vector)
+                           const DefinitionsVector &scripts)
       const; // Creating sql files for scripts from DefinitionsVector and
->>>>>>> Stashed changes
              // creating install script file
   bool isContains(const ObjectData &data,
                   const string &script_text); // Returns true, if the object was
                                               // found in the script
-<<<<<<< Updated upstream
-  objectDataVector
-  getPatchListVector() const; // Getting vector of objects that contains a patch
-  void
-  createObjectList(const scriptDataVector &scripts,
-                   const string &directory) const; // Creating of ObjectList
-  static void
-  remove(objectDataVector &objects_first,
-         const objectDataVector &objects_second); // Removing elements of second
-                                                  // vector from first vector
-  static void removeComments(
-      scriptDataVector &scripts); // Removing all commits from script text
-=======
   ObjectsDataVector
   getPatchListVector() const; // Getting vector of objects that contains a patch
   void
   createObjectList(const DefinitionsVector &scripts,
                    const string &directory) const; // Creating of ObjectList
-  static void
-  remove(ObjectsDataVector &objects_first,
-         const ObjectsDataVector &objects_second); // Removing elements of second
-                                                  // vector from first vector
+  static void remove(
+      ObjectsDataVector &objects_first,
+      const ObjectsDataVector &objects_second); // Removing elements of second
+                                                // vector from first vector
   static void removeComments(
       DefinitionsVector &scripts); // Removing all commits from script text
->>>>>>> Stashed changes
   regex createExpression(const ObjectData &data); // Creating regular expression
                                                   // for data from params
   static string getCurrentDateTime();             // Get current date
