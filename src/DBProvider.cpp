@@ -23,7 +23,8 @@ bool ObjectData::operator==(ObjectData &object) const {
   return (this->name == object.name) && (this->type == object.type);
 }
 
-ScriptDefinition::ScriptDefinition(const string &p_name, const ObjectType &p_type,
+ScriptDefinition::ScriptDefinition(const string &p_name,
+                                   const ObjectType &p_type,
                                    const string &p_scheme,
                                    const vector<string> &p_params_vector,
                                    string p_text)
@@ -34,8 +35,7 @@ ScriptDefinition::ScriptDefinition(const string &p_name, const ObjectType &p_typ
 ScriptDefinition::ScriptDefinition(const ObjectData &object_data,
                                    const string &p_text)
     : ScriptDefinition(object_data.name, object_data.type, object_data.schema,
-                       object_data.params, p_text)
-{
+                       object_data.params, p_text) {
   text = p_text;
 }
 
@@ -106,58 +106,33 @@ ObjectType CastObjectType(const string &object_type) {
 DBProvider::DBProvider() = default;
 
 DBProvider::DBProvider(const string &connection_params) {
-  try {
-    current_connection_ = make_shared<DBConnection>();
-    current_connection_->SetConnection(
-        const_cast<string &>(connection_params));
-  } catch (const exception &error) {
-    cerr << "Wrong Parameters: " << connection_params << endl;
-    throw error;
-  }
+  current_connection_ = make_shared<DBConnection>();
+  current_connection_->SetConnection(const_cast<string &>(connection_params));
 }
 
 DBProvider::DBProvider(shared_ptr<DBConnection> already_set_connection) {
-  try {
-    current_connection_ = move(already_set_connection);
-    current_connection_->Connect();
-  } catch (const exception &error) {
-    if (already_set_connection->IsConnectionReady()) {
-      const auto params = already_set_connection->GetParameters();
-      cerr << "\nPassed connection was not set properly." << endl;
 
-      cerr << "\tHostname: ";
-      params.hostname.empty() ? cerr << "<empty>" << endl
-                              : cerr << params.hostname << endl;
-
-      cerr << "\tPort: " << params.port << endl;
-
-      cerr << "\tDatabase: ";
-      params.database.empty() ? cerr << "<empty>" << endl
-                              : cerr << params.database << endl;
-
-      cerr << "\tUsername: ";
-      params.username.empty() ? cerr << "<empty>" << endl
-                              : cerr << params.username << endl;
-
-      cerr << "\tPassword: ";
-      params.password.empty() ? cerr << "<empty>" << endl
-                              : cerr << params.password << endl;
-      throw invalid_argument(
-          "[DBProvider]: Passed connection was not set properly.\n");
-    }
-
-    if (already_set_connection->IsOpen())
-      throw invalid_argument(
-          "[DBProvider]: Could not open passed connection.\n");
-
-    throw error;
+  if (!already_set_connection->IsParametersSet()) {
+    throw invalid_argument(
+        "[DBProvider]: Passed connection was not set properly.\n");
   }
+
+  current_connection_ = move(already_set_connection);
 }
 
 DBProvider::~DBProvider() { current_connection_.reset(); }
 
-void DBProvider::InitializeStatements()
-{
+void DBProvider::SetConnection(std::string &connection_parameters) const {
+  current_connection_->SetConnection(connection_parameters);
+}
+
+void DBProvider::Connect() {
+  current_connection_->Connect();
+  InitializeStatements();
+  PrepareAllStatements();
+}
+
+void DBProvider::InitializeStatements() {
   const auto database = current_connection_->GetParameters().database;
 
   prepared_statements_["get_all_triggers in table"] =
@@ -171,7 +146,7 @@ void DBProvider::InitializeStatements()
 
   prepared_statements_["table_exists"] =
       "SELECT EXISTS (SELECT * FROM information_schema.tables WHERE "
-      "table_schema = $1 AND table_name = $2";
+      "table_schema = $1 AND table_name = $2);";
 
   prepared_statements_["function_exists"] =
       "SELECT EXISTS (SELECT * FROM information_schema.routines r, "
@@ -244,8 +219,8 @@ void DBProvider::PrepareAllStatements() {
   }
 }
 
-void DBProvider::PrepareStatement(
-    const string &key, const string &statement_definition) const {
+void DBProvider::PrepareStatement(const string &key,
+                                  const string &statement_definition) const {
   auto connection = current_connection_->GetConnection();
   connection->prepare(key, statement_definition);
 }
@@ -372,8 +347,8 @@ pqxx::result DBProvider::Query(const string &sql_request) const {
   }
 }
 
-pair<bool, pqxx::result> DBProvider::QueryWithStatus(const string& sql_request) const
-{
+pair<bool, pqxx::result>
+DBProvider::QueryWithStatus(const string &sql_request) const {
   if (!current_connection_->IsOpen()) {
     throw runtime_error(
         "ERROR: Couldn't execute query. Database connection is dead.\n");
@@ -422,8 +397,8 @@ bool DBProvider::IndexExists(const string &index_schema,
 bool DBProvider::FunctionExists(const string &function_schema,
                                 const string &function_signature) const {
   pqxx::work transaction(*current_connection_->GetConnection());
-  const auto query_result =
-      transaction.exec_prepared("function_exists", function_schema, function_signature);
+  const auto query_result = transaction.exec_prepared(
+      "function_exists", function_schema, function_signature);
   transaction.commit();
   return query_result.begin()["exists"].as<bool>();
 }
@@ -479,9 +454,9 @@ ScriptDefinition DBProvider::FunctionDefinition(const ObjectData &data) const {
   }
 
   ScriptDefinition function;
-  function.schema = row["routine_name"].as<string>(); // Function schema
-  function.name = row["routine_schema"].as<string>() + "(" +
-                  row["function_params"].as<string>() + ")"; // Function name
+  function.schema = row["routine_schema"].as<string>(); // Function schema
+  function.name = row["specific_name"].as<string>() + "(" +
+                  row["array_to_string"].as<string>() + ")"; // Function name
   function.params = data.params;
   function.text = text_definition;
   return function;
@@ -527,9 +502,11 @@ ScriptDefinition DBProvider::TriggerDefinition(const ObjectData &data,
   return trigger;
 }
 
-ScriptDefinition DBProvider::SequenceDefinition(const ObjectData& data, int start_value, int minimum_value,
-	int maximum_value, int increment, bool cycle_option, const string& comment) const
-{
+ScriptDefinition
+DBProvider::SequenceDefinition(const ObjectData &data, int start_value,
+                               int minimum_value, int maximum_value,
+                               int increment, bool cycle_option,
+                               const string &comment) const {
   pqxx::work transaction(*current_connection_->GetConnection());
   pqxx::result res =
       transaction.exec_prepared("get_sequence_text", data.name, data.schema);
@@ -635,8 +612,8 @@ DBProvider::GetTableData(const ObjectData &data,
       } else if (constraint.type == "FOREIGN KEY") {
         script_text += "(" + constraint.column_name + ")\n";
         script_text += "REFERENCES " + constraint.foreign_table_schema + "." +
-                         constraint.foreign_table_name + " (" +
-                         constraint.foreign_column_name + ") ";
+                       constraint.foreign_table_name + " (" +
+                       constraint.foreign_column_name + ") ";
         if (constraint.match_option == "NONE") {
           script_text += "MATCH SIMPLE";
         } else {
@@ -685,20 +662,20 @@ DBProvider::GetTableData(const ObjectData &data,
 
     // "OWNER TO" block to make the owner user
     script_text += "ALTER TABLE " + data.schema + "." + data.name +
-                     " OWNER TO " + table.owner + ";\n\n";
+                   " OWNER TO " + table.owner + ";\n\n";
 
     // "COMMENT ON TABLE" block
     if (!table.description.empty()) {
       script_text += "COMMENT ON TABLE " + data.schema + "." + data.name +
-                       "\nIS '" + table.description + "';\n\n";
+                     "\nIS '" + table.description + "';\n\n";
     }
 
     // "COMMENT ON COLUMN blocks
     for (const auto &column : table.columns) {
       if (!column.description.empty()) {
         script_text += "COMMENT ON COLUMN " + data.schema + "." + data.name +
-                         "." + column.name + "\nIS '" + column.description +
-                         "';\n\n";
+                       "." + column.name + "\nIS '" + column.description +
+                       "';\n\n";
       }
     }
 
@@ -723,9 +700,9 @@ DBProvider::GetTableData(const ObjectData &data,
   } else {
     PartitionTable parent_table = table.GetPartitionTable();
     script_text = "CREATE TABLE " + data.schema + "." + data.name +
-                    " PARTITION OF " + parent_table.schema + "." +
-                    parent_table.name + "\n" +
-                    parent_table.partition_expression + ";\n";
+                  " PARTITION OF " + parent_table.schema + "." +
+                  parent_table.name + "\n" + parent_table.partition_expression +
+                  ";\n";
   }
 
   auto script_definition = ScriptDefinition(data, script_text);
@@ -789,24 +766,24 @@ bool DBProvider::InitializePartitionTable(TableStructure &table,
 void DBProvider::InitializeType(TableStructure &table,
                                 const ObjectData &data) const {
   const auto query_request = "SELECT * FROM information_schema.tables t "
-                               "WHERE t.table_schema = '" +
-                               data.schema + "' AND t.table_name = '" +
-                               data.name + "'";
+                             "WHERE t.table_schema = '" +
+                             data.schema + "' AND t.table_name = '" +
+                             data.name + "'";
   table.type = GetValue(query_request, "table_type");
 }
 
 void DBProvider::InitializeOwner(TableStructure &table,
                                  const ObjectData &data) const {
-  const auto query_request =
-      "SELECT * FROM pg_tables t where schemaname = '" + data.schema +
-      "' and tablename = '" + data.name + "'";
+  const auto query_request = "SELECT * FROM pg_tables t where schemaname = '" +
+                             data.schema + "' and tablename = '" + data.name +
+                             "'";
   table.owner = GetValue(query_request, "tableowner");
 }
 
 void DBProvider::InitializeDescription(TableStructure &table,
                                        const ObjectData &data) const {
   const auto query_request = "SELECT obj_description('" + data.schema + "." +
-                               data.name + "'::regclass::oid)";
+                             data.name + "'::regclass::oid)";
   table.description = GetValue(query_request, "obj_description");
 }
 
@@ -839,8 +816,8 @@ void DBProvider::InitializeOptions(TableStructure &table,
 void DBProvider::InitializeSpace(TableStructure &table,
                                  const ObjectData &data) const {
   const auto query_request = "SELECT * FROM pg_tables WHERE tablename = '" +
-                               data.name + "' AND schemaname = '" +
-                               data.schema + "'";
+                             data.name + "' AND schemaname = '" + data.schema +
+                             "'";
   table.space = GetValue(query_request, "tablespace");
 }
 
@@ -987,12 +964,12 @@ void DBProvider::InitializeInheritTables(TableStructure &table,
 void DBProvider::InitializeIndexExpressions(TableStructure &table,
                                             const ObjectData &data) const {
   const auto query_request = "SELECT * FROM pg_indexes "
-                               "WHERE 1 = 1 "
-                               "AND schemaname = '" +
-                               data.schema +
-                               "' "
-                               "AND tablename = '" +
-                               data.name + "'";
+                             "WHERE 1 = 1 "
+                             "AND schemaname = '" +
+                             data.schema +
+                             "' "
+                             "AND tablename = '" +
+                             data.name + "'";
 
   const auto query_result = Query(query_request);
   for (auto row = query_result.begin(); row != query_result.end(); ++row) {

@@ -15,9 +15,9 @@ LoginData::LoginData(string hostname_, unsigned int port_, string database_,
   password = move(password_);
 }
 
-LoginData::LoginData(const string &login_pgpass_string) {
+LoginData::LoginData(const string &login_pgpass) {
   try {
-  	auto values = ParsingTools::SplitToVector(login_pgpass_string, ":");
+    auto values = ParsingTools::SplitToVector(login_pgpass, ":");
     hostname = values[0];
     port = stoi(values[1]);
     database = values[2];
@@ -25,8 +25,9 @@ LoginData::LoginData(const string &login_pgpass_string) {
     password = values[4];
   } catch (exception &err) {
     cerr << err.what() << endl;
-    throw invalid_argument(
-        "PARSING ERROR: Couldn't parse database connection parameters.");
+    throw invalid_argument("PARSING ERROR: Couldn't parse database connection "
+                           "parameters.\nParameters:\n\t" +
+                           login_pgpass);
   }
 }
 
