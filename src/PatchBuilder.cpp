@@ -55,18 +55,18 @@ void PatchBuilder::buildPatch(const string directory) {
   // Executing all methods for patch building
   ofstream output(directory + "/" +
                   DEPENDENCY_LIST_NAME); // Dependency list directory
-  const ObjectDataVectorType patch_objects =
+  const ObjectsDataVector patch_objects =
       getPatchListVector(); // Getting vector that contains all patch objects
-  ScriptDataVectorType scripts = getScriptDataVector(
+  DefinitionsVector scripts = getScriptDataVector(
       patch_objects); // Getting all scripts created by DBProvider
   createObjectList(scripts, directory);    // Creating of ObjectList
   createInstallPocket(directory, scripts); // Creaing all instalation components
   removeComments(scripts);
-  ObjectDataVectorType objects =
+  ObjectsDataVector objects =
       getObjectDataVector(); // Getting vector that contains all objects of
                              // source databse
   remove(objects,
-         patch_objects); // Removing path objects from ObjectDataVectorType
+         patch_objects); // Removing path objects from ObjectsDataVector
 
   // Writing of DependencyList
   showMessage(string("Parsing started...\n") + BLOCK_LINE + "\n");
@@ -99,10 +99,10 @@ void PatchBuilder::buildPatch(const string directory) {
   showMessage(message);
 }
 
-ScriptDataVectorType
-PatchBuilder::getScriptDataVector(const ObjectDataVectorType &objects) {
+DefinitionsVector
+PatchBuilder::getScriptDataVector(const ObjectsDataVector &objects) {
   // Not implemented
-  ScriptDataVectorType scripts;
+  DefinitionsVector scripts;
   for (ObjectData object : objects) {
     if (object.schema == "script") {
       // Reading all text from file
@@ -137,16 +137,16 @@ PatchBuilder::getScriptDataVector(const ObjectDataVectorType &objects) {
   return scripts;
 }
 
-ObjectDataVectorType PatchBuilder::getObjectDataVector() {
+ObjectsDataVector PatchBuilder::getObjectDataVector() {
   // Getting all source database objects
-  ObjectDataVectorType objects = provider.GetObjects();
+  ObjectsDataVector objects = provider.GetObjects();
 
   showMessage("Object vector created\n");
   return objects;
 }
 
-void PatchBuilder::createInstallPocket(
-    const string &directory, const ScriptDataVectorType &scripts) const {
+void PatchBuilder::createInstallPocket(const string &directory,
+                                       const DefinitionsVector &scripts) const {
   ofstream output_bat(directory + "/" + INSTALL_SCRIPT_NAME_BAT);
   ofstream output_sh(directory + "/" + INSTALL_SCRIPT_NAME_SH);
 
@@ -230,9 +230,9 @@ bool PatchBuilder::isContains(const ObjectData &data,
   }
 }
 
-ObjectDataVectorType PatchBuilder::getPatchListVector() const {
+ObjectsDataVector PatchBuilder::getPatchListVector() const {
   // Getting all patch objects
-  ObjectDataVectorType patch_objects;
+  ObjectsDataVector patch_objects;
   ifstream input(patch_list_full_name);
   if (input.is_open()) {
     while (!input.eof()) {
@@ -276,7 +276,7 @@ ObjectDataVectorType PatchBuilder::getPatchListVector() const {
   }
 }
 
-void PatchBuilder::createObjectList(const ScriptDataVectorType &objects,
+void PatchBuilder::createObjectList(const DefinitionsVector &objects,
                                     const string &directory) const {
   ofstream output(directory + "/" + OBJECT_LIST_NAME);
   for (ObjectData data : objects) {
@@ -294,8 +294,8 @@ void PatchBuilder::createObjectList(const ScriptDataVectorType &objects,
   output.close();
 }
 
-void PatchBuilder::remove(ObjectDataVectorType &objects_first,
-                          const ObjectDataVectorType &objects_second) {
+void PatchBuilder::remove(ObjectsDataVector &objects_first,
+                          const ObjectsDataVector &objects_second) {
   // Removing elements of second vector from first vector
   for (size_t index = 0; index < objects_first.size(); index++) {
     for (const ObjectData &object : objects_second) {
@@ -308,7 +308,7 @@ void PatchBuilder::remove(ObjectDataVectorType &objects_first,
   }
 }
 
-void PatchBuilder::removeComments(ScriptDataVectorType &scripts) {
+void PatchBuilder::removeComments(DefinitionsVector &scripts) {
   // Removing of all commits
   for (ScriptDefinition &script : scripts) {
     // "--" comments removing

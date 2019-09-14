@@ -41,7 +41,6 @@ constexpr auto LOG_FORMAT = ".log";        // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
 using namespace std;
-typedef ScriptDataVectorType ScriptDataVectorType;
 
 class PatchBuilder {
 public:
@@ -59,29 +58,29 @@ private:
   DBProvider provider;           // Ptr to provider class
   bool is_with_errors = false;   // Become true after some error
   bool is_with_warnings = false; // Become true after some warning
-  ScriptDataVectorType getScriptDataVector(
-      const ObjectDataVectorType &object_data_vector); // Getting vector of scripts,
+  DefinitionsVector getScriptDataVector(
+      const ObjectsDataVector &object_data_vector); // Getting vector of scripts,
                                                    // created by DBProvider
-  ObjectDataVectorType
+  ObjectsDataVector
   getObjectDataVector(); // Getting vector of objects from source database
   void createInstallPocket(const string &directory,
-                           const ScriptDataVectorType &script_data_vector)
-      const; // Creating sql files for scripts from ScriptDataVectorType and
+                           const DefinitionsVector &script_data_vector)
+      const; // Creating sql files for scripts from DefinitionsVector and
              // creating install script file
   bool isContains(const ObjectData &data,
                   const string &script_text); // Returns true, if the object was
                                               // found in the script
-  ObjectDataVectorType
+  ObjectsDataVector
   getPatchListVector() const; // Getting vector of objects that contains a patch
   void
-  createObjectList(const ScriptDataVectorType &scripts,
+  createObjectList(const DefinitionsVector &scripts,
                    const string &directory) const; // Creating of ObjectList
   static void
-  remove(ObjectDataVectorType &objects_first,
-         const ObjectDataVectorType &objects_second); // Removing elements of second
+  remove(ObjectsDataVector &objects_first,
+         const ObjectsDataVector &objects_second); // Removing elements of second
                                                   // vector from first vector
   static void removeComments(
-      ScriptDataVectorType &scripts); // Removing all commits from script text
+      DefinitionsVector &scripts); // Removing all commits from script text
   regex createExpression(const ObjectData &data); // Creating regular expression
                                                   // for data from params
   static string getCurrentDateTime();             // Get current date
