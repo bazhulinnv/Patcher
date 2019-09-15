@@ -9,10 +9,12 @@
 
 using namespace PatcherLogger;
 
-PatchInstaller::PatchInstaller(std::string conn_params) {
+PatchInstaller::PatchInstaller(const std::string& conn_params) {
   provider = DBProvider(conn_params);
+  provider.Connect();
 }
-PatchInstaller::~PatchInstaller() {}
+
+PatchInstaller::~PatchInstaller() = default;
 
 /** Creates log for both parts of PatchInstaller. */
 void createLog(std::string path, Level level, std::string data) {
@@ -36,7 +38,7 @@ void passCheckLogsForGui(std::string data, bool result_check) {
 /** Main method of checking dependencies.
         Checks the presence of objects in the database according to the list of
    objects specified in the file. */
-bool PatchInstaller::checkDependencyList(std::string file_name) {
+bool PatchInstaller::checkDependencyList(const std::string& file_name) {
   FileParser parser;
   if (parser.checkInputCorrect(file_name)) {
     // A list of objects with three parameters: schema-name-type is created from
@@ -56,15 +58,14 @@ bool PatchInstaller::checkDependencyList(std::string file_name) {
               checker.getDataForLog());
 
     return result;
-  } else {
-    throw std::invalid_argument("Incorrect DependencyList.dpn file");
   }
+  throw std::invalid_argument("Incorrect DependencyList.dpn file");
 }
 
 /** Installation part. */
 
 /** Inner methods. */
-std::string readLogFromTempFile(std::string file_name) {
+std::string readLogFromTempFile(const std::string& file_name) {
   std::string data_for_log;
   std::string buffer;
   std::ifstream temp(file_name, std::ios::in);
@@ -101,17 +102,18 @@ void passInstallLogsGui(std::string &data_for_error_log,
 /** Main method of installing part.
         When the method starts, the dependency check is considered successful.
  */
-bool PatchInstaller::startInstallation(LoginData p) {
+bool PatchInstaller::startInstallation(LoginData parameters) const
+{
   // build command with parameters: Install.bat username databaseName host port
 #if defined(__WIN32__)
   std::string command_with_connection =
-      "Install.bat " + p.username + +" " + p.database + " " + p.hostname + " ";
-  command_with_connection += std::to_string(p.port);
+      "Install.bat " + parameters.username + +" " + parameters.database + " " + parameters.hostname + " ";
+  command_with_connection += std::to_string(parameters.port);
 #endif
 #if (defined(__unix__))
   std::string commandWithParametersConnection =
-      "Install.sh " + p.username + +" " + p.database + " " + p.hostname + " ";
-  commandWithParametersConnection += std::to_string(p.port);
+      "Install.sh " + parameters.username + +" " + parameters.database + " " + parameters.hostname + " ";
+  commandWithParametersConnection += std::to_string(parameters.port);
 #endif
   const char *cstr = command_with_connection.c_str();
   // start installation script with parameters

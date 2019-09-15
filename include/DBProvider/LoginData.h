@@ -17,7 +17,7 @@ struct LoginData {
                      std::string database_, std::string username_,
                      std::string password_);
 
-  explicit LoginData(const std::string &login_pgpass_string);
+  explicit LoginData(const std::string &login_pgpass);
 
   // Returns login data as single string in libpqxx format
   // e.g. "hostname=127.0.0.1 port=5432 dbname=example username=user

@@ -1,5 +1,4 @@
 #include "PatchBuilder/PatchBuilder.h"
-#include <cstdio>
 #include <ctime>
 #include <direct.h>
 #include <exception>
@@ -16,6 +15,7 @@ PatchBuilder::PatchBuilder(const string &value_patch_list_name,
                            const string &p_templates_name) {
   patch_list_full_name = value_patch_list_name;
   provider = DBProvider(string(connect_args));
+  provider.Connect();
   // Check tamplate file
   ifstream input;
   input.open(p_templates_name);
@@ -39,7 +39,7 @@ PatchBuilder::PatchBuilder(const string &value_patch_list_name,
     }
   }
 }
-PatchBuilder::~PatchBuilder() {}
+PatchBuilder::~PatchBuilder() = default;
 
 void PatchBuilder::buildPatch(const string directory) {
   if (!filesystem::exists(directory)) {
@@ -100,10 +100,11 @@ void PatchBuilder::buildPatch(const string directory) {
 }
 
 DefinitionsVector
-PatchBuilder::getScriptDataVector(const ObjectsDataVector &objects) {
+PatchBuilder::getScriptDataVector(const ObjectsDataVector &object_data_vector) const
+{
   // Not implemented
   DefinitionsVector scripts;
-  for (ObjectData object : objects) {
+  for (ObjectData object : object_data_vector) {
     if (object.schema == "script") {
       // Reading all text from file
       ifstream input(object.name);
@@ -137,7 +138,7 @@ PatchBuilder::getScriptDataVector(const ObjectsDataVector &objects) {
   return scripts;
 }
 
-ObjectsDataVector PatchBuilder::getObjectDataVector() {
+ObjectsDataVector PatchBuilder::getObjectDataVector() const {
   // Getting all source database objects
   ObjectsDataVector objects = provider.GetObjects();
 
@@ -152,8 +153,8 @@ void PatchBuilder::createInstallPocket(const string &directory,
 
   // Files to logging of install script working
   vector<string> temp_names;
-  temp_names.push_back(TEMP_ERROR_FILE_NAME);
-  temp_names.push_back(TEMP_INFO_FILE_NAME);
+  temp_names.emplace_back(TEMP_ERROR_FILE_NAME);
+  temp_names.emplace_back(TEMP_INFO_FILE_NAME);
 
   string out_operator = ">";
 
@@ -251,13 +252,11 @@ ObjectsDataVector PatchBuilder::getPatchListVector() const {
         object.type = ObjectType::Empty;
       } else {
         input >> object.name;
-        string temp;
-        input >> temp;
-        object.type = CastObjectType(temp);
+        input >> CastObjectType(object.type);
       }
 
       // If type is "function" reading params of it
-      if (object.type == CastObjectType("function")) {
+      if (object.type == ObjectType::Function) {
         string current_word;
         input >> current_word;
         input >> current_word;
@@ -279,12 +278,12 @@ ObjectsDataVector PatchBuilder::getPatchListVector() const {
 void PatchBuilder::createObjectList(const DefinitionsVector &objects,
                                     const string &directory) const {
   ofstream output(directory + "/" + OBJECT_LIST_NAME);
-  for (ObjectData data : objects) {
+  for (const ObjectData &data : objects) {
     output << data.schema << " " << data.name << " "
            << CastObjectType(data.type);
-    if (data.type == CastObjectType("function")) {
+    if (data.type == ObjectType::Function) {
       output << " ( ";
-      for (string param : data.params) {
+      for (const string &param : data.params) {
         output << param << " ";
       }
       output << ")";

@@ -8,9 +8,9 @@ public:
 	FileParser();
 	~FileParser();
 	//
-	bool checkInputCorrect(std::string file_name);
+	bool checkInputCorrect(const std::string& file_name);
 	DBObjs getResultOfParsing(std::string file_name);
 private:
-	DBObjs parse(std::string file_name);
+	DBObjs parse(const std::string& file_name);
 };
 #endif

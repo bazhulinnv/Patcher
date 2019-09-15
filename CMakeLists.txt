@@ -135,7 +135,8 @@ set(patcher_SRCS_bld	src/PatchBuilder.cpp
 set(patcher_INCS_inst	include/PatchInstaller/PatchInstaller.h
 						include/PatchInstaller/DependenciesChecker.h
 						include/PatchInstaller/FileParser.h
-						include/DBProvider/DBProvider.h
+						
+            include/DBProvider/DBProvider.h
 						include/Shared/Logger.h
 						include/Shared/ParsingTools.h
 						)
@@ -153,7 +154,7 @@ set(patcher_INCS_shared	include/Shared/Logger.h
 						)
 
 set(patcher_SRCS_shared	src/Logger.cpp
-						src/PatchInstaller.cpp
+						src/ParsingTools.cpp
 						src/TextTable.cpp
 						)
 

@@ -3,9 +3,7 @@
 
 #include "DBProvider/DBProvider.h"
 #include <regex>
-#include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 using namespace Provider;
 // Templates code words
@@ -40,7 +38,9 @@ constexpr auto LOG_FOLDER = "logs";        // Folder name for logs
 constexpr auto LOG_FORMAT = ".log";        // Folder name for logs
 
 constexpr auto BLOCK_LINE = "----------------"; // Splitter for text outing
+
 using namespace std;
+using namespace Provider; // DBProvider namespace
 
 class PatchBuilder {
 public:
@@ -58,13 +58,15 @@ private:
   DBProvider provider;           // Ptr to provider class
   bool is_with_errors = false;   // Become true after some error
   bool is_with_warnings = false; // Become true after some warning
-  DefinitionsVector getScriptDataVector(
-      const ObjectsDataVector &object_data_vector); // Getting vector of scripts,
-                                                   // created by DBProvider
+
+  DefinitionsVector
+  getScriptDataVector(const ObjectsDataVector
+                          &object_data_vector) const; // Getting vector of scripts,
+                                                // created by DBProvider
   ObjectsDataVector
-  getObjectDataVector(); // Getting vector of objects from source database
+  getObjectDataVector() const; // Getting vector of objects from source database
   void createInstallPocket(const string &directory,
-                           const DefinitionsVector &script_data_vector)
+                           const DefinitionsVector &scripts)
       const; // Creating sql files for scripts from DefinitionsVector and
              // creating install script file
   bool isContains(const ObjectData &data,
@@ -75,10 +77,11 @@ private:
   void
   createObjectList(const DefinitionsVector &scripts,
                    const string &directory) const; // Creating of ObjectList
-  static void
-  remove(ObjectsDataVector &objects_first,
-         const ObjectsDataVector &objects_second); // Removing elements of second
-                                                  // vector from first vector
+
+  static void remove(
+      ObjectsDataVector &objects_first,
+      const ObjectsDataVector &objects_second); // Removing elements of second
+                                                // vector from first vector
   static void removeComments(
       DefinitionsVector &scripts); // Removing all commits from script text
   regex createExpression(const ObjectData &data); // Creating regular expression

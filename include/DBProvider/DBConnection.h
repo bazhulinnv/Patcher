@@ -19,11 +19,10 @@ public:
   explicit DBConnection(std::string &connection_str);
 
   /**
-   * @brief Checks that parameters were set and connection was established
-   * successfully.
-   * @return True if connection succeed, otherwise false.
+   * @brief Checks if connection parameters was set.
+   * @return True if parameters was set, otherwise false
    */
-  bool IsConnectionReady() const;
+  bool IsParametersSet() const;
 
   /**
    * @brief Checks if pqxx::connection is open.
@@ -36,13 +35,14 @@ public:
 
   /**
    * @brief Sets or resets database connection with given parameters.
-   * @param connection_str String contains all parameters in pgpass format.
+   * @param connection_str String contains all parameters in "pgpass" format.
+   * @throws std::invalid_argument if could not parse parameters.
    */
   void SetConnection(std::string &connection_str);
 
   /**
    * @brief Tries connecting to database with already set parameters.
-   * @throws std::runtime_error
+   * @throws std::runtime_error if connection failed.
    */
   void Connect();
 
@@ -66,7 +66,7 @@ public:
 
 private:
   bool is_parameters_set_ = false;
-  bool is_connection_set_ = false;
+  bool is_connected_ = false;
   LoginData connection_params_;
   std::shared_ptr<pqxx::connection_base> db_connection_;
 

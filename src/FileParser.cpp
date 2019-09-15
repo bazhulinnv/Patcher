@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <string>
+#include <utility>
 
 FileParser::FileParser() {}
 FileParser::~FileParser() {}
@@ -27,33 +28,34 @@ bool FileParser::checkInputCorrect(std::string file_name) {
 	return true;
 }
 
-//public wrapper for private implementation
-DBObjs FileParser::getResultOfParsing(std::string file_name) 
-{
-	FileParser parser;
-	return parser.parse(file_name);
+// public wrapper for private implementation
+DBObjs FileParser::getResultOfParsing(const std::string file_name) {
+  FileParser parser;
+  return parser.parse(file_name);
 }
 
 /** Parsing of file with list of objects. */
-DBObjs FileParser::parse(std::string file_name)
-{
-	DBObjs object_parameters_from_file;
-	std::ifstream dependencies;
-	dependencies.open(file_name);
+DBObjs FileParser::parse(const std::string &file_name) {
+  DBObjs object_parameters_from_file;
+  std::ifstream dependencies;
+  dependencies.open(file_name);
 
-	std::string schema("");
-	std::string object_name("");
-	std::string object_type("");
+  std::string schema;
+  std::string object_name;
+  std::string object_type;
 
-	//Try to read first string from file
-	while (!dependencies.eof()) {
-		dependencies >> schema >> object_name >> object_type;
-		if (!schema.empty() && !object_name.empty() && !object_type.empty()) {
-			object_parameters_from_file.emplace_back(schema, object_name, object_type);
-		}
-		schema = ""; object_name = ""; object_type = "";
-	}
+  // Try to read first string from file
+  while (!dependencies.eof()) {
+    dependencies >> schema >> object_name >> object_type;
+    if (!schema.empty() && !object_name.empty() && !object_type.empty()) {
+      object_parameters_from_file.emplace_back(schema, object_name,
+                                               object_type);
+    }
+    schema = "";
+    object_name = "";
+    object_type = "";
+  }
 
-	dependencies.close();
-	return object_parameters_from_file;
+  dependencies.close();
+  return object_parameters_from_file;
 }
