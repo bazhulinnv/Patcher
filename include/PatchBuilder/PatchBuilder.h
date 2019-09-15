@@ -5,7 +5,7 @@
 #include <regex>
 #include <string>
 #include <vector>
-
+using namespace Provider;
 // Templates code words
 constexpr auto TYPE_CODE = "$type$";     // Type code
 constexpr auto BEGIN_CODE = "$begin$";   // Begining of the block code
@@ -58,6 +58,7 @@ private:
   DBProvider provider;           // Ptr to provider class
   bool is_with_errors = false;   // Become true after some error
   bool is_with_warnings = false; // Become true after some warning
+
   DefinitionsVector
   getScriptDataVector(const ObjectsDataVector
                           &object_data_vector) const; // Getting vector of scripts,
@@ -76,6 +77,7 @@ private:
   void
   createObjectList(const DefinitionsVector &scripts,
                    const string &directory) const; // Creating of ObjectList
+
   static void remove(
       ObjectsDataVector &objects_first,
       const ObjectsDataVector &objects_second); // Removing elements of second

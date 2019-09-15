@@ -12,6 +12,8 @@ using DBObj = std::tuple<std::string, std::string, std::string>;
 // list of objects
 using DBObjs = std::list<DBObj>;
 
+using namespace Provider;
+
 class PatchInstaller {
 public:
   PatchInstaller(const std::string& conn_param);

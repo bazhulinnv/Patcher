@@ -111,7 +111,6 @@ DBProvider::DBProvider(const string &connection_params) {
 }
 
 DBProvider::DBProvider(shared_ptr<DBConnection> already_set_connection) {
-
   if (!already_set_connection->IsParametersSet()) {
     throw invalid_argument(
         "[DBProvider]: Passed connection was not set properly.\n");
@@ -347,8 +346,8 @@ pqxx::result DBProvider::Query(const string &sql_request) const {
   }
 }
 
-pair<bool, pqxx::result>
-DBProvider::QueryWithStatus(const string &sql_request) const {
+pair<bool, pqxx::result> DBProvider::QueryWithStatus(const string& sql_request) const
+{
   if (!current_connection_->IsOpen()) {
     throw runtime_error(
         "ERROR: Couldn't execute query. Database connection is dead.\n");

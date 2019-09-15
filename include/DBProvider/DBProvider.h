@@ -292,6 +292,11 @@ private:
 
   // Keeps prepared statement
   std::map<std::string, std::string> prepared_statements_;
+  
+  /**
+   * @brief Initializes map of standard statements (queries) frequently used by DBProvider.
+   */
+  void InitializeStatements();
 
   /**
    * @brief Initializes map of standard statements (queries) frequently used by
@@ -328,24 +333,17 @@ private:
                std::vector<ScriptDefinition> &extra_script_data) const;
 
   // Methods for initialization of TableStructure structure
-
-  bool InitializePartitionTable(TableStructure &table,
-                                const ObjectData &data) const;
+  bool InitializePartitionTable(TableStructure &table, const ObjectData &data) const;
   void InitializeType(TableStructure &table, const ObjectData &data) const;
   void InitializeOwner(TableStructure &table, const ObjectData &data) const;
-  void InitializeDescription(TableStructure &table,
-                             const ObjectData &data) const;
+  void InitializeDescription(TableStructure &table, const ObjectData &data) const;
   void InitializeOptions(TableStructure &table, const ObjectData &data) const;
   void InitializeSpace(TableStructure &table, const ObjectData &data) const;
   void InitializeColumns(TableStructure &table, const ObjectData &data) const;
-  void InitializePartitionExpression(TableStructure &table,
-                                     const ObjectData &data) const;
-  void InitializeConstraints(TableStructure &table,
-                             const ObjectData &data) const;
-  void InitializeInheritTables(TableStructure &table,
-                               const ObjectData &data) const;
-  void InitializeIndexExpressions(TableStructure &table,
-                                  const ObjectData &data) const;
+  void InitializePartitionExpression(TableStructure &table, const ObjectData &data) const;
+  void InitializeConstraints(TableStructure &table, const ObjectData &data) const;
+  void InitializeInheritTables(TableStructure &table, const ObjectData &data) const;
+  void InitializeIndexExpressions(TableStructure &table, const ObjectData &data) const;
 };
 
 void PrintObjectsData(const pqxx::result &query_result);

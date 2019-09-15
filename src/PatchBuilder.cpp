@@ -8,6 +8,7 @@
 #include <streambuf>
 
 using namespace std;
+using namespace Provider;
 
 PatchBuilder::PatchBuilder(const string &value_patch_list_name,
                            const string &connect_args,

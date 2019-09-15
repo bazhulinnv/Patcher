@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
+
 set(MODULE_NAME Patcher)
 project(${MODULE_NAME})
 
@@ -134,8 +135,8 @@ set(patcher_SRCS_bld	src/PatchBuilder.cpp
 set(patcher_INCS_inst	include/PatchInstaller/PatchInstaller.h
 						include/PatchInstaller/DependenciesChecker.h
 						include/PatchInstaller/FileParser.h
-
-						include/DBProvider/DBProvider.h
+						
+            include/DBProvider/DBProvider.h
 						include/Shared/Logger.h
 						include/Shared/ParsingTools.h
 						)

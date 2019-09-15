@@ -1,6 +1,6 @@
+#include "PatchInstaller/PatchInstaller.h"
 #include "PatchInstaller/DependenciesChecker.h"
 #include "PatchInstaller/FileParser.h"
-#include "PatchInstaller/PatchInstaller.h"
 #include "Shared/Logger.h"
 
 #include <filesystem>

@@ -1,34 +1,31 @@
 #include "PatchInstaller/FileParser.h"
 #include "PatchInstaller/PatchInstaller.h"
+#include "Shared/ParsingTools.h"
 
 #include <fstream>
 #include <string>
 #include <utility>
 
-#include "Shared/ParsingTools.h"
+FileParser::FileParser() {}
+FileParser::~FileParser() {}
 
-FileParser::FileParser() = default;
-FileParser::~FileParser() = default;
+/** Check if file DependencyList is incorrect: if any string has more or less than 3 parameters, file considered incorrect. */
+bool FileParser::checkInputCorrect(std::string file_name) {
+	std::ifstream dependencies;
+	dependencies.open(file_name);
+	while (!dependencies.eof()) {
+		std::string buffer;
+		std::getline(dependencies, buffer);
 
-/** Check if file DependencyList is incorrect: if any string has more or less
- * than 3 parameters, file considered incorrect. */
-bool FileParser::checkInputCorrect(const std::string &file_name) {
-  std::ifstream dependencies;
-  dependencies.open(file_name);
-  while (!dependencies.eof()) {
-    std::string buffer;
-    std::getline(dependencies, buffer);
-
-    if (!buffer.empty()) {
-      std::vector<std::string> parameters =
-          ParsingTools::SplitToVector(buffer, " ");
-      if (parameters.size() != 3) {
-        return false;
-      }
-    }
-  }
-  dependencies.close();
-  return true;
+		if (!buffer.empty()) {
+			std::vector<std::string> parameters = ParsingTools::SplitToVector(buffer, " ");
+			if (parameters.size() != 3) {
+				return false;
+			}		
+		}
+	}
+	dependencies.close();
+	return true;
 }
 
 // public wrapper for private implementation
