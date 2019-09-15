@@ -298,12 +298,6 @@ private:
    */
   void InitializeStatements();
 
-  /**
-   * @brief Initializes map of standard statements (queries) frequently used by
-   * DBProvider.
-   */
-  void InitializeStatements();
-
   // Getting information about object from database
   TableStructure GetTable(const ObjectData &data) const;
 
