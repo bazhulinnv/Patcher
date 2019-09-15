@@ -11,6 +11,7 @@ using namespace PatcherLogger;
 
 PatchInstaller::PatchInstaller(const std::string& conn_params) {
   provider = DBProvider(conn_params);
+  provider.Connect();
 }
 
 PatchInstaller::~PatchInstaller() = default;

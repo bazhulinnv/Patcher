@@ -4,7 +4,6 @@
 #include "PatchInstaller.h"
 #include "DBProvider/DBProvider.h"
 
-#include <iostream>
 #include <unordered_map>
 
 class DependenciesChecker {

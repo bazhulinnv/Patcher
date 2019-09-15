@@ -2,7 +2,6 @@
 #include "PatchBuilder/PatchBuilder.h"
 #include <ctype.h>
 #include <iostream>
-#include <optional>
 #include <string>
 
 using namespace std;

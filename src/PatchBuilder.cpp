@@ -14,6 +14,7 @@ PatchBuilder::PatchBuilder(const string &value_patch_list_name,
                            const string &p_templates_name) {
   patch_list_full_name = value_patch_list_name;
   provider = DBProvider(string(connect_args));
+  provider.Connect();
   // Check tamplate file
   ifstream input;
   input.open(p_templates_name);
