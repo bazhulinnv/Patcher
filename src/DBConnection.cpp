@@ -11,7 +11,12 @@ DBConnection::DBConnection(string &connection_str) {
   is_parameters_set_ = true;
 }
 
-bool DBConnection::IsOpen() const { return db_connection_->is_open(); }
+bool DBConnection::IsOpen() const {
+  if (db_connection_ == nullptr) {
+    return false;
+  }
+  return db_connection_->is_open();
+}
 
 DBConnection::~DBConnection() { CloseConnection(); }
 
@@ -73,6 +78,8 @@ bool DBConnection::IsParametersSet() const { return is_parameters_set_; }
 void DBConnection::CloseConnection() {
   is_parameters_set_ = false;
   is_connected_ = false;
-  db_connection_->disconnect();
-  db_connection_.reset();
+  if (db_connection_ != nullptr) {
+    db_connection_->disconnect();
+    db_connection_.reset();
+  }
 }
