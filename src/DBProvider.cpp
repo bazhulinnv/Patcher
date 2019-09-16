@@ -103,7 +103,7 @@ ObjectType CastObjectType(const string &object_type) {
   throw invalid_argument("ERROR: No such object type.\n");
 }
 
-DBProvider::DBProvider() = default;
+DBProvider::DBProvider() { current_connection_ = make_shared<DBConnection>(); };
 
 DBProvider::DBProvider(const string &connection_params) {
   current_connection_ = make_shared<DBConnection>();
@@ -119,7 +119,11 @@ DBProvider::DBProvider(shared_ptr<DBConnection> already_set_connection) {
   current_connection_ = move(already_set_connection);
 }
 
-DBProvider::~DBProvider() { current_connection_.reset(); }
+DBProvider::~DBProvider() {
+  if (current_connection_ != nullptr) {
+    current_connection_.reset();
+  }
+}
 
 void DBProvider::SetConnection(std::string &connection_parameters) const {
   current_connection_->SetConnection(connection_parameters);
@@ -346,8 +350,8 @@ pqxx::result DBProvider::Query(const string &sql_request) const {
   }
 }
 
-pair<bool, pqxx::result> DBProvider::QueryWithStatus(const string& sql_request) const
-{
+pair<bool, pqxx::result>
+DBProvider::QueryWithStatus(const string &sql_request) const {
   if (!current_connection_->IsOpen()) {
     throw runtime_error(
         "ERROR: Couldn't execute query. Database connection is dead.\n");
@@ -418,6 +422,10 @@ bool DBProvider::TriggerExists(const string &trigger_schema,
       transaction.exec_prepared("trigger_exists", trigger_schema, trigger_name);
   transaction.commit();
   return query_result.begin()["exists"].as<bool>();
+}
+
+std::map<std::string, std::string> DBProvider::GetPreparedStatements() const {
+  return prepared_statements_;
 }
 
 TableStructure DBProvider::GetTable(const ObjectData &data) const {

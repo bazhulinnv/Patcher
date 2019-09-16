@@ -399,15 +399,15 @@ void RunSimpleTests() {
   cout << colors::red << Test_sequenceExists(provider)
        << colors::reset << endl;
 
-  RunTest_PrintScriptsText(provider);
+  //RunTest_PrintScriptsText(provider);
 
-  PrintAllFunctionParams(provider);
+ /* PrintAllFunctionParams(provider);*/
 
-  cout << colors::yellow << "Test functions"<< colors::reset << endl;
+  /*cout << colors::yellow << "Test functions"<< colors::reset << endl;
   cout << colors::red << Test_GetFunctions(provider) << colors::reset
-       << endl;
+       << endl;*/
 
-  cout << colors::yellow << "Test function parameters"<< colors::reset << endl;
+  /*cout << colors::yellow << "Test function parameters"<< colors::reset << endl;
   cout << colors::red << Test_GetFunctionParameters(provider)
        << colors::reset << endl;
 
@@ -425,7 +425,7 @@ void RunSimpleTests() {
 
   cout << colors::yellow << "Test printing triggers"<< colors::reset << endl;
   cout << colors::red << Test_PrintTriggers(provider)
-       << colors::reset << endl;
+       << colors::reset << endl;*/
 }
 
 int main(int argc, char **argv) {

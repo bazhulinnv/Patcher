@@ -286,6 +286,12 @@ public:
   bool TriggerExists(const std::string &trigger_schema,
                      const std::string &trigger_name) const;
 
+  /**
+   * @brief Gets all prepared statements from DBProvider 
+   * @return Map with prepared statements
+   */
+  std::map<std::string, std::string> GetPreparedStatements() const;
+
 private:
   // Points to current connection
   std::shared_ptr<DBConnection> current_connection_;
@@ -295,12 +301,6 @@ private:
   
   /**
    * @brief Initializes map of standard statements (queries) frequently used by DBProvider.
-   */
-  void InitializeStatements();
-
-  /**
-   * @brief Initializes map of standard statements (queries) frequently used by
-   * DBProvider.
    */
   void InitializeStatements();
 
